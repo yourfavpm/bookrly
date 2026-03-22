@@ -246,12 +246,11 @@ export const useAppStore = create<AppState>()(
         if (!businessSubdomain && business.name) {
           businessSubdomain = generateSubdomain(business.name, business.id);
           // Save it to the database (non-blocking)
-          supabase
+          void supabase
             .from('businesses')
             .update({ subdomain: businessSubdomain })
             .eq('id', business.id)
             .select()
-            .then(() => {})
             .catch((err: any) => console.error('Failed to save auto-generated subdomain:', err));
         }
 
@@ -541,12 +540,11 @@ export const useAppStore = create<AppState>()(
       if (!businessSubdomain && business.name) {
         businessSubdomain = generateSubdomain(business.name, business.id);
         // Save it to the database (non-blocking)
-        supabase
+        void supabase
           .from('businesses')
           .update({ subdomain: businessSubdomain })
           .eq('id', business.id)
           .select()
-          .then(() => {})
           .catch((err: any) => console.error('Failed to save auto-generated subdomain:', err));
       }
 
