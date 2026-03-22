@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { 
   Star, 
@@ -23,7 +23,7 @@ interface PublicWebsiteProps {
 
 export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
   const { subdomain } = useParams<{ subdomain: string }>();
-  const { business, fetchPublicBusiness, loading, error } = useAppStore();
+  const { business, fetchPublicBusiness, loading, error, user } = useAppStore();
   const [isBooking, setIsBooking] = useState(false);
   
   // Determine if we should render as mobile
@@ -61,6 +61,15 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
 
   return (
     <div className="min-h-full bg-white flex flex-col relative font-sans">
+      {/* Owner preview bar */}
+      {user && (
+        <div className="bg-text-primary text-white px-4 py-2.5 flex items-center justify-between text-xs sticky top-0 z-50">
+          <span className="font-medium opacity-80">You're previewing your live site</span>
+          <Link to="/dashboard/website" className="bg-white text-text-primary px-4 py-1.5 rounded-lg font-semibold hover:bg-gray-100 transition-colors no-underline">
+            ← Exit Preview
+          </Link>
+        </div>
+      )}
       {/* Navigation */}
       <nav className="h-16 px-6 md:px-12 flex items-center justify-between border-b border-border-light sticky top-0 bg-white/95 backdrop-blur-md z-40">
         <div className={`flex items-center gap-2 ${isMobile ? 'scale-90 origin-left' : ''}`}>
