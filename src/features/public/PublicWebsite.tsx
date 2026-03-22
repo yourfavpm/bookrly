@@ -10,7 +10,8 @@ import {
   Clock,
   Calendar as CalendarIcon,
   Twitter,
-  Mail
+  Mail,
+  Image as ImageIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookingFlow } from './BookingFlow';
@@ -143,7 +144,7 @@ export const PublicWebsite: React.FC = () => {
       </section>
 
       {/* Trust Section - Reviews */}
-      {(business.trustSection === 'reviews' || business.trustSection === 'both') && (
+      {(business.trustSection === 'reviews' || business.trustSection === 'both') && business.reviews.length > 0 && (
         <section id="reviews" className="py-24 bg-bg-secondary/40 w-full px-6 text-center">
           <div className="max-w-6xl mx-auto space-y-16">
             <div className="space-y-3">
@@ -170,6 +171,40 @@ export const PublicWebsite: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* Proof of Work Gallery */}
+      {(business.trustSection === 'proof' || business.trustSection === 'both') && business.proofOfWork.length > 0 && (
+        <section id="gallery" className="py-24 px-6 max-w-7xl mx-auto w-full space-y-16 text-center">
+          <div className="space-y-3">
+             <span className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: business.primaryColor }}>Our Work</span>
+             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary">Portfolio Showcase</h2>
+             <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: business.primaryColor }} />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+             {business.proofOfWork.map((item, index) => (
+               <motion.div 
+                 key={item.id}
+                 initial={{ opacity: 0, scale: 0.9 }}
+                 whileInView={{ opacity: 1, scale: 1 }}
+                 transition={{ delay: index * 0.1 }}
+                 viewport={{ once: true }}
+                 className="group relative aspect-square rounded-[32px] overflow-hidden shadow-md"
+               >
+                  {item.image ? (
+                    <img src={item.image} alt={item.caption} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
+                  ) : (
+                    <div className="w-full h-full bg-bg-secondary flex items-center justify-center text-text-tertiary">
+                       <ImageIcon size={32} />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                     <span className="text-white text-xs font-bold tracking-wider uppercase">{item.caption}</span>
+                  </div>
+               </motion.div>
+             ))}
           </div>
         </section>
       )}
