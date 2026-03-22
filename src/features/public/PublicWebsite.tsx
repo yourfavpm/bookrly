@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { Globe } from 'lucide-react';
+import { Globe, ShieldCheck } from 'lucide-react';
 import { getTemplateComponent } from './templates/templateRegistry';
 import { BookingModal } from './sections/BookingModal';
 
@@ -51,6 +51,12 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
     resolveTenant();
   }, [paramSubdomain, fetchPublicBusiness, isPreview]);
 
+  const isTrialing = business?.subscriptionStatus === 'trialing';
+  const trialEndDate = business?.trialEndDate ? new Date(business.trialEndDate) : null;
+  const isTrialExpired = isTrialing && trialEndDate && new Date() > trialEndDate;
+  const isActive = business?.subscriptionStatus === 'active';
+  const isRestricted = (isTrialExpired || (!isTrialing && !isActive)) && !isPreview;
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
@@ -65,6 +71,18 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
       </div>
     </div>
   );
+
+  if (isRestricted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white p-6">
+        <div className="text-center space-y-4">
+          <ShieldCheck className="mx-auto text-brand opacity-20" size={48} />
+          <h1 className="text-2xl font-bold text-text-primary">Service Temporarily Unavailable</h1>
+          <p className="text-text-secondary max-w-sm mx-auto">This business website is currently not accepting bookings. Please check back later or contact the owner directly.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!business.isPublished && !user && !isPreview) {
     return (

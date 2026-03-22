@@ -81,7 +81,18 @@ interface BusinessState {
   services: Service[];
   bookings: Booking[];
   stripeConnected: boolean;
+  stripeAccountId: string | null;
+  stripeOnboardingStatus: 'not_started' | 'pending' | 'complete';
+  stripeChargesEnabled: boolean;
+  stripePayouts_enabled: boolean;
+  stripeDetailsSubmitted: boolean;
   templateKey: string;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  subscriptionStatus: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'incomplete';
+  trialStartDate: string | null;
+  trialEndDate: string | null;
+  planType: 'free' | 'pro' | 'enterprise';
 }
 
 interface AppState {
@@ -111,6 +122,9 @@ interface AppState {
   updateBookingStatus: (id: string, status: string) => Promise<void>;
   updateReview: (id: string, updates: any) => Promise<void>;
   updateProofItem: (id: string, updates: any) => Promise<void>;
+  setupStripeConnect: () => Promise<string | null>;
+  refreshStripeStatus: () => Promise<void>;
+  createSubscription: () => Promise<string | null>;
 }
 
 const generateSlug = (name: string): string => {
@@ -127,7 +141,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
   user: null,
   business: null,
-  loading: false,
+  loading: true,
   error: null,
   onboardingStep: 1,
   
@@ -220,7 +234,7 @@ export const useAppStore = create<AppState>()(
         set({ 
           business: {
             ...business,
-            primaryColor: business.primary_color || '#4F46E5',
+            primaryColor: business.primary_color || '#111111',
             coverImage: business.cover_image || null,
             logo: business.logo || null,
             socials: business.socials || { instagram: '', facebook: '', twitter: '' },
@@ -236,7 +250,17 @@ export const useAppStore = create<AppState>()(
             trustSection: business.trust_section || 'none',
             stripeAccountId: business.stripe_account_id,
             stripeConnected: business.stripe_enabled || false,
+            stripeOnboardingStatus: business.stripe_onboarding_status || 'not_started',
+            stripeChargesEnabled: business.stripe_charges_enabled || false,
+            stripePayouts_enabled: business.stripe_payouts_enabled || false,
+            stripeDetailsSubmitted: business.stripe_details_submitted || false,
             templateKey: business.template_key || 'clean_classic',
+            stripeCustomerId: business.stripe_customer_id || null,
+            stripeSubscriptionId: business.stripe_subscription_id || null,
+            subscriptionStatus: business.subscription_status || 'trialing',
+            trialStartDate: business.trial_start_date || null,
+            trialEndDate: business.trial_end_date || null,
+            planType: business.plan_type || 'pro',
             services: mappedServices,
             workingHours: (availability || []).map((h: any) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
             bookings: mappedBookings,
@@ -561,6 +585,67 @@ export const useAppStore = create<AppState>()(
   updateProofItem: async (id, updates) => {
     const { error } = await supabase.from('proof_items').update(updates).eq('id', id);
     if (!error) get().fetchBusiness();
+  },
+
+  setupStripeConnect: async () => {
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-connect', {
+        body: { action: 'create-onboarding-link' },
+      });
+
+      if (error) throw error;
+      return data.url;
+    } catch (err: any) {
+      set({ error: err.message });
+      return null;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  refreshStripeStatus: async () => {
+    const { business } = get();
+    if (!business?.stripeAccountId) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-connect', {
+        body: { action: 'refresh-status' },
+      });
+
+      if (error) throw error;
+      
+      // Update local state with refreshed data
+      set((state) => ({
+        business: state.business ? {
+          ...state.business,
+          stripeOnboardingStatus: data.stripe_onboarding_status,
+          stripeChargesEnabled: data.stripe_charges_enabled,
+          stripePayouts_enabled: data.stripe_payouts_enabled,
+          stripeDetailsSubmitted: data.stripe_details_submitted,
+          stripeConnected: data.stripe_enabled
+        } : null
+      }));
+    } catch (err: any) {
+      console.error('Refresh Stripe status error:', err.message);
+    }
+  },
+
+  createSubscription: async () => {
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-subscription', {
+        body: { action: 'create-checkout-session' },
+      });
+
+      if (error) throw error;
+      return data.url;
+    } catch (err: any) {
+      set({ error: err.message });
+      return null;
+    } finally {
+      set({ loading: false });
+    }
   }
 }), {
   name: 'bookflow-storage',

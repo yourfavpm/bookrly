@@ -112,15 +112,21 @@ export const OnboardingFlow: React.FC = () => {
           return;
         }
 
+        const now = new Date();
+        const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
         const { data, error } = await supabase
           .from('businesses')
           .insert([{ 
             owner_id: user.id, 
             name: '',
             subdomain: `biz-${user.id.slice(0, 8)}`,
-            primary_color: '#4F46E5',
+            primary_color: '#111111',
             trust_section: 'none',
-            template_key: 'clean_classic'
+            template_key: 'clean_classic',
+            trial_start_date: now.toISOString(),
+            trial_end_date: trialEnd.toISOString(),
+            subscription_status: 'trialing'
           }])
           .select()
           .single();
@@ -335,7 +341,7 @@ export const OnboardingFlow: React.FC = () => {
             >
               <div className="space-y-8">
                  <div className="flex flex-wrap justify-center gap-3">
-                    {['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6', '#3B82F6', '#111111'].map((color) => (
+                    {['#111111', '#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6', '#3B82F6'].map((color) => (
                       <button
                         key={color}
                         onClick={() => updateBusiness({ primaryColor: color })}

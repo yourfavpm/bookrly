@@ -15,14 +15,14 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const paddingStyles = {
     none: "p-0",
-    sm: "p-3",
-    md: "p-6",
-    lg: "p-8"
+    sm: "p-4",
+    md: "p-8",
+    lg: "p-10"
   };
 
   return (
     <div 
-      className={`bg-white rounded-3xl shadow-sm border border-border-light/50 ${paddingStyles[padding]} ${className}`}
+      className={`bg-white rounded-shopify shadow-none border border-border-polaris ${paddingStyles[padding]} ${className}`}
       onClick={onClick}
     >
       {children}

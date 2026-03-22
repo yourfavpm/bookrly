@@ -4,7 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Plus, Edit2, Trash2, Clock, DollarSign, ShieldCheck, ChevronRight } from 'lucide-react';
 import { ServiceEditor } from './ServiceEditor';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const ServicesList: React.FC = () => {
   const { business, deleteService, updateService } = useAppStore();
@@ -42,16 +42,16 @@ export const ServicesList: React.FC = () => {
          </Button>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
         {business.services.length > 0 ? (
           business.services.map((service) => (
-            <Card key={service.id} className={`flex flex-col sm:flex-row sm:items-center justify-between group transition-all p-6 lg:p-8 relative overflow-hidden rounded-[32px] border-border-light/60 bg-white ${!service.active ? 'opacity-60 grayscale' : 'hover:shadow-xl shadow-sm'}`}>
+            <Card key={service.id} className={`flex flex-col sm:flex-row sm:items-center justify-between group transition-all relative overflow-hidden border-border-polaris bg-white ${!service.active ? 'opacity-60 grayscale' : ''}`}>
                {!service.active && (
                  <div className="absolute top-0 left-0 w-1.5 h-full bg-text-tertiary/20" />
                )}
-               <div className="flex items-center gap-5 lg:gap-8 mb-6 sm:mb-0">
+               <div className="flex items-center gap-8 mb-6 sm:mb-0">
                   <div 
-                    className={`w-12 h-12 lg:w-16 lg:h-16 rounded-2xl flex items-center justify-center font-medium text-xl transition-all duration-500 ${service.active ? 'bg-brand/10 text-brand scale-100 group-hover:scale-110 shadow-sm border border-brand/5' : 'bg-bg-secondary text-text-tertiary'}`}
+                    className={`w-14 h-14 rounded-lg flex items-center justify-center font-medium text-xl transition-all duration-500 ${service.active ? 'bg-brand/5 text-brand shadow-none border border-brand/10' : 'bg-bg-canvas text-text-tertiary'}`}
                   >
                     {service.name.charAt(0)}
                   </div>
@@ -84,37 +84,59 @@ export const ServicesList: React.FC = () => {
                
                <div className="flex items-center justify-between sm:justify-end gap-3 pt-4 sm:pt-0 border-t sm:border-t-0 border-border-light/40">
                   <div className="flex items-center gap-2">
-                    <button 
-                       onClick={() => handleToggleActive(service.id)}
-                       className={`h-9 px-4 rounded-xl text-[9px] font-normal uppercase tracking-widest transition-all ${service.active ? 'bg-bg-secondary text-text-tertiary hover:bg-bg-tertiary' : 'bg-brand text-white shadow-md'}`}
-                    >
-                       {service.active ? 'Disable' : 'Enable'}
-                    </button>
-                    <button 
-                       onClick={() => setEditingId(service.id)}
-                       className="h-9 w-9 flex items-center justify-center hover:bg-brand/5 hover:text-brand rounded-xl text-text-tertiary transition-all bg-bg-secondary/30"
-                    >
-                       <Edit2 size={16} />
-                    </button>
-                    <button 
-                       onClick={() => handleDelete(service.id)}
-                       className="h-9 w-9 flex items-center justify-center hover:bg-error/5 hover:text-error rounded-xl text-text-tertiary transition-all bg-bg-secondary/30"
-                    >
-                       <Trash2 size={16} />
-                    </button>
+                     <button 
+                        onClick={() => handleToggleActive(service.id)}
+                        className={`h-9 px-4 rounded-lg text-[9px] font-semibold uppercase tracking-widest transition-all ${service.active ? 'bg-bg-canvas text-text-secondary hover:bg-bg-canvas/80' : 'bg-emerald-600 text-white shadow-none'}`}
+                     >
+                        {service.active ? 'Disable' : 'Enable'}
+                     </button>
+                     <button 
+                        onClick={() => setEditingId(service.id)}
+                        className="h-9 w-9 flex items-center justify-center hover:bg-bg-canvas hover:text-brand rounded-lg text-text-tertiary transition-all bg-bg-canvas/20"
+                     >
+                        <Edit2 size={16} />
+                     </button>
+                     <button 
+                        onClick={() => handleDelete(service.id)}
+                        className="h-9 w-9 flex items-center justify-center hover:bg-error/5 hover:text-error rounded-lg text-text-tertiary transition-all bg-bg-canvas/20"
+                     >
+                        <Trash2 size={16} />
+                     </button>
                   </div>
                   <ChevronRight size={14} className="text-text-tertiary sm:hidden" />
                </div>
             </Card>
           ))
         ) : (
-          <Card className="border-dashed flex flex-col items-center justify-center py-20 text-center bg-bg-secondary/20 group hover:border-brand/40 transition-all cursor-pointer rounded-[40px]" onClick={() => setEditingId(null)}>
-             <div className="w-16 h-16 rounded-3xl bg-white shadow-sm flex items-center justify-center text-text-tertiary mb-6 group-hover:bg-brand group-hover:text-white transition-all shadow-xl shadow-brand/5">
-               <Plus size={32} />
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="flex flex-col items-center justify-center py-20 px-6 text-center"
+          >
+             <div className="relative mb-8 group cursor-pointer" onClick={() => setEditingId(null)}>
+                <div className="absolute inset-0 bg-brand/5 rounded-[40px] blur-3xl group-hover:bg-brand/10 transition-colors duration-500" />
+                <motion.img 
+                  src="/illustrations/empty_services.png" 
+                  alt="No services" 
+                  className="w-64 h-64 lg:w-80 lg:h-80 object-contain relative z-10"
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                />
              </div>
-             <p className="text-sm font-normal text-text-primary uppercase tracking-widest">No services yet</p>
-             <p className="text-[10px] text-text-tertiary mt-2 font-normal">Create your first offering to start taking bookings.</p>
-          </Card>
+             <div className="space-y-2 lg:space-y-3 relative z-10 max-w-sm mx-auto">
+                <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-text-primary">Ready to launch?</h3>
+                <p className="text-xs lg:text-sm text-text-tertiary font-normal leading-relaxed">Create your first service offering to start taking appointments and building your brand.</p>
+             </div>
+              <Button 
+                size="sm" 
+                className="mt-8 rounded-lg font-semibold px-8 h-12 shadow-none transition-all text-[10px] uppercase tracking-widest bg-brand text-white"
+                onClick={() => setEditingId(null)}
+              >
+               <Plus size={18} className="mr-2" />
+               Create Service
+             </Button>
+          </motion.div>
         )}
       </div>
 

@@ -1,6 +1,7 @@
-import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, ChevronDown, Plus, Palette, Clock } from 'lucide-react';
+import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, ChevronDown, Plus, Palette, Clock, ShieldCheck } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';
+import { Button } from '../../components/ui/Button';
 import React from 'react';
 
 interface NavItemProps {
@@ -11,9 +12,11 @@ interface NavItemProps {
 }
 
 const SidebarItem: React.FC<NavItemProps> = ({ icon, label, to, active }) => (
-  <Link to={to} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${active ? 'bg-brand text-white shadow-sm' : 'text-text-secondary hover:bg-bg-secondary hover:text-text-primary'}`}>
-    {icon}
-    <span className="text-sm font-medium tracking-tight">{label}</span>
+  <Link to={to} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 ${active ? 'bg-bg-canvas text-text-primary font-semibold' : 'text-text-secondary hover:bg-bg-canvas/50 hover:text-text-primary'}`}>
+    <div className={`${active ? 'text-brand' : 'text-text-secondary'}`}>
+      {icon}
+    </div>
+    <span className="text-sm tracking-tight">{label}</span>
   </Link>
 );
 
@@ -29,7 +32,23 @@ const BottomNavItem: React.FC<NavItemProps> = ({ icon, label, to, active }) => (
 export const DashboardLayout: React.FC = () => {
   const business = useAppStore((state) => state.business);
   const loading = useAppStore((state) => state.loading);
+  const createSubscription = useAppStore((state) => state.createSubscription);
   const location = useLocation();
+
+  const isTrialing = business?.subscriptionStatus === 'trialing';
+  const trialEndDate = business?.trialEndDate ? new Date(business.trialEndDate) : null;
+  const isTrialExpired = isTrialing && trialEndDate && new Date() > trialEndDate;
+  const isActive = business?.subscriptionStatus === 'active';
+  const isRestricted = isTrialExpired || (!isTrialing && !isActive);
+
+  const trialDaysLeft = trialEndDate 
+    ? Math.max(0, Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
+  const handleSubscribe = async () => {
+    const url = await createSubscription();
+    if (url) window.location.href = url;
+  };
 
   if (!business && !loading) {
     return <Navigate to="/onboarding" replace />;
@@ -57,66 +76,98 @@ export const DashboardLayout: React.FC = () => {
   const isSelected = (to: string) => currentPath === to || (to === '/dashboard/overview' && currentPath === '/dashboard');
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-bg-secondary font-sans overflow-x-hidden">
-      {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-border-light fixed left-0 top-0 bottom-0 p-6 shrink-0 z-40">
-        <div className="flex items-center gap-2 px-2 mb-10">
-          <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-medium italic shadow-sm">B</div>
-          <span className="font-medium text-xl tracking-tight text-text-primary">Bookflow</span>
+    <div className="flex flex-col h-screen bg-white font-sans overflow-hidden">
+      {/* Header - System Frame Anchor (Layer 0) - Static */}
+      <header className="h-16 bg-bg-header border-b border-white/5 flex items-center justify-between px-6 lg:px-8 z-50 text-white shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-medium italic">B</div>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-0 lg:gap-2">
+             <span className="text-sm font-semibold text-white tracking-tight">{business.name || 'Your Business'}</span>
+             <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-md font-bold w-fit mt-1 lg:mt-0 ${isActive ? 'bg-success text-white' : 'bg-white/10 text-white/40'}`}>
+               {isActive ? 'Pro' : isTrialing ? 'Trial' : 'Inactive'}
+             </span>
+          </div>
         </div>
 
-        <nav className="flex flex-col gap-1.5 flex-1">
-          {navItems.map(item => (
-            <SidebarItem 
-              key={item.to} 
-              icon={React.isValidElement(item.icon) ? React.cloneElement(item.icon as React.ReactElement<{ size?: number }>, { size: 18 }) : item.icon} 
-              label={item.label} 
-              to={item.to} 
-              active={isSelected(item.to)} 
-            />
-          ))}
-        </nav>
-      </aside>
+        <div className="flex items-center gap-3 lg:gap-6">
+          <Link to={`/p/${business.subdomain}`} target="_blank" className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white hover:bg-white/20 transition-all">
+            <ExternalLink size={12} />
+            Preview
+          </Link>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 pb-32 lg:pb-0 lg:pl-64">
-        {/* Header - Stays at top */}
-        <header className="h-16 lg:h-20 bg-white/80 backdrop-blur-md border-b border-border-light flex items-center justify-between px-6 lg:px-10 sticky top-0 z-30">
-          <div className="flex items-center gap-4">
-            <div className="lg:hidden w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-medium italic">B</div>
-            <div className="flex flex-col lg:flex-row lg:items-center gap-0 lg:gap-2">
-               <span className="text-sm font-medium text-text-primary leading-none">{business.name || 'Your Business'}</span>
-               <span className="text-[9px] uppercase tracking-widest text-text-tertiary px-1.5 py-0.5 bg-bg-tertiary rounded-md font-normal w-fit mt-1 lg:mt-0">Pro</span>
+          <Link 
+            to="/dashboard/settings" 
+            className={`p-2 rounded-lg transition-all ${isSelected('/dashboard/settings') ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+          >
+            <Settings size={20} />
+          </Link>
+          
+          <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block" />
+
+          <button className="flex items-center gap-2 px-1 py-1 rounded-lg hover:bg-white/10 transition-all group">
+            <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center text-white font-medium text-xs">
+              {business.name?.charAt(0) || 'B'}
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Link to={`/p/${business.subdomain}`} target="_blank" className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-border-default rounded-xl text-[10px] font-normal uppercase tracking-widest text-text-primary hover:bg-bg-secondary transition-all shadow-sm">
-              <ExternalLink size={12} />
-              Preview
-            </Link>
-
-            <Link 
-              to="/dashboard/settings" 
-              className={`p-2 rounded-full transition-all ${isSelected('/dashboard/settings') ? 'bg-brand/10 text-brand' : 'text-text-tertiary hover:bg-bg-secondary hover:text-text-primary'}`}
-            >
-              <Settings size={20} />
-            </Link>
-            
-            <button className="flex items-center gap-2 px-1 py-1 rounded-full hover:bg-bg-secondary transition-all group">
-              <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-brand-light border border-brand/10 flex items-center justify-center text-brand font-medium text-xs">
-                {business.name?.charAt(0) || 'B'}
-              </div>
-              <ChevronDown size={12} className="text-text-tertiary hidden sm:block" />
-            </button>
-          </div>
-        </header>
-
-        {/* Content - Full width on mobile */}
-        <div className="p-5 md:p-10 max-w-7xl mx-auto w-full flex-1">
-          <Outlet />
+            <ChevronDown size={12} className="text-white/40 hidden sm:block" />
+          </button>
         </div>
-      </main>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Sidebar - Static Sidebar with independent scroll (Layer 1) */}
+        <aside className="hidden lg:flex flex-col w-64 bg-bg-sidebar border-r border-border-polaris/40 overflow-y-auto shrink-0 z-40 p-6">
+          {isTrialing && !isTrialExpired && (
+            <div className="mb-8 p-5 rounded-xl bg-white border border-border-polaris/30 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-text-primary uppercase tracking-widest">Trial Mode</span>
+                <span className="text-[10px] font-bold text-brand">{trialDaysLeft} days left</span>
+              </div>
+              <div className="h-1.5 w-full bg-bg-canvas rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-brand transition-all duration-1000" 
+                  style={{ width: `${(trialDaysLeft / 14) * 100}%` }}
+                />
+              </div>
+              <button 
+                onClick={handleSubscribe}
+                className="w-full py-2.5 bg-brand text-white text-[10px] font-bold uppercase tracking-widest rounded-lg shadow-lg shadow-brand/20 hover:bg-brand-hover transition-all"
+              >
+                Upgrade Now
+              </button>
+            </div>
+          )}
+
+          <nav className="flex flex-col gap-1 flex-1">
+            {navItems.map(item => (
+              <SidebarItem 
+                key={item.to} 
+                icon={React.isValidElement(item.icon) ? React.cloneElement(item.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 18, strokeWidth: 2 }) : item.icon} 
+                label={item.label} 
+                to={item.to} 
+                active={isSelected(item.to)} 
+              />
+            ))}
+          </nav>
+
+          <div className="pt-6 border-t border-border-polaris/30 mt-auto">
+             <p className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest mb-4 px-3">Quick Links</p>
+             <Link to="/onboarding" className="flex items-center gap-3 px-3 py-2 text-text-secondary hover:text-text-primary transition-colors">
+                <Plus size={16} />
+                <span className="text-xs font-medium">Business Setup</span>
+             </Link>
+          </div>
+        </aside>
+
+        {/* Main Content Area - Work Surface (Layer 2) - Scrollable */}
+        <main className="flex-1 min-w-0 bg-white relative overflow-y-auto">
+          <div className="p-8 lg:p-12 max-w-[1200px] mx-auto min-h-full">
+            <Outlet />
+          </div>
+          
+          {/* Mobile padding for bottom nav */}
+          <div className="h-24 lg:hidden" />
+        </main>
+      </div>
 
       {/* Bottom Navigation - Mobile App Look */}
       <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-xl border-t border-border-light flex items-center justify-around px-2 lg:hidden z-50 safe-area-bottom shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
@@ -130,6 +181,44 @@ export const DashboardLayout: React.FC = () => {
         <BottomNavItem icon={<Palette />} label="Design" to="/dashboard/templates" active={isSelected('/dashboard/templates')} />
         <BottomNavItem icon={<BarChart3 />} label="Stats" to="/dashboard/analytics" active={isSelected('/dashboard/analytics')} />
       </nav>
+
+      {/* Subscription Overlay */}
+      {isRestricted && (
+        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
+          <div className="w-full max-w-sm text-center space-y-8">
+            <div className="w-20 h-20 bg-brand/10 rounded-[32px] flex items-center justify-center text-brand mx-auto shadow-xl shadow-brand/5 border border-brand/10">
+              <ShieldCheck size={40} />
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-3xl font-medium tracking-tight text-text-primary">
+                {isTrialExpired ? 'Trial Ended' : 'Subscription Required'}
+              </h2>
+              <p className="text-sm text-text-secondary leading-relaxed max-w-[280px] mx-auto">
+                {isTrialExpired 
+                  ? "Your 14-day free trial has come to an end. Upgrade to Pro to keep growing your business."
+                  : "An active subscription is required to access your dashboard and receive bookings."}
+              </p>
+            </div>
+            <div className="space-y-4 pt-4">
+              <Button 
+                onClick={handleSubscribe}
+                className="w-full h-16 rounded-[24px] bg-brand text-white font-medium text-xs uppercase tracking-widest shadow-2xl shadow-brand/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                Go Pro — $19/mo
+              </Button>
+              <p className="text-[10px] text-text-tertiary font-normal">
+                Includes all features, custom domains, and zero platform fees.
+              </p>
+            </div>
+            <button 
+              onClick={() => useAppStore.getState().signOut()}
+              className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest hover:text-text-primary transition-colors py-4"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

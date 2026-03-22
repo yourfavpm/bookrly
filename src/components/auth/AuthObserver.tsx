@@ -22,11 +22,13 @@ export const AuthObserver: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchBusiness();
+      async (_event, session) => {
+        const user = session?.user ?? null;
+        setUser(user);
+        if (user) {
+          await fetchBusiness();
         }
+        setLoading(false);
       }
     );
 

@@ -37,7 +37,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     if (!selectedService) return 0;
     let total = selectedService.price;
     selectedAddOns.forEach((name: string) => {
-      const addon = selectedService.addOns.find((a: Record<string, unknown>) => a.name === name);
+      const addon = selectedService.addOns.find((a: any) => a.name === name);
       if (addon) total += (addon.price as number);
     });
     return total;
@@ -47,14 +47,15 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     if (!business) return [];
     const dates = [];
     const now = new Date();
+    // Show next 30 days
     for (let i = 0; i < 30; i++) {
-      const d = new Date();
-      d.setDate(now.getDate() + i);
-      const dayOfWeek = d.getDay();
-      const config = (business.workingHours || []).find(h => h.dayOfWeek === dayOfWeek);
-      if (config?.isOpen) {
-        dates.push(d.toISOString().split('T')[0]);
-      }
+        const d = new Date();
+        d.setDate(now.getDate() + i);
+        const dayOfWeek = d.getDay();
+        const config = (business.workingHours || []).find(h => h.dayOfWeek === dayOfWeek);
+        if (config?.isOpen) {
+            dates.push(d.toISOString().split('T')[0]);
+        }
     }
     return dates;
   }, [business]);
@@ -72,17 +73,13 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
 
     while (current < end) {
       const timeStr = current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-      
       const isBooked = (business.bookings || []).some(b => 
         b.date === selectedDate && 
         b.time === timeStr &&
         b.status !== 'cancelled'
       );
 
-      if (!isBooked) {
-        slots.push(timeStr);
-      }
-      
+      if (!isBooked) slots.push(timeStr);
       current.setMinutes(current.getMinutes() + (selectedService?.duration || 30));
     }
     return slots;
@@ -92,105 +89,105 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
 
   const steps = [
     { id: 1, title: 'Service' },
-    { id: 2, title: 'Extras' },
+    { id: 2, title: 'Add-ons' },
     { id: 3, title: 'Date' },
     { id: 4, title: 'Time' },
     { id: 5, title: 'Details' },
-    { id: 6, title: 'Review' },
-    { id: 7, title: 'Success' }
+    { id: 6, title: 'Review' }
   ];
 
   const nextStep = () => setStep(s => Math.min(s + 1, 7));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
   const handleFinalize = async () => {
+    if (subtotal > 0 && !business.stripeConnected) {
+      alert("This business is not currently set up to receive payments. Please contact them directly.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const addOnIds = selectedAddOns.map(name => {
-        return selectedService.addOns.find((a: any) => a.name === name)?.id;
-      }).filter(Boolean);
-
-      // Direct Supabase booking insert
-      console.log('Booking submitted:', {
-        serviceId: selectedService.id,
-        customerName: contactInfo.name,
-        customerEmail: contactInfo.email,
-        customerPhone: contactInfo.phone,
-        date: selectedDate,
-        time: selectedTime,
-        totalPrice: subtotal,
-        notes: contactInfo.notes,
-        addOnIds: addOnIds
-      });
-      nextStep();
+      // In a real app, we would:
+      // 1. Create the booking as 'pending_payment'
+      // 2. Call a Supabase function to create a Stripe Checkout Session
+      // 3. Redirect to the session URL
+      
+      // For now, we simulate the redirect success
+      setTimeout(() => {
+          setIsSubmitting(false);
+          setStep(7);
+      }, 1500);
     } catch (err: any) {
-      alert("Booking failed: " + err.message);
-    } finally {
+      console.error('Booking finalization error:', err);
       setIsSubmitting(false);
     }
   };
 
   const renderProgress = () => (
-    <div className="flex items-center justify-between w-full mb-12 px-2">
-      {steps.slice(0, 6).map((s, idx) => (
-        <React.Fragment key={s.id}>
-          <div className="flex flex-col items-center gap-3 relative group">
-             <div 
-               className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm transition-all duration-500 shadow-lg ${step >= s.id ? 'text-white scale-110' : 'bg-bg-secondary text-text-tertiary shadow-none'}`}
-               style={{ backgroundColor: step >= s.id ? business.primaryColor : undefined }}
-             >
-                {step > s.id ? <Check size={18} /> : s.id}
-             </div>
-             <span className={`text-[10px] font-bold uppercase tracking-widest absolute -bottom-6 whitespace-nowrap transition-colors ${step === s.id ? 'text-text-primary' : 'text-text-tertiary'}`}>
-                {s.title}
-             </span>
-          </div>
-          {idx < 5 && (
-            <div className={`h-1 flex-1 mx-4 rounded-full transition-all duration-1000 ${step > s.id ? 'bg-brand' : 'bg-bg-secondary'}`} style={{ backgroundColor: step > s.id ? business.primaryColor : undefined }} />
-          )}
-        </React.Fragment>
+    <div className="w-full flex items-center gap-1 mb-10 px-1">
+      {steps.map((s) => (
+        <div 
+          key={s.id}
+          className="h-1 flex-1 rounded-full transition-all duration-500 overflow-hidden bg-bg-secondary"
+        >
+           <motion.div 
+             initial={false}
+             animate={{ width: step >= s.id ? '100%' : '0%' }}
+             className="h-full"
+             style={{ backgroundColor: business.primaryColor }}
+           />
+        </div>
       ))}
     </div>
   );
 
-  const renderTotalPrice = () => (
-    <div className="p-8 rounded-[32px] bg-bg-secondary/50 flex items-center justify-between mb-8 border border-border-light shadow-sm">
-       <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-text-tertiary shadow-sm">
-             <CreditCard size={20} />
+  const renderSummary = () => (
+    <div className="fixed bottom-0 left-0 right-0 p-4 lg:p-0 lg:relative lg:mb-8 z-40">
+       <div className="bg-white/80 backdrop-blur-xl border border-border-light p-4 lg:p-6 rounded-3xl shadow-xl lg:shadow-none flex items-center justify-between">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-tertiary">
+                <CreditCard size={18} />
+             </div>
+             <div>
+                <p className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest">Est. Total</p>
+                <p className="text-xl font-medium tracking-tight text-text-primary">${subtotal}</p>
+             </div>
           </div>
-          <div>
-             <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Total Price</p>
-             <p className="text-2xl font-bold tracking-tight text-text-primary">${subtotal}</p>
-          </div>
-       </div>
-       <div className="text-right">
-          <p className="text-xs font-bold text-success uppercase tracking-widest flex items-center gap-1.5 justify-end">
-             <ShieldCheck size={14} /> Secure Booking
-          </p>
+          {step < 5 && (
+            <div className="text-[10px] font-medium text-text-tertiary uppercase tracking-[0.2em] px-3 py-1 bg-bg-secondary rounded-lg">
+               Step {step} of 6
+            </div>
+          )}
        </div>
     </div>
   );
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col min-h-full">
-      <header className="flex items-center justify-between mb-12">
-         <div className="flex items-center gap-5">
+    <div className="w-full max-w-2xl mx-auto flex flex-col min-h-full pb-32 lg:pb-0">
+      <header className="flex items-center justify-between mb-8">
+         <div className="flex items-center gap-4">
             {step > 1 && step < 7 && (
-              <button onClick={prevStep} className="p-4 hover:bg-bg-secondary rounded-xl transition-all bg-white border border-border-light text-text-primary shadow-sm">
-                 <ChevronLeft size={20} />
+              <button 
+                onClick={prevStep} 
+                className="w-10 h-10 flex items-center justify-center hover:bg-bg-secondary rounded-xl transition-all border border-border-light bg-white text-text-primary shadow-sm"
+              >
+                 <ChevronLeft size={16} />
               </button>
             )}
             <div>
-               <h2 className="text-3xl font-bold tracking-tight text-text-primary">
-                  {steps.find(s => s.id === step)?.title} {step < 7 ? 'Selection' : ''}
+               <h2 className="text-xl font-medium tracking-tight text-text-primary">
+                  {step < 7 ? steps.find(s => s.id === step)?.title : 'Success!'}
                </h2>
-               <p className="text-sm font-medium text-text-tertiary">{step < 7 ? `Step ${step} of 6 • Secure Checkout` : 'Confirmation'}</p>
+               {step < 7 && (
+                 <p className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest">
+                    Customer Booking • Secure
+                 </p>
+               )}
             </div>
          </div>
          {onCancel && step < 7 && (
-           <button onClick={onCancel} className="p-4 hover:bg-bg-secondary rounded-xl transition-all text-text-tertiary">
-              <X size={24} />
+           <button onClick={onCancel} className="p-2 border border-border-light rounded-xl hover:bg-bg-secondary transition-all text-text-tertiary">
+              <X size={18} />
            </button>
          )}
       </header>
@@ -202,34 +199,31 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
            {step === 1 && (
              <motion.div 
                key="step1"
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               className="grid grid-cols-1 md:grid-cols-2 gap-6"
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -10 }}
+               className="space-y-4"
              >
-                {(business.services || []).map(s => (
+                {(business.services || []).filter(s => s.active).map(s => (
                   <button 
                     key={s.id}
                     onClick={() => { setSelectedService(s); nextStep(); }}
-                    className={`p-8 rounded-[40px] border-2 transition-all text-left flex flex-col hover:shadow-2xl hover:scale-[1.02] cursor-pointer group ${selectedService?.id === s.id ? 'shadow-2xl scale-[1.02]' : 'border-border-default bg-white'}`}
-                    style={{ borderColor: selectedService?.id === s.id ? business.primaryColor : undefined }}
+                    className="w-full p-6 rounded-3xl border border-border-light/60 bg-white text-left flex items-center justify-between hover:border-brand/40 transition-all group"
                   >
-                     <div className="flex justify-between items-start mb-10">
-                        <div className="w-14 h-14 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-tertiary transition-colors group-hover:bg-brand-light/20" style={{ color: selectedService?.id === s.id ? business.primaryColor : undefined }}>
-                           <Clock size={28} />
+                     <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-tertiary group-hover:bg-brand/10 transition-colors" style={{ color: selectedService?.id === s.id ? business.primaryColor : undefined }}>
+                           <Clock size={20} />
                         </div>
-                        <span className="text-2xl font-bold text-text-primary">$ {s.price}</span>
-                     </div>
-                     <h3 className="text-2xl font-bold text-text-primary mb-3">{s.name}</h3>
-                     <p className="text-text-secondary text-sm font-medium leading-relaxed flex-1 mb-8 opacity-70">{s.description}</p>
-                     <div className="flex items-center justify-between pt-6 border-t border-border-light mt-auto">
-                        <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest bg-bg-secondary px-4 py-2 rounded-full">
-                           {s.duration} MIN
-                        </span>
-                        <div className="w-10 h-10 rounded-xl bg-text-primary text-white flex items-center justify-center" style={{ backgroundColor: selectedService?.id === s.id ? business.primaryColor : undefined }}>
-                           <ArrowRight size={18} />
+                        <div>
+                           <h3 className="text-base font-medium text-text-primary">{s.name}</h3>
+                           <div className="flex items-center gap-3 mt-1">
+                              <span className="text-[10px] font-normal text-text-tertiary uppercase tracking-widest">{s.duration} MIN</span>
+                              <span className="w-1 h-1 rounded-full bg-border-default" />
+                              <span className="text-[10px] font-medium text-brand uppercase tracking-widest">${s.price}</span>
+                           </div>
                         </div>
                      </div>
+                     <ChevronRight size={18} className="text-text-tertiary opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0" />
                   </button>
                 ))}
              </motion.div>
@@ -238,13 +232,12 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
            {step === 2 && selectedService && (
              <motion.div 
                key="step2"
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               className="space-y-10"
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -10 }}
+               className="space-y-6"
              >
-                {renderTotalPrice()}
-                <div className="grid grid-cols-1 gap-5">
+                <div className="space-y-3">
                    {(selectedService.addOns || []).length > 0 ? (
                      selectedService.addOns.map((addon: any) => (
                        <button 
@@ -256,46 +249,43 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                              setSelectedAddOns([...selectedAddOns, addon.name]);
                            }
                          }}
-                         className={`p-8 rounded-[32px] border-2 transition-all flex items-center justify-between group cursor-pointer ${selectedAddOns.includes(addon.name) ? 'bg-brand-light/10 shadow-lg' : 'border-border-default bg-white hover:border-border-light'}`}
+                         className={`w-full p-5 rounded-3xl border transition-all flex items-center justify-between group cursor-pointer ${selectedAddOns.includes(addon.name) ? 'bg-white shadow-sm' : 'border-border-light/60 bg-bg-secondary/20 hover:bg-white'}`}
                          style={{ borderColor: selectedAddOns.includes(addon.name) ? business.primaryColor : undefined }}
                        >
-                          <div className="flex items-center gap-6">
-                             <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all ${selectedAddOns.includes(addon.name) ? 'text-white' : 'border-border-default'}`} style={{ backgroundColor: selectedAddOns.includes(addon.name) ? business.primaryColor : undefined, borderColor: selectedAddOns.includes(addon.name) ? business.primaryColor : undefined }}>
-                                {selectedAddOns.includes(addon.name) && <Check size={18} />}
+                          <div className="flex items-center gap-4">
+                             <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${selectedAddOns.includes(addon.name) ? 'text-white' : 'border-border-default bg-white'}`} style={{ backgroundColor: selectedAddOns.includes(addon.name) ? business.primaryColor : 'transparent', borderColor: selectedAddOns.includes(addon.name) ? business.primaryColor : undefined }}>
+                                {selectedAddOns.includes(addon.name) && <Check size={12} strokeWidth={4} />}
                              </div>
                              <div className="text-left">
-                                <h4 className="font-bold text-lg text-text-primary group-hover:text-brand transition-colors" style={{ color: selectedAddOns.includes(addon.name) ? business.primaryColor : undefined }}>{addon.name}</h4>
-                                <p className="text-sm font-medium text-text-tertiary">{addon.description}</p>
+                                <h4 className="text-sm font-medium text-text-primary">{addon.name}</h4>
+                                <p className="text-[10px] text-text-tertiary">{addon.description}</p>
                              </div>
                           </div>
-                          <span className="text-xl font-bold text-text-primary">+${addon.price}</span>
+                          <span className="text-sm font-medium text-brand">+${addon.price}</span>
                        </button>
                      ))
                    ) : (
-                     <div className="p-16 text-center space-y-4 bg-bg-secondary/30 rounded-[40px]">
-                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mx-auto text-text-tertiary">
-                           <Info size={32} />
-                        </div>
-                        <p className="text-text-secondary font-medium">No specialized extras available for this service.</p>
+                     <div className="py-20 text-center space-y-3 px-6">
+                        <p className="text-xs text-text-tertiary">No specialized add-ons for this service.</p>
                      </div>
                    )}
                 </div>
-                <Button className="w-full h-20 rounded-[32px] font-bold text-xl shadow-2xl" style={{ backgroundColor: business.primaryColor }} onClick={nextStep}>
-                   Continue to Scheduling
+                <Button className="w-full h-14 rounded-2xl font-medium shadow-lg" style={{ backgroundColor: business.primaryColor }} onClick={nextStep}>
+                   Continue to Calendar
                 </Button>
+                {renderSummary()}
              </motion.div>
            )}
 
            {step === 3 && (
              <motion.div 
                key="step3"
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               className="space-y-10"
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -10 }}
+               className="space-y-8"
              >
-                {renderTotalPrice()}
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
                    {availableDates.map(date => {
                       const d = new Date(date);
                       const isSelected = selectedDate === date;
@@ -303,237 +293,239 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                         <button 
                           key={date}
                           onClick={() => { setSelectedDate(date); nextStep(); }}
-                          className={`h-36 shrink-0 rounded-[32px] border-2 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group hover:scale-[1.05] ${isSelected ? 'text-white shadow-2xl scale-[1.05]' : 'border-border-default bg-white hover:border-border-light'}`}
+                          className={`aspect-square rounded-[24px] border transition-all flex flex-col items-center justify-center gap-1 cursor-pointer group hover:border-brand/40 ${isSelected ? 'text-white shadow-xl' : 'border-border-light/60 bg-white'}`}
                           style={{ backgroundColor: isSelected ? business.primaryColor : undefined, borderColor: isSelected ? business.primaryColor : undefined }}
                         >
-                           <span className={`text-[10px] font-bold uppercase tracking-widest ${isSelected ? 'text-white/80' : 'text-text-tertiary'}`}>{d.toLocaleDateString(undefined, { weekday: 'short' })}</span>
-                           <span className="text-3xl font-bold tracking-tight">{d.getDate()}</span>
-                           <span className={`text-[10px] font-bold uppercase tracking-widest ${isSelected ? 'text-white/80' : 'text-text-tertiary'}`}>{d.toLocaleDateString(undefined, { month: 'short' })}</span>
+                           <span className={`text-[8px] font-medium uppercase tracking-[0.2em] ${isSelected ? 'text-white/80' : 'text-text-tertiary'}`}>{d.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+                           <span className="text-xl font-medium tracking-tight">{d.getDate()}</span>
+                           <span className={`text-[8px] font-medium uppercase tracking-[0.2em] ${isSelected ? 'text-white/80' : 'text-text-tertiary'}`}>{d.toLocaleDateString(undefined, { month: 'short' })}</span>
                         </button>
                       );
                    })}
                 </div>
+                {renderSummary()}
              </motion.div>
            )}
 
            {step === 4 && (
              <motion.div 
                key="step4"
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               className="space-y-10"
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -10 }}
+               className="space-y-8"
              >
-                {renderTotalPrice()}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                <div className="grid grid-cols-3 gap-3">
                    {timeSlots.length > 0 ? timeSlots.map(time => {
                       const isSelected = selectedTime === time;
                       return (
                         <button 
                           key={time}
                           onClick={() => { setSelectedTime(time); nextStep(); }}
-                          className={`py-8 rounded-[28px] border-2 font-bold text-lg transition-all cursor-pointer group hover:scale-[1.03] ${isSelected ? 'text-white shadow-xl scale-[1.03]' : 'border-border-default bg-white hover:border-border-light'}`}
+                          className={`py-4 rounded-2xl border font-medium text-xs transition-all cursor-pointer group hover:border-brand/40 ${isSelected ? 'text-white shadow-lg' : 'border-border-light/60 bg-white'}`}
                           style={{ backgroundColor: isSelected ? business.primaryColor : undefined, borderColor: isSelected ? business.primaryColor : undefined }}
                         >
                            {time}
                         </button>
                       );
                    }) : (
-                     <div className="col-span-full py-16 text-center text-text-tertiary bg-bg-secondary rounded-[32px] font-bold uppercase tracking-widest text-xs">
-                        No slots available for this date.
+                     <div className="col-span-full py-20 text-center text-text-tertiary text-[10px] font-medium uppercase tracking-[0.3em]">
+                        No available slots
                      </div>
                    )}
                 </div>
+                {renderSummary()}
              </motion.div>
            )}
 
            {step === 5 && (
              <motion.div 
                key="step5"
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               className="space-y-10"
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -10 }}
+               className="space-y-8"
              >
-                {renderTotalPrice()}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-5">
                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-[0.2em] ml-2">Full Name</label>
+                      <label className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest ml-1">Full Name</label>
                       <div className="relative group">
-                         <User size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand transition-colors" style={{ color: contactInfo.name ? business.primaryColor : undefined }} />
+                         <User size={14} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-tertiary" />
                          <input 
                            type="text"
-                           placeholder="John Doe"
-                           className="w-full h-16 pl-16 pr-8 rounded-[24px] border-2 border-border-light bg-bg-secondary/30 outline-none focus:bg-white transition-all text-sm font-bold"
+                           placeholder="Jane Smith"
+                           className="w-full h-14 pl-12 pr-6 rounded-2xl border border-border-light/60 bg-bg-secondary/20 outline-none focus:bg-white text-sm font-medium transition-all"
                            value={contactInfo.name}
                            onChange={e => setContactInfo({...contactInfo, name: e.target.value})}
                          />
                       </div>
                    </div>
                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-[0.2em] ml-2">Email Address</label>
+                      <label className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest ml-1">Email Address</label>
                       <div className="relative group">
-                         <Mail size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand transition-colors" style={{ color: contactInfo.email ? business.primaryColor : undefined }} />
+                         <Mail size={14} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-tertiary" />
                          <input 
                            type="email"
-                           placeholder="john@example.com"
-                           className="w-full h-16 pl-16 pr-8 rounded-[24px] border-2 border-border-light bg-bg-secondary/30 outline-none focus:bg-white transition-all text-sm font-bold"
+                           placeholder="jane@example.com"
+                           className="w-full h-14 pl-12 pr-6 rounded-2xl border border-border-light/60 bg-bg-secondary/20 outline-none focus:bg-white text-sm font-medium transition-all"
                            value={contactInfo.email}
                            onChange={e => setContactInfo({...contactInfo, email: e.target.value})}
                          />
                       </div>
                    </div>
                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                      <div className="flex justify-between items-center ml-1">
+                        <label className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest">Phone Number</label>
+                        <span className="text-[9px] font-normal text-text-tertiary uppercase tracking-widest">Optional</span>
+                      </div>
                       <div className="relative group">
-                         <Phone size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand transition-colors" style={{ color: contactInfo.phone ? business.primaryColor : undefined }} />
+                         <Phone size={14} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-tertiary" />
                          <input 
                            type="tel"
                            placeholder="+1 (555) 000-0000"
-                           className="w-full h-16 pl-16 pr-8 rounded-[24px] border-2 border-border-light bg-bg-secondary/30 outline-none focus:bg-white transition-all text-sm font-bold"
+                           className="w-full h-14 pl-12 pr-6 rounded-2xl border border-border-light/60 bg-bg-secondary/20 outline-none focus:bg-white text-sm font-medium transition-all"
                            value={contactInfo.phone}
                            onChange={e => setContactInfo({...contactInfo, phone: e.target.value})}
                          />
                       </div>
                    </div>
-                   <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-[0.2em] ml-2">Appt. Notes (Optional)</label>
-                      <input 
-                        type="text"
-                        placeholder="Any special requests?"
-                        className="w-full h-16 px-8 rounded-[24px] border-2 border-border-light bg-bg-secondary/30 outline-none focus:bg-white transition-all text-sm font-bold"
-                        value={contactInfo.notes}
-                        onChange={e => setContactInfo({...contactInfo, notes: e.target.value})}
-                      />
-                   </div>
                 </div>
                 <Button 
-                   disabled={!contactInfo.name || !contactInfo.email || !contactInfo.phone}
-                   className="w-full h-20 rounded-[32px] font-bold text-xl shadow-2xl" 
+                   disabled={!contactInfo.name || !contactInfo.email}
+                   className="w-full h-16 rounded-2xl font-medium shadow-xl mt-4" 
                    style={{ backgroundColor: business.primaryColor }} 
                    onClick={nextStep}
                 >
-                   Review Your Appointment
+                   Finalize Booking
                 </Button>
+                {renderSummary()}
              </motion.div>
            )}
 
            {step === 6 && selectedService && (
              <motion.div 
                key="step6"
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               className="space-y-10"
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -10 }}
+               className="space-y-8 pb-10"
              >
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                   <div className="p-10 rounded-[48px] bg-white border-2 border-border-light space-y-8 shadow-sm">
-                      <div className="flex items-center gap-5">
-                         <div className="w-16 h-16 rounded-[24px] flex items-center justify-center text-white" style={{ backgroundColor: business.primaryColor }}>
-                            <CalendarIcon size={32} />
+                <div className="space-y-4">
+                   <div className="p-6 rounded-[32px] bg-white border border-border-light/60 space-y-6">
+                      <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: business.primaryColor }}>
+                            <CalendarIcon size={20} />
                          </div>
                          <div>
-                            <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Appointment Time</p>
-                            <h4 className="text-xl font-bold text-text-primary">
-                               {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+                            <p className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest">Appointment</p>
+                            <h4 className="text-sm font-medium text-text-primary">
+                               {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} at {selectedTime}
                             </h4>
-                            <p className="text-sm font-bold opacity-60">at {selectedTime}</p>
                          </div>
                       </div>
-                      <div className="space-y-4 pt-4">
-                         <div className="flex justify-between items-center text-sm font-bold text-text-secondary">
-                            <span>{selectedService.name}</span>
-                            <span>${selectedService.price}</span>
+                      
+                      <div className="space-y-3 pt-3 border-t border-border-light/40">
+                         <div className="flex justify-between items-center text-xs font-normal">
+                            <span className="text-text-secondary">{selectedService.name}</span>
+                            <span className="text-text-primary font-medium">${selectedService.price}</span>
                          </div>
                          {selectedAddOns.map(name => {
                            const addon = selectedService.addOns.find((a: any) => a.name === name);
                            return (
-                             <div key={name} className="flex justify-between items-center text-sm font-bold text-text-secondary">
-                                <span>+ {name}</span>
-                                <span>${addon.price}</span>
+                             <div key={name} className="flex justify-between items-center text-xs font-normal">
+                                <span className="text-text-tertiary">+ {name}</span>
+                                <span className="text-text-primary font-medium">${addon.price}</span>
                              </div>
                            );
                          })}
-                         <div className="pt-6 border-t-2 border-dashed border-border-light flex justify-between items-center">
-                            <span className="text-xl font-bold text-text-primary">Total Amount</span>
-                            <span className="text-3xl font-bold" style={{ color: business.primaryColor }}>${subtotal}</span>
-                         </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-dashed border-border-light flex justify-between items-center">
+                         <span className="text-sm font-medium text-text-primary">Total to Pay</span>
+                         <span className="text-2xl font-medium tracking-tight" style={{ color: business.primaryColor }}>${subtotal}</span>
                       </div>
                    </div>
 
-                   <div className="p-10 rounded-[48px] bg-bg-secondary/30 space-y-8">
-                      <div className="flex items-center gap-5">
-                         <div className="w-16 h-16 rounded-[24px] bg-white flex items-center justify-center text-text-tertiary">
-                            <User size={32} />
-                         </div>
-                         <div>
-                            <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Customer Details</p>
-                            <h4 className="text-xl font-bold text-text-primary">{contactInfo.name}</h4>
-                            <p className="text-sm font-bold opacity-60 truncate max-w-[200px]">{contactInfo.email}</p>
-                         </div>
-                      </div>
-                      <div className="space-y-4 pt-4">
-                         <div className="bg-white p-6 rounded-[24px] shadow-sm border border-border-light">
-                            <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest mb-2">Instructions / Notes</p>
-                            <p className="text-sm font-bold text-text-primary leading-relaxed">
-                               {contactInfo.notes || "No special instructions provided."}
-                            </p>
-                         </div>
-                      </div>
+                   <div className="p-6 rounded-[32px] bg-bg-secondary/20 flex items-center justify-between border border-border-light/40">
+                       <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-2xl bg-white border border-border-light/60 flex items-center justify-center text-text-tertiary">
+                             <User size={18} />
+                          </div>
+                          <div>
+                             <p className="text-[9px] font-medium text-text-tertiary uppercase tracking-widest leading-none mb-1">Customer</p>
+                             <h4 className="text-sm font-medium text-text-primary leading-none">{contactInfo.name}</h4>
+                          </div>
+                       </div>
+                       <button onClick={() => setStep(5)} className="text-[10px] font-medium text-brand uppercase tracking-widest hover:underline px-2 py-1">Edit</button>
                    </div>
                 </div>
 
-                <Button 
-                  isLoading={isSubmitting}
-                  className="w-full h-24 rounded-[40px] font-bold text-2xl shadow-3xl group flex items-center justify-center gap-4 transition-all hover:scale-[1.02]" 
-                  style={{ backgroundColor: business.primaryColor }} 
-                  onClick={handleFinalize}
-                >
-                   Confirm & Book Appointment <ChevronRight size={28} className="group-hover:translate-x-2 transition-transform" />
-                </Button>
+                <div className="space-y-4">
+                   {subtotal > 0 && !business.stripeConnected && (
+                     <div className="p-4 rounded-2xl bg-error/5 border border-error/10 flex items-start gap-3">
+                       <Info size={16} className="text-error mt-0.5 flex-shrink-0" />
+                       <p className="text-[11px] text-error/80 font-normal leading-relaxed">
+                         This business hasn't enabled online payments yet. They cannot accept paid bookings through the website at this time.
+                       </p>
+                     </div>
+                   )}
+
+                   <Button 
+                     isLoading={isSubmitting}
+                     disabled={subtotal > 0 && !business.stripeConnected}
+                     className="w-full h-16 rounded-2xl font-medium shadow-2xl flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed" 
+                     style={{ backgroundColor: (subtotal > 0 && !business.stripeConnected) ? '#94a3b8' : business.primaryColor }} 
+                     onClick={handleFinalize}
+                   >
+                      {subtotal > 0 ? (
+                        <>Confirm & Pay with Stripe <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /></>
+                      ) : (
+                        <>Confirm Free Booking <Check size={18} className="transition-transform" /></>
+                      )}
+                   </Button>
+                   <p className="text-[10px] text-center text-text-tertiary px-10 leading-relaxed font-normal">
+                      By clicking confirm, you agree to our terms of service and chosen appointment time.
+                   </p>
+                </div>
              </motion.div>
            )}
 
            {step === 7 && (
              <motion.div 
                key="step7"
-               initial={{ opacity: 0, scale: 0.9 }}
+               initial={{ opacity: 0, scale: 0.95 }}
                animate={{ opacity: 1, scale: 1 }}
-               className="py-16 text-center space-y-12"
+               className="py-12 text-center"
              >
-                <div className="w-32 h-32 rounded-full bg-success/10 text-success flex items-center justify-center mx-auto shadow-2xl">
-                   <Check size={64} className="stroke-[3px]" />
+                <div className="w-20 h-20 rounded-full bg-success/10 text-success flex items-center justify-center mx-auto mb-8 shadow-xl shadow-success/5">
+                   <Check size={40} strokeWidth={3} />
                 </div>
-                <div className="space-y-4">
-                   <h2 className="text-5xl font-bold tracking-tight text-text-primary">You're all set!</h2>
-                   <p className="text-xl text-text-secondary font-medium max-w-lg mx-auto leading-relaxed">
-                      Your appointment with <span className="font-bold text-text-primary">{business.name}</span> has been successfully scheduled. We've sent a confirmation to <span className="font-bold text-text-primary">{contactInfo.email}</span>.
-                   </p>
-                </div>
+                <h2 className="text-2xl font-medium tracking-tight text-text-primary mb-3">Booking Confirmed</h2>
+                <p className="text-sm text-text-secondary font-normal mb-10 max-w-xs mx-auto">
+                   Your appointment is scheduled. We've sent the details to <span className="font-medium text-text-primary">{contactInfo.email}</span>.
+                </p>
                 
-                <div className="p-12 rounded-[56px] border-2 border-border-light bg-white prose max-w-2xl mx-auto shadow-sm">
-                   <div className="flex flex-col sm:flex-row items-center gap-10 text-left">
-                      <div className="w-24 h-24 rounded-[32px] bg-bg-secondary flex items-center justify-center text-text-tertiary">
-                         <CalendarIcon size={40} />
-                      </div>
-                      <div className="space-y-2">
-                         <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Receipt of Booking</p>
-                         <h4 className="text-2xl font-bold text-text-primary">{selectedService?.name}</h4>
-                         <p className="text-lg font-bold opacity-60">
-                            {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} at {selectedTime}
-                         </p>
-                         <p className="text-sm font-bold text-success flex items-center gap-2 pt-2">
-                            <ShieldCheck size={16} /> Appointment Confirmed • Price: ${subtotal}
-                         </p>
-                      </div>
+                <div className="p-8 rounded-[32px] border border-border-light bg-bg-secondary/10 mb-10 text-left space-y-4">
+                   <div>
+                      <p className="text-[9px] font-medium text-text-tertiary uppercase tracking-widest mb-1">Service</p>
+                      <h4 className="font-medium text-text-primary">{selectedService?.name}</h4>
+                   </div>
+                   <div>
+                      <p className="text-[9px] font-medium text-text-tertiary uppercase tracking-widest mb-1">When</p>
+                      <p className="font-medium text-text-primary">
+                         {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} at {selectedTime}
+                      </p>
+                   </div>
+                   <div className="pt-4 border-t border-dashed border-border-light">
+                      <p className="text-[10px] font-medium text-success flex items-center gap-2">
+                         <ShieldCheck size={14} /> Total Paid: ${subtotal}
+                      </p>
                    </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-5 justify-center">
-                   <Button variant="secondary" className="px-12 h-16 rounded-[24px] font-bold" onClick={() => window.location.reload()}>
-                      Done
-                   </Button>
-                </div>
+                <Button variant="secondary" className="px-10 h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest border-border-light" onClick={() => window.location.reload()}>
+                   Return to Site
+                </Button>
              </motion.div>
            )}
         </AnimatePresence>
