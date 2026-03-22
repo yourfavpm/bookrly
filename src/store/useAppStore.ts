@@ -250,7 +250,8 @@ export const useAppStore = create<AppState>()(
             .from('businesses')
             .update({ subdomain: businessSubdomain })
             .eq('id', business.id)
-            .catch((err) => console.error('Failed to save auto-generated subdomain:', err));
+            .select()
+            .catch((err: any) => console.error('Failed to save auto-generated subdomain:', err));
         }
 
         set({ 
@@ -543,7 +544,8 @@ export const useAppStore = create<AppState>()(
           .from('businesses')
           .update({ subdomain: businessSubdomain })
           .eq('id', business.id)
-          .catch((err) => console.error('Failed to save auto-generated subdomain:', err));
+          .select()
+          .catch((err: any) => console.error('Failed to save auto-generated subdomain:', err));
       }
 
       set({ 
