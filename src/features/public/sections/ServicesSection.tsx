@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import type { SectionProps } from '../templates/types';
 
 interface ServicesProps extends SectionProps {
-  variant?: 'grid' | 'list' | 'compact' | 'horizontal';
+  variant?: 'grid' | 'list' | 'compact' | 'horizontal' | 'visual-studio-floating' | 'home-services-grid';
 }
 
 export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isMobile, isPreview, variant = 'grid' }) => {

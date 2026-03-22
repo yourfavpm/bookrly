@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, ChevronDown, Plus, Palette, Clock, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, ChevronDown, Plus, Palette, Clock, ShieldCheck, Image, MessageSquare } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
@@ -67,6 +67,8 @@ export const DashboardLayout: React.FC = () => {
     { icon: <Globe />, label: 'Website', to: '/dashboard/website' },
     { icon: <Palette />, label: 'Templates', to: '/dashboard/templates' },
     { icon: <Scissors />, label: 'Services', to: '/dashboard/services' },
+    { icon: <Image />, label: 'Portfolio', to: '/dashboard/portfolio' },
+    { icon: <MessageSquare />, label: 'Testimonials', to: '/dashboard/testimonials' },
     { icon: <Clock />, label: 'Availability', to: '/dashboard/availability' },
     { icon: <Calendar />, label: 'Bookings', to: '/dashboard/bookings' },
     { icon: <BarChart3 />, label: 'Analytics', to: '/dashboard/analytics' }
@@ -90,7 +92,7 @@ export const DashboardLayout: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3 lg:gap-6">
-          <Link to={`/p/${business.subdomain}`} target="_blank" className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white hover:bg-white/20 transition-all">
+          <Link to="/preview" target="_blank" className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white hover:bg-white/20 transition-all">
             <ExternalLink size={12} />
             Preview
           </Link>

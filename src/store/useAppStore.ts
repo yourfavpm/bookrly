@@ -455,39 +455,77 @@ export const useAppStore = create<AppState>()(
   addReview: async (review) => {
     const { business } = get();
     if (!business) return;
-    const { error } = await supabase.from('reviews').insert([{ 
+
+    const tempId = `temp-${Date.now()}`;
+    const newReview = { id: tempId, ...review, business_id: business.id };
+    
+    set({ business: { ...business, reviews: [...(business.reviews || []), newReview] } });
+
+    const { data, error } = await supabase.from('reviews').insert([{ 
       customer_name: review.customer_name,
       rating: review.rating,
       comment: review.comment,
       business_id: business.id 
-    }]);
-    if (!error) get().fetchBusiness();
+    }]).select().single();
+    
+    if (!error && data) {
+      set(state => ({
+        business: state.business ? { ...state.business, reviews: state.business.reviews?.map(r => r.id === tempId ? data : r) } : null
+      }));
+    } else get().fetchBusiness();
   },
 
   deleteReview: async (id) => {
+    const { business } = get();
+    if (!business) return;
+
+    set({ business: { ...business, reviews: business.reviews?.filter(r => r.id !== id) } });
+
     const { error } = await supabase.from('reviews').delete().eq('id', id);
-    if (!error) get().fetchBusiness();
+    if (error) get().fetchBusiness();
   },
 
   addProofItem: async (item) => {
     const { business } = get();
     if (!business) return;
-    const { error } = await supabase.from('proof_items').insert([{ 
+
+    const tempId = `temp-${Date.now()}`;
+    const newItem = { id: tempId, ...item, business_id: business.id };
+    
+    set({ business: { ...business, proofOfWork: [...(business.proofOfWork || []), newItem] } });
+
+    const { data, error } = await supabase.from('proof_items').insert([{ 
       image_url: item.image_url,
       caption: item.caption,
       business_id: business.id 
-    }]);
-    if (!error) get().fetchBusiness();
+    }]).select().single();
+    
+    if (!error && data) {
+      set(state => ({
+        business: state.business ? { ...state.business, proofOfWork: state.business.proofOfWork?.map(p => p.id === tempId ? data : p) } : null
+      }));
+    } else get().fetchBusiness();
   },
 
   deleteProofItem: async (id) => {
+    const { business } = get();
+    if (!business) return;
+
+    set({ business: { ...business, proofOfWork: business.proofOfWork?.filter(p => p.id !== id) } });
+
     const { error } = await supabase.from('proof_items').delete().eq('id', id);
-    if (!error) get().fetchBusiness();
+    if (error) get().fetchBusiness();
   },
 
   addService: async (service) => {
     const { business } = get();
     if (!business) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const newService = { id: tempId, ...service, booking_fee_enabled: service.bookingFeeEnabled, booking_fee_amount: service.bookingFeeAmount, business_id: business.id };
+    
+    set({ business: { ...business, services: [...(business.services || []), newService] } });
+
     const { data: sData, error: sError } = await supabase.from('services').insert([{
       business_id: business.id,
       name: service.name,
@@ -499,7 +537,10 @@ export const useAppStore = create<AppState>()(
       active: service.active
     }]).select().single();
 
-    if (sError) throw sError;
+    if (sError) {
+      get().fetchBusiness();
+      return;
+    }
 
     if (service.addOns?.length > 0) {
       await supabase.from('addons').insert(
@@ -512,36 +553,55 @@ export const useAppStore = create<AppState>()(
         }))
       );
     }
-    get().fetchBusiness();
+    
+    if (sData) {
+      set(state => ({
+        business: state.business ? { ...state.business, services: state.business.services?.map(s => s.id === tempId ? sData : s) } : null
+      }));
+      get().fetchBusiness();
+    }
   },
 
   updateService: async (id, service) => {
-    const { error: sError } = await supabase.from('services').update({
-      name: service.name,
-      description: service.description,
-      price: service.price,
-      duration: service.duration,
-      booking_fee_enabled: service.bookingFeeEnabled,
-      booking_fee_amount: service.bookingFeeAmount,
-      active: service.active
-    }).eq('id', id);
+    set(state => ({
+      business: state.business ? {
+        ...state.business,
+        services: state.business.services.map(s => s.id === id ? { ...s, ...service } : s)
+      } : null
+    }));
 
-    if (sError) throw sError;
-
-    // Simplified add-on sync: delete all and re-insert
-    await supabase.from('addons').delete().eq('service_id', id);
-    if (service.addOns?.length > 0) {
-      await supabase.from('addons').insert(
-        service.addOns.map((a: any) => ({
-          service_id: id,
-          name: a.name,
-          price: a.price,
-          duration: a.duration || 0,
-          active: true
-        }))
-      );
+    if ((window as any)[`__bookrly_timer_svc_${id}`]) {
+      clearTimeout((window as any)[`__bookrly_timer_svc_${id}`]);
     }
-    get().fetchBusiness();
+
+    (window as any)[`__bookrly_timer_svc_${id}`] = setTimeout(async () => {
+      try {
+        await supabase.from('services').update({
+          name: service.name,
+          description: service.description,
+          price: service.price,
+          duration: service.duration,
+          booking_fee_enabled: service.bookingFeeEnabled,
+          booking_fee_amount: service.bookingFeeAmount,
+          active: service.active
+        }).eq('id', id);
+
+        await supabase.from('addons').delete().eq('service_id', id);
+        if (service.addOns?.length > 0) {
+          await supabase.from('addons').insert(
+            service.addOns.map((a: any) => ({
+              service_id: id,
+              name: a.name,
+              price: a.price,
+              duration: a.duration || 0,
+              active: true
+            }))
+          );
+        }
+      } catch(e) {
+        console.error('Save error', e);
+      }
+    }, 800);
   },
 
   deleteService: async (id) => {
@@ -705,13 +765,37 @@ export const useAppStore = create<AppState>()(
   },
 
   updateReview: async (id, updates) => {
-    const { error } = await supabase.from('reviews').update(updates).eq('id', id);
-    if (!error) get().fetchBusiness();
+    set(state => ({
+      business: state.business ? {
+        ...state.business,
+        reviews: state.business.reviews.map(r => r.id === id ? { ...r, ...updates } : r)
+      } : null
+    }));
+
+    if ((window as any)[`__bookrly_timer_rev_${id}`]) {
+      clearTimeout((window as any)[`__bookrly_timer_rev_${id}`]);
+    }
+
+    (window as any)[`__bookrly_timer_rev_${id}`] = setTimeout(async () => {
+      await supabase.from('reviews').update(updates).eq('id', id);
+    }, 800);
   },
 
   updateProofItem: async (id, updates) => {
-    const { error } = await supabase.from('proof_items').update(updates).eq('id', id);
-    if (!error) get().fetchBusiness();
+    set(state => ({
+      business: state.business ? {
+        ...state.business,
+        proofOfWork: state.business.proofOfWork.map(p => p.id === id ? { ...p, ...updates } : p)
+      } : null
+    }));
+
+    if ((window as any)[`__bookrly_timer_proof_${id}`]) {
+      clearTimeout((window as any)[`__bookrly_timer_proof_${id}`]);
+    }
+
+    (window as any)[`__bookrly_timer_proof_${id}`] = setTimeout(async () => {
+      await supabase.from('proof_items').update(updates).eq('id', id);
+    }, 800);
   },
 
   setupStripeConnect: async () => {

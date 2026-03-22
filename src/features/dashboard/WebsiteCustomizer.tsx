@@ -1,34 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { 
-  Plus,
-  Eye,
-  Smartphone,
-  Monitor,
-  Sparkles,
-  Link2,
-  ChevronRight,
-  Image as ImageIcon,
-  Upload,
-  Camera,
-  Check,
-  Trash2,
-  Instagram,
-  Facebook
-} from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Image as ImageIcon, Upload, Camera, Instagram, Facebook, ExternalLink, Sparkles, Link2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { PublicWebsite } from '../public/PublicWebsite';
+
 
 const STEPS = [
   { id: 'info', title: 'Business Info', description: 'Basic contact details' },
   { id: 'branding', title: 'Branding', description: 'Logo and colors' },
   { id: 'hero', title: 'Hero Section', description: 'Your main headline' },
-  { id: 'services', title: 'Services', description: 'Check your offerings' },
-  { id: 'portfolio', title: 'Portfolio', description: 'Showcase your work' },
-  { id: 'testimonials', title: 'Testimonials', description: 'Customer reviews' },
   { id: 'socials', title: 'Socials', description: 'Connect accounts' },
   { id: 'publish', title: 'Publish', description: 'Go live with your site' }
 ];
@@ -37,21 +17,11 @@ export const WebsiteCustomizer: React.FC = () => {
   const { 
     business, 
     updateBusiness, 
-    addReview, 
-    addProofItem, 
-    deleteReview, 
-    deleteProofItem, 
-    updateReview, 
-    updateProofItem,
-    addService,
-    updateService,
-    deleteService
+    updateProofItem
   } = useAppStore();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [activeTab, setActiveTab] = useState(STEPS[0].id);
   const [uploading, setUploading] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [showMobilePreview, setShowMobilePreview] = useState(false);
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   // Autosave simulation/feedback
   useEffect(() => {
@@ -85,18 +55,13 @@ export const WebsiteCustomizer: React.FC = () => {
     }
   };
 
-  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
-  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 0));
-
   const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || 'localhost:5173';
 
   const renderStepContent = () => {
-    const stepId = STEPS[currentStep].id;
-
-    switch (stepId) {
+    switch (activeTab) {
       case 'info':
         return (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+          <div className="space-y-6 animate-in fade-in duration-300">
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Business Name</label>
@@ -130,7 +95,7 @@ export const WebsiteCustomizer: React.FC = () => {
         );
       case 'branding':
         return (
-          <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+          <div className="space-y-8 animate-in fade-in duration-300">
             <div className="grid grid-cols-1 gap-8">
               <div className="space-y-3">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Business Logo</label>
@@ -169,7 +134,7 @@ export const WebsiteCustomizer: React.FC = () => {
         );
       case 'hero':
         return (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+          <div className="space-y-6 animate-in fade-in duration-300">
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Main Headline</label>
@@ -202,127 +167,10 @@ export const WebsiteCustomizer: React.FC = () => {
             </div>
           </div>
         );
-      case 'portfolio':
-        return (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-            <div className="flex items-center justify-between">
-               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Gallery Entries</span>
-               <Button variant="secondary" size="sm" onClick={() => addProofItem({ image_url: '', caption: 'New Entry' })} className="h-8 px-4 rounded-lg font-bold text-[9px] uppercase tracking-widest">
-                  <Plus size={14} className="mr-1.5" />
-                  Add New
-               </Button>
-            </div>
-            <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {(business.proofOfWork || []).map((item: any) => (
-                <div key={item.id} className="p-4 rounded-xl border border-border-polaris bg-white flex items-center gap-4 relative group">
-                  <div className="w-16 h-16 rounded-lg bg-bg-canvas/50 flex items-center justify-center shrink-0 relative overflow-hidden">
-                    {item.image_url ? <img src={item.image_url} className="w-full h-full object-cover" alt="Proof" /> : <ImageIcon size={16} className="text-text-tertiary" />}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                      <Camera className="text-white" size={12} />
-                      <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'proof', item.id)} />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <Input 
-                      value={item.caption || ''} 
-                      onChange={e => updateProofItem(item.id, { caption: e.target.value })}
-                      className="h-8 border-none p-0 focus:ring-0 text-xs font-medium placeholder:text-text-tertiary"
-                      placeholder="Enter a caption..."
-                    />
-                  </div>
-                  <button onClick={() => deleteProofItem(item.id)} className="p-2 text-text-tertiary hover:text-error transition-colors">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case 'services':
-        return (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-            <div className="flex items-center justify-between">
-               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Your Offerings</span>
-               <Button variant="secondary" size="sm" onClick={() => addService({ name: 'New Service', price: 0, duration: 30, description: '', active: true, bookingFeeEnabled: false, bookingFeeAmount: 0 })} className="h-8 px-4 rounded-lg font-bold text-[9px] uppercase tracking-widest">
-                  <Plus size={14} className="mr-1.5" />
-                  Add Service
-               </Button>
-            </div>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {(business.services || []).map((service: any) => (
-                <div key={service.id} className="p-4 rounded-xl border border-border-polaris bg-white space-y-3 relative group">
-                  <div className="flex items-center justify-between gap-4">
-                    <Input 
-                      value={service.name} 
-                      onChange={e => updateService(service.id, { ...service, name: e.target.value })}
-                      className="h-8 w-2/3 text-xs font-bold border-none p-0 focus:ring-0"
-                    />
-                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-text-tertiary">$</span>
-                        <Input 
-                          value={service.price} 
-                          type="number"
-                          onChange={e => updateService(service.id, { ...service, price: Number(e.target.value) })}
-                          className="h-8 w-16 text-xs font-bold border-none p-0 focus:ring-0"
-                        />
-                     </div>
-                    <button onClick={() => deleteService(service.id)} className="text-text-tertiary hover:text-error transition-colors p-1 shrink-0">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  <textarea 
-                    value={service.description} 
-                    onChange={e => updateService(service.id, { ...service, description: e.target.value })}
-                    className="w-full text-xs text-text-secondary bg-transparent border-none p-0 focus:ring-0 min-h-10 resize-none leading-relaxed"
-                    placeholder="Describe this service..."
-                  />
-                  <div className="flex items-center gap-4 pt-2 border-t border-border-polaris/30">
-                     <div className="flex items-center gap-1.5">
-                        <Camera size={10} className="text-text-tertiary" />
-                        <span className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">{service.duration} mins</span>
-                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case 'testimonials':
-        return (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-            <div className="flex items-center justify-between">
-               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Client Reviews</span>
-               <Button variant="secondary" size="sm" onClick={() => addReview({ customer_name: 'Name', comment: 'Review text...', rating: 5 })} className="h-8 px-4 rounded-lg font-bold text-[9px] uppercase tracking-widest">
-                  <Plus size={14} className="mr-1.5" />
-                  Add Review
-               </Button>
-            </div>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {business.reviews?.map((review: any) => (
-                <div key={review.id} className="p-4 rounded-xl border border-border-polaris bg-white space-y-3 relative group">
-                  <div className="flex items-center justify-between gap-4">
-                    <Input 
-                      value={review.customer_name} 
-                      onChange={e => updateReview(review.id, { customer_name: e.target.value })}
-                      className="h-8 w-1/3 text-xs font-bold border-none p-0 focus:ring-0"
-                    />
-                    <button onClick={() => deleteReview(review.id)} className="text-text-tertiary hover:text-error transition-colors p-1">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  <textarea 
-                    value={review.comment} 
-                    onChange={e => updateReview(review.id, { comment: e.target.value })}
-                    className="w-full text-xs text-text-secondary bg-transparent border-none p-0 focus:ring-0 min-h-[40px] resize-none leading-relaxed"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        );
+
       case 'socials':
         return (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+          <div className="space-y-6 animate-in fade-in duration-300">
              <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="p-2 rounded-lg bg-pink-50 text-pink-600 shrink-0"><Instagram size={18} /></div>
@@ -356,7 +204,7 @@ export const WebsiteCustomizer: React.FC = () => {
         );
       case 'publish':
         return (
-          <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700 text-center py-10">
+          <div className="space-y-8 animate-in fade-in duration-300 text-center py-10">
             <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto shadow-xl shadow-emerald-500/10">
               <Sparkles size={40} />
             </div>
@@ -372,7 +220,7 @@ export const WebsiteCustomizer: React.FC = () => {
                <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-border-polaris shadow-sm cursor-pointer hover:bg-bg-canvas/40 transition-colors" onClick={() => {
                  const previewId = business.subdomain || business.slug;
                  if (previewId) {
-                   window.open(`/p/${previewId}`, '_blank');
+                   window.open(`/preview`, '_blank');
                  }
                }}>
                   <Link2 size={14} className="text-text-tertiary shrink-0" />
@@ -390,183 +238,71 @@ export const WebsiteCustomizer: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white animate-in fade-in duration-500">
-      {/* Redesigned Header */}
-      <header className="h-16 shrink-0 border-b border-border-polaris flex items-center justify-between px-6 lg:px-10 bg-white">
+    <div className="flex flex-col h-full bg-slate-50 relative animate-in fade-in duration-300">
+      {/* Simple Professional Header */}
+      <header className="h-14 shrink-0 border-b border-border-default flex items-center justify-between px-6 bg-white z-10">
         <div className="flex items-center gap-6">
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight text-text-primary uppercase tracking-widest text-[14px]">Website Setup</h1>
-            <div className="flex items-center gap-2 mt-0.5">
-               {isSaving ? (
-                 <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                   <span className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">Saving changes...</span>
-                 </div>
-               ) : (
-                 <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                   <span className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">Auto-saved</span>
-                 </div>
-               )}
-            </div>
+          <h1 className="text-sm font-semibold tracking-tight text-text-primary">Website Editor</h1>
+          <div className="flex items-center gap-2">
+            {isSaving ? (
+              <>
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-xs font-medium text-text-tertiary">Saving changes...</span>
+              </>
+            ) : (
+              <>
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-xs font-medium text-text-tertiary">All changes saved</span>
+              </>
+            )}
           </div>
         </div>
         <button 
           onClick={() => {
             const previewId = business.subdomain || business.slug;
             if (previewId) {
-              window.open(`/p/${previewId}`, '_blank');
+              window.open(`/preview`, '_blank');
             } else {
-              alert('Save your site details first (at least Business Name and Info)');
+              alert('Save your site details first');
             }
           }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-brand/20 bg-brand/5 text-brand font-bold text-[10px] uppercase tracking-widest hover:bg-brand/10 transition-all shadow-sm"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border-default bg-white text-text-primary text-xs font-medium hover:bg-slate-50 transition-colors shadow-sm"
         >
-          <Eye size={14} />
+          <ExternalLink size={14} />
           View Live Site
         </button>
       </header>
 
-      {/* Progress Bar Container */}
-      <div className="bg-bg-sidebar/30 border-b border-border-polaris/40 py-4 px-6 lg:px-10 shrink-0">
-        <div className="max-w-[1200px] mx-auto w-full">
-           <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-bold text-text-primary uppercase tracking-widest">
-                Step {currentStep + 1} of {STEPS.length}
-              </p>
-              <div className="flex items-center gap-3 h-1.5 w-64 bg-bg-canvas rounded-full overflow-hidden">
-                 <motion.div 
-                    className="h-full bg-brand"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
-                    transition={{ duration: 0.5 }}
-                 />
-              </div>
-           </div>
-           
-           <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
-              {STEPS.map((step, idx) => (
-                <button 
-                  key={step.id} 
-                  onClick={() => setCurrentStep(idx)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg flex-1 min-w-fit transition-all border ${idx === currentStep ? 'bg-white border-brand/20 shadow-sm' : 'border-transparent text-text-tertiary hover:text-text-secondary hover:bg-white/40'}`}
-                >
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${idx < currentStep ? 'bg-emerald-500 text-white' : idx === currentStep ? 'bg-brand text-white' : 'bg-bg-canvas text-text-tertiary'}`}>
-                    {idx < currentStep ? <Check size={10} /> : idx + 1}
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap">{step.title}</span>
-                </button>
-              ))}
-           </div>
-        </div>
-      </div>
-
       {/* Main Builder Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Side: Editor Form */}
-        <section className="flex-1 lg:max-w-[500px] lg:border-r border-border-polaris overflow-y-auto custom-scrollbar p-6 lg:p-10 bg-[#fbfbfb]">
-          <div className="max-w-md mx-auto space-y-8 min-h-full flex flex-col pt-4">
-            {/* Top Navigation Buttons (Underlined style) */}
-            <div className="flex items-center justify-between border-b border-border-polaris pb-6 mb-2">
-              <button 
-                onClick={prevStep}
-                disabled={currentStep === 0}
-                className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary hover:text-text-primary disabled:opacity-0 transition-all underline underline-offset-4 decoration-2 decoration-transparent hover:decoration-text-tertiary"
+        {/* Sidebar Nav */}
+        <aside className="w-64 shrink-0 border-r border-border-default bg-white flex flex-col overflow-y-auto">
+          <div className="p-4 space-y-1">
+            {STEPS.map(step => (
+              <button
+                key={step.id}
+                onClick={() => setActiveTab(step.id)}
+                className={`w-full text-left px-3 py-2.5 rounded-md text-sm transition-colors flex flex-col gap-0.5 ${activeTab === step.id ? 'bg-slate-100 font-medium text-text-primary' : 'text-text-secondary hover:bg-slate-50 hover:text-text-primary'}`}
               >
-                Back
+                <span>{step.title}</span>
               </button>
-              
-              <button 
-                onClick={nextStep}
-                disabled={currentStep === STEPS.length - 1}
-                className="text-[10px] font-bold uppercase tracking-widest text-brand hover:opacity-80 transition-all underline underline-offset-4 decoration-2 decoration-brand/30 hover:decoration-brand disabled:opacity-0"
-              >
-                Continue
-              </button>
-            </div>
+            ))}
+          </div>
+        </aside>
 
-            <div className="space-y-1.5">
-               <h2 className="text-2xl font-semibold tracking-tight text-text-primary">{STEPS[currentStep].title}</h2>
-               <p className="text-sm text-text-tertiary font-normal">{STEPS[currentStep].description}</p>
+        {/* Central Form Area */}
+        <section className="flex-1 bg-white p-8 lg:p-12 overflow-y-auto custom-scrollbar flex justify-center">
+          <div className="w-full max-w-3xl">
+            <div className="mb-8 border-b border-border-default pb-6">
+              <h2 className="text-3xl font-semibold tracking-tight text-text-primary">{STEPS.find(s => s.id === activeTab)?.title}</h2>
+              <p className="text-base text-text-secondary mt-2">{STEPS.find(s => s.id === activeTab)?.description}</p>
             </div>
-
-            <div className="flex-1 py-4">
+            <div className="max-w-xl">
               {renderStepContent()}
-            </div>
-
-            {/* Bottom Primary Button (Keep for Save & Continue prominence) */}
-            <div className="pt-10 flex items-center justify-end mt-auto">
-              <Button 
-                onClick={nextStep}
-                disabled={currentStep === STEPS.length - 1}
-                className="h-12 px-10 rounded-xl bg-brand font-bold text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-brand/10 hover:shadow-brand/20 transition-all disabled:hidden"
-              >
-                Save & Continue
-                <ChevronRight size={14} className="ml-2" />
-              </Button>
             </div>
           </div>
         </section>
-
-        {/* Right Side: Live Preview (Desktop Only) */}
-        <section className="hidden lg:flex flex-1 bg-bg-canvas/30 items-center justify-center p-12 overflow-hidden relative">
-           {/* Preview Toggle Contols */}
-           <div className="absolute top-8 left-1/2 -translate-x-1/2 flex items-center gap-1 p-1 bg-white rounded-xl border border-border-polaris shadow-lg z-10">
-              <button 
-                onClick={() => setPreviewDevice('desktop')}
-                className={`p-2 rounded-lg transition-all ${previewDevice === 'desktop' ? 'bg-brand text-white shadow-md' : 'text-text-tertiary hover:bg-bg-canvas'}`}
-              >
-                <Monitor size={16} />
-              </button>
-              <button 
-                onClick={() => setPreviewDevice('mobile')}
-                className={`p-2 rounded-lg transition-all ${previewDevice === 'mobile' ? 'bg-brand text-white shadow-md' : 'text-text-tertiary hover:bg-bg-canvas'}`}
-              >
-                <Smartphone size={16} />
-              </button>
-           </div>
-
-           <div className="absolute top-8 right-10 flex items-center gap-2 text-text-tertiary font-bold uppercase tracking-widest text-[9px] animate-pulse">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Live Preview
-           </div>
-
-           {/* Preview Frame */}
-           <div className={`transition-all duration-700 h-full w-full flex items-center justify-center`}>
-              <div className={`relative transition-all duration-700 bg-white shadow-2xl overflow-hidden border border-border-polaris ${previewDevice === 'mobile' ? 'w-[375px] h-[760px] rounded-[48px] border-[12px] border-slate-900' : 'w-full h-full rounded-2xl'}`}>
-                {previewDevice === 'mobile' && (
-                  <>
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-20" />
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-24 h-1 bg-slate-200/20 rounded-full z-20" />
-                  </>
-                )}
-                <div className={`w-full h-full overflow-y-auto custom-scrollbar bg-white ${previewDevice === 'mobile' ? 'p-0' : 'p-0'}`}>
-                   <PublicWebsite isPreview forcedView={previewDevice === 'mobile' ? 'mobile' : 'desktop'} />
-                </div>
-              </div>
-           </div>
-        </section>
       </div>
-
-      {/* Mobile Preview Modal Overlay */}
-      <AnimatePresence>
-        {showMobilePreview && (
-          <motion.div 
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 100 }}
-            className="fixed inset-0 z-[100] lg:hidden bg-white"
-          >
-             <header className="h-16 flex items-center justify-between px-6 border-b border-border-polaris shrink-0">
-                <span className="text-xs font-bold uppercase tracking-widest text-text-tertiary">Site Preview</span>
-                <button onClick={() => setShowMobilePreview(false)} className="px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-widest bg-bg-canvas">Close</button>
-             </header>
-             <div className="flex-1 h-[calc(100vh-64px)] overflow-y-auto">
-               <PublicWebsite isPreview forcedView="mobile" />
-             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

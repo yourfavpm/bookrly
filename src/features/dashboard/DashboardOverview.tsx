@@ -129,7 +129,7 @@ export const DashboardOverview: React.FC = () => {
           <Button 
             variant="secondary" 
             size="sm"
-            onClick={() => window.open(`/p/${business.subdomain}`, '_blank')}
+            onClick={() => window.open(`/preview`, '_blank')}
             className="rounded-lg h-9 px-4 font-bold text-[10px] uppercase tracking-widest border-border-polaris bg-white hover:bg-bg-canvas/40"
           >
             <Eye size={14} className="mr-2" />
@@ -265,7 +265,7 @@ export const DashboardOverview: React.FC = () => {
                  <Button 
                     size="sm"
                     variant="secondary"
-                    onClick={() => window.open(`/p/${business.subdomain}`, '_blank')}
+                    onClick={() => window.open(`/preview`, '_blank')}
                     className="h-8 px-4 rounded-md border-border-polaris bg-white text-[9px] font-bold uppercase tracking-widest hover:bg-bg-canvas/30"
                  >
                    Preview your page

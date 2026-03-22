@@ -1,13 +1,210 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { MapPin, Star, Calendar as CalendarIcon, ShieldCheck, CheckCircle2, Zap, ChevronRight } from 'lucide-react';
 import type { SectionProps } from '../templates/types';
 
 interface HeroProps extends SectionProps {
   scrollTo: (id: string) => void;
-  variant?: 'centered' | 'split' | 'full-image' | 'card' | 'minimal' | 'editorial-luxe';
+  variant?: 'centered' | 'split' | 'full-image' | 'card' | 'minimal' | 'editorial-luxe' | 'visual-studio' | 'home-services-split';
 }
 
 export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, isMobile, variant = 'centered' }) => {
+  if (variant === 'visual-studio') {
+    return (
+      <section className="relative min-h-[100svh] flex items-end pb-24 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden bg-black">
+        {/* Background Image with slow zoom */}
+        <motion.div 
+          initial={{ scale: 1.05 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 10, ease: 'easeOut' }}
+          className="absolute inset-0"
+        >
+          {business.coverImage ? (
+            <img 
+              src={business.coverImage} 
+              className="w-full h-full object-cover" 
+              alt="Hero" 
+            />
+          ) : (
+             <div className="w-full h-full bg-[#1a1a1a]" />
+          )}
+          {/* Minimal soft overlay for text readability without darkening entire image */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+        </motion.div>
+
+        {/* Content Wrapper */}
+        <div className="relative z-10 w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-12 md:gap-24">
+          
+          {/* Left: Branding & Headline (Asymmetrical balance) */}
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+            className="space-y-6 max-w-3xl"
+          >
+            <div className="space-y-3">
+              <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-white/50">
+                {business.category || 'Creative Studio'}
+              </span>
+            </div>
+            {/* Small, light typography but huge scale */}
+            <h1 className={`${isMobile ? 'text-4xl' : 'text-5xl md:text-6xl lg:text-[5.5rem]'} font-light tracking-[-0.02em] leading-[1.05] text-white`}>
+              {business.heroTitle || "Visual Studio"}
+            </h1>
+          </motion.div>
+
+          {/* Right: Subtitle & CTA (Pushed to bottom right) */}
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
+            className="flex flex-col space-y-10 md:max-w-[280px] shrink-0"
+          >
+            <p className="text-sm text-white/60 leading-relaxed font-light tracking-wide">
+              {business.heroSubtitle || "A high-end visual experience tailored for the modern brand."}
+            </p>
+            <button 
+              onClick={onBook}
+              className="group flex items-center gap-4 text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:text-white/70 transition-colors w-fit"
+            >
+              <div className="w-8 h-[1px] bg-white/40 group-hover:w-16 group-hover:bg-white transition-all duration-500 ease-out" />
+              {business.ctaText || "Book Appointment"}
+            </button>
+          </motion.div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === 'home-services-split') {
+    return (
+      <section className="relative min-h-[90svh] w-full flex items-center pt-24 pb-16 px-6 lg:px-12 xl:px-24 bg-[#f8fafc] overflow-hidden">
+        {/* Subtle background element */}
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-slate-900/5 skew-x-[-15deg] translate-x-32 origin-top-right hidden lg:block" />
+        
+        <div className="max-w-[1400px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 relative z-10 items-center">
+          
+          {/* Left: Text, CTA, Trust Badges */}
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="space-y-8 max-w-2xl"
+          >
+            {/* Top Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm">
+              <Star size={14} className="text-amber-500 fill-amber-500" />
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">
+                Top Rated {business.category || 'Service'}
+              </span>
+            </div>
+
+            {/* Headline & Subtext */}
+            <div className="space-y-6">
+              <h1 className="text-5xl md:text-6xl lg:text-[4.5rem] font-extrabold tracking-[-0.03em] leading-[1.05] text-slate-900">
+                {business.name}
+              </h1>
+              <p className="text-lg md:text-xl text-slate-600 leading-relaxed font-medium max-w-xl">
+                {business.heroSubtitle || "Professional, reliable, and highly rated services tailored specifically for your needs."}
+              </p>
+            </div>
+
+            {/* CTA & Trust Actions */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pt-4">
+              <button 
+                onClick={onBook} 
+                className="px-8 py-4 rounded-xl text-white font-bold text-lg hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand/20 flex items-center gap-2 border-none cursor-pointer" 
+                style={{ backgroundColor: business.primaryColor }}
+              >
+                <CalendarIcon size={20} /> Request Service
+              </button>
+              
+              <div className="flex items-center gap-4 text-sm font-bold text-slate-700">
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-600">
+                    <ShieldCheck size={16} />
+                  </span>
+                  Licensed & Insured
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Trust Row */}
+            <div className="pt-8 mt-8 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-3 gap-6">
+              <div className="flex flex-col gap-1">
+                <p className="font-extrabold text-2xl text-slate-900">5.0</p>
+                <div className="flex gap-1 text-amber-500">
+                  <Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" />
+                </div>
+                <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Average Rating</p>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 text-slate-900 font-extrabold text-2xl">
+                  <CheckCircle2 size={24} className="text-emerald-500" /> 100%
+                </div>
+                <p className="text-xs font-bold text-slate-500 mt-2 uppercase tracking-wider">Satisfaction</p>
+              </div>
+              <div className="flex flex-col gap-1 hidden sm:flex">
+                <div className="flex items-center gap-1.5 text-slate-900 font-extrabold text-2xl">
+                  <Zap size={24} className="text-amber-500" /> 24/7
+                </div>
+                <p className="text-xs font-bold text-slate-500 mt-2 uppercase tracking-wider">Support Available</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right: Booking Widget */}
+          <motion.div 
+            initial={{ opacity: 0, x: 40, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+            className="w-full max-w-[500px] mx-auto lg:ml-auto lg:mr-0 p-8 md:p-10 bg-white rounded-[32px] shadow-2xl border border-slate-100 relative group"
+          >
+            {/* Top accent line */}
+            <div className="absolute top-0 left-8 right-8 h-1.5 rounded-b-full" style={{ backgroundColor: business.primaryColor }} />
+            
+            <div className="text-center mb-8 space-y-2 mt-4">
+              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Get an Instant Quote</h3>
+              <p className="text-sm font-medium text-slate-500">Fast, free, and no obligation.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-widest pl-2">Select Service</label>
+                <div className="w-full h-14 bg-slate-50 border-2 border-slate-200 rounded-xl flex items-center justify-between px-4 text-slate-400 font-medium cursor-pointer hover:border-slate-300 transition-colors" onClick={onBook}>
+                  <span>Choose what you need...</span>
+                  <ChevronRight size={18} />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-widest pl-2">Preferred Date</label>
+                <div className="w-full h-14 bg-slate-50 border-2 border-slate-200 rounded-xl flex items-center justify-between px-4 text-slate-400 font-medium cursor-pointer hover:border-slate-300 transition-colors" onClick={onBook}>
+                  <span>Select a date...</span>
+                  <CalendarIcon size={18} />
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button 
+                  onClick={onBook}
+                  className="w-full h-16 rounded-xl font-bold text-lg text-white shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 border-none cursor-pointer"
+                  style={{ backgroundColor: business.primaryColor }}
+                >
+                  Continue Booking
+                </button>
+                <p className="text-xs font-bold text-slate-400 text-center mt-4 flex items-center justify-center gap-1.5">
+                  <ShieldCheck size={14} /> Secure & Encrypted Process
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+        </div>
+      </section>
+    );
+  }
+
   if (variant === 'editorial-luxe') {
     return (
       <section className="relative min-h-[600px] md:min-h-[700px] lg:min-h-[750px] flex items-center overflow-hidden bg-white">

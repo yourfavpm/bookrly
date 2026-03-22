@@ -13,6 +13,8 @@ import { AnalyticsPage } from './features/dashboard/AnalyticsPage';
 import { DashboardOverview } from './features/dashboard/DashboardOverview';
 import { SettingsPage } from './features/dashboard/SettingsPage';
 import { TemplateSelector } from './features/dashboard/TemplateSelector';
+import { PortfolioPage } from './features/dashboard/PortfolioPage';
+import { TestimonialsPage } from './features/dashboard/TestimonialsPage';
 import { PublicWebsite } from './features/public/PublicWebsite';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { AuthObserver } from './components/auth/AuthObserver';
@@ -47,6 +49,8 @@ function App() {
             <Route path="website" element={<WebsiteCustomizer />} />
             <Route path="templates" element={<TemplateSelector />} />
             <Route path="services" element={<ServicesList />} />
+            <Route path="portfolio" element={<PortfolioPage />} />
+            <Route path="testimonials" element={<TestimonialsPage />} />
             <Route path="availability" element={<AvailabilityPage />} />
             <Route path="bookings" element={<BookingsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
@@ -55,6 +59,13 @@ function App() {
           
           {/* Public Site (Direct View) */}
           <Route path="/p/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />
+          
+          {/* Dashboard Preview (Local State) */}
+          <Route path="/preview" element={
+            <ProtectedRoute>
+              <PublicLayout><PublicWebsite isPreview={true} /></PublicLayout>
+            </ProtectedRoute>
+          } />
           
           {/* Redirects */}
           <Route path="/" element={<LandingPage />} />

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import type { SectionProps } from '../templates/types';
 
 interface AboutProps extends SectionProps {
-  variant?: 'split' | 'centered' | 'full-width' | 'editorial';
+  variant?: 'split' | 'centered' | 'full-width' | 'editorial' | 'visual-studio-split' | 'home-services-short';
 }
 
 export const AboutSection: React.FC<AboutProps> = ({ business, onBook, variant = 'split' }) => {

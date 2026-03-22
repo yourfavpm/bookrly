@@ -21,13 +21,13 @@ export const VisualStudioLayout: React.FC<TemplateLayoutProps> = (props) => {
 
   return (
     <>
-      <SiteNav {...props} scrollTo={scrollTo} />
-      <HeroSection {...props} scrollTo={scrollTo} variant="full-image" />
-      <ProofSection {...props} variant="grid" />
-      <ServicesSection {...props} variant="grid" />
-      <ReviewsSection {...props} variant="grid" />
-      <AboutSection {...props} variant="split" />
-      <SiteFooter {...props} variant="full" />
+      <SiteNav {...props} scrollTo={scrollTo} variant="minimal" />
+      <HeroSection {...props} scrollTo={scrollTo} variant="visual-studio" />
+      <ProofSection {...props} variant="visual-studio-masonry" />
+      <ServicesSection {...props} variant="visual-studio-floating" />
+      <ReviewsSection {...props} variant="visual-studio-strip" />
+      <AboutSection {...props} variant="visual-studio-split" />
+      <SiteFooter {...props} variant="minimal" />
     </>
   );
 };

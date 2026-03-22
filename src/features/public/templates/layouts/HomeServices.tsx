@@ -21,11 +21,11 @@ export const HomeServicesLayout: React.FC<TemplateLayoutProps> = (props) => {
   return (
     <>
       <SiteNav {...props} scrollTo={scrollTo} />
-      <HeroSection {...props} scrollTo={scrollTo} variant="centered" />
-      <ReviewsSection {...props} variant="featured" />
-      <ServicesSection {...props} variant="grid" />
-      <ProofSection {...props} variant="grid" />
-      <AboutSection {...props} variant="full-width" />
+      <HeroSection {...props} scrollTo={scrollTo} variant="home-services-split" />
+      <ServicesSection {...props} variant="home-services-grid" />
+      <ProofSection {...props} variant="home-services-slider" />
+      <ReviewsSection {...props} variant="home-services-trust" />
+      <AboutSection {...props} variant="home-services-short" />
       <SiteFooter {...props} variant="full" />
     </>
   );

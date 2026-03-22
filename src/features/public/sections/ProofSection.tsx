@@ -4,11 +4,12 @@ import { Image as ImageIcon } from 'lucide-react';
 import type { SectionProps } from '../templates/types';
 
 interface ProofProps extends SectionProps {
-  variant?: 'grid' | 'masonry' | 'filmstrip' | 'overlap-gallery';
+  variant?: 'grid' | 'masonry' | 'filmstrip' | 'overlap-gallery' | 'visual-studio-masonry' | 'home-services-slider';
 }
 
 export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPreview, variant = 'grid' }) => {
   const items = business.proofOfWork || [];
+  const [sliderPos, setSliderPos] = React.useState(50);
 
   if ((business.trustSection !== 'proof' && business.trustSection !== 'both')) {
     return null;
@@ -16,6 +17,106 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
 
   if (items.length === 0 && !isPreview) {
     return null;
+  }
+
+  if (variant === 'home-services-slider') {
+    const hasEnoughImages = items.length >= 2 && items[0].image_url && items[1].image_url;
+
+    return (
+      <section id="gallery" className="py-24 bg-slate-50 w-full px-6">
+        <div className="max-w-[1200px] mx-auto space-y-16">
+          <div className="text-center space-y-4 max-w-3xl mx-auto">
+            <span className="text-sm font-bold tracking-widest uppercase text-slate-500 flex items-center justify-center gap-2">
+              <span className="w-8 h-[2px]" style={{ backgroundColor: business.primaryColor }} />
+              Real Results
+              <span className="w-8 h-[2px]" style={{ backgroundColor: business.primaryColor }} />
+            </span>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+              Before & After
+            </h2>
+            <p className="text-slate-600 font-medium text-lg pt-2">
+              Slide to see the transformation difference our service makes.
+            </p>
+          </div>
+
+          {hasEnoughImages ? (
+            <div className="space-y-12">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.98 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative w-full aspect-square md:aspect-[21/9] rounded-[32px] overflow-hidden shadow-2xl bg-slate-200 group"
+              >
+                {/* After Image (Background) */}
+                <div className="absolute inset-0">
+                  <img src={items[1].image_url!} alt={items[1].caption || "After result"} className="w-full h-full object-cover" />
+                  <div className="absolute top-6 right-6 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-slate-900 shadow-sm z-0">AFTER</div>
+                </div>
+                
+                {/* Before Image (Foreground, Clipped) */}
+                <div 
+                  className="absolute inset-0 z-10"
+                  style={{ clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)` }}
+                >
+                  <img src={items[0].image_url!} alt={items[0].caption || "Before result"} className="w-full h-full object-cover" />
+                  <div className="absolute top-6 left-6 px-4 py-2 bg-slate-900/90 backdrop-blur-sm rounded-full text-xs font-bold text-white shadow-sm">BEFORE</div>
+                </div>
+
+                {/* Slider Handle & Line */}
+                <div 
+                  className="absolute top-0 bottom-0 w-1 bg-white cursor-ew-resize drop-shadow-lg z-20 pointer-events-none" 
+                  style={{ left: `calc(${sliderPos}% - 2px)` }}
+                >
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                  </div>
+                </div>
+
+                {/* Invisible Range Input for Dragging */}
+                <input 
+                  type="range" 
+                  min="0" max="100" 
+                  value={sliderPos}
+                  onChange={(e) => setSliderPos(Number(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
+                />
+              </motion.div>
+
+              {/* Remaining grid if more than 2 items exist */}
+              {items.length > 2 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {items.slice(2).map((item, idx) => (
+                    <motion.div 
+                      key={item.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: idx * 0.1 }}
+                      className="aspect-square rounded-2xl overflow-hidden shadow-sm relative group cursor-pointer"
+                    >
+                      {item.image_url ? (
+                        <img src={item.image_url} alt={item.caption} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><ImageIcon size={24} /></div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="w-full py-20 border-2 border-dashed border-slate-200 rounded-[32px] text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-slate-400 mx-auto"><ImageIcon size={24} /></div>
+              <div>
+                <p className="text-slate-900 font-bold">Add at least 2 images for the Before & After Slider</p>
+                <p className="text-sm font-medium text-slate-500 mt-1">The first two images in your portfolio will be used as the split comparison.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    );
   }
 
   if (variant === 'overlap-gallery') {
