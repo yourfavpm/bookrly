@@ -16,9 +16,16 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookingFlow } from './BookingFlow';
 
-export const PublicWebsite: React.FC = () => {
+interface PublicWebsiteProps {
+  forcedView?: 'desktop' | 'mobile';
+}
+
+export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
   const { business } = useAppStore();
   const [isBooking, setIsBooking] = useState(false);
+  
+  // Determine if we should render as mobile
+  const isMobile = forcedView === 'mobile';
 
   // Scroll to section
   const scrollTo = (id: string) => {
@@ -30,7 +37,7 @@ export const PublicWebsite: React.FC = () => {
     <div className="min-h-full bg-white flex flex-col relative font-sans">
       {/* Navigation */}
       <nav className="h-16 px-6 md:px-12 flex items-center justify-between border-b border-border-light sticky top-0 bg-white/95 backdrop-blur-md z-40">
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2 ${isMobile ? 'scale-90 origin-left' : ''}`}>
            {business.logo ? (
              <img src={business.logo} alt="Logo" className="h-6 w-auto" />
            ) : (
@@ -38,7 +45,7 @@ export const PublicWebsite: React.FC = () => {
            )}
            <span className="text-lg font-bold tracking-tight text-text-primary">{business.name || 'Your Business'}</span>
         </div>
-        <div className="hidden md:flex items-center gap-8">
+        <div className={`${isMobile ? 'hidden' : 'hidden md:flex'} items-center gap-8`}>
            <button onClick={() => scrollTo('services')} className="text-xs font-bold text-text-secondary hover:text-brand transition-colors bg-transparent border-none cursor-pointer">Services</button>
            <button onClick={() => scrollTo('about')} className="text-xs font-bold text-text-secondary hover:text-brand transition-colors bg-transparent border-none cursor-pointer">About</button>
            <button 
@@ -51,7 +58,7 @@ export const PublicWebsite: React.FC = () => {
         </div>
         <button 
           onClick={() => setIsBooking(true)}
-          className="md:hidden p-2 rounded-xl text-white border-none cursor-pointer" 
+          className={`${isMobile ? 'block' : 'md:hidden'} p-2 rounded-xl text-white border-none cursor-pointer`} 
           style={{ backgroundColor: business.primaryColor }}
         >
           <CalendarIcon size={18} />
@@ -73,10 +80,10 @@ export const PublicWebsite: React.FC = () => {
              transition={{ duration: 0.8 }}
              className="space-y-6"
            >
-              <h1 className={`text-4xl md:text-6xl font-black tracking-tight leading-[1.1] ${business.coverImage ? 'text-white' : 'text-text-primary'}`}>
+              <h1 className={`${isMobile ? 'text-3xl' : 'text-4xl md:text-6xl'} font-black tracking-tight leading-[1.1] ${business.coverImage ? 'text-white' : 'text-text-primary'}`}>
                 {business.headline || "Your premium headline goes here"}
               </h1>
-              <p className={`text-base md:text-lg max-w-xl mx-auto leading-relaxed font-medium opacity-90 ${business.coverImage ? 'text-white' : 'text-text-secondary'}`}>
+              <p className={`${isMobile ? 'text-sm' : 'text-base md:text-lg'} max-w-xl mx-auto leading-relaxed font-medium opacity-90 ${business.coverImage ? 'text-white' : 'text-text-secondary'}`}>
                 {business.subtext || "Enter a supporting subheadline that builds trust and explains what you do best."}
               </p>
            </motion.div>
@@ -111,7 +118,7 @@ export const PublicWebsite: React.FC = () => {
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary">Our Signature Services</h2>
             <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: business.primaryColor }} />
          </div>
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+         <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-3'} gap-8`}>
             {business.services.map(s => (
                <div key={s.id} className="p-8 rounded-3xl border border-border-light bg-white hover:shadow-xl transition-all duration-500 group flex flex-col items-start text-left relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 rounded-bl-[64px] translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-700" style={{ backgroundColor: `${business.primaryColor}08` }} />
@@ -152,7 +159,7 @@ export const PublicWebsite: React.FC = () => {
                <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary">What our clients say</h2>
                <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: business.primaryColor }} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-3'} gap-8`}>
               {business.reviews.map(r => (
                 <div key={r.id} className="p-8 rounded-3xl bg-white border border-border-light shadow-sm space-y-6 flex flex-col h-full hover:shadow-lg transition-all duration-500">
                   <div className="flex gap-1.5 text-amber-400">
@@ -183,7 +190,7 @@ export const PublicWebsite: React.FC = () => {
              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary">Portfolio Showcase</h2>
              <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: business.primaryColor }} />
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className={`grid grid-cols-2 ${isMobile ? '' : 'lg:grid-cols-4'} gap-4 md:gap-6`}>
              {business.proofOfWork.map((item, index) => (
                <motion.div 
                  key={item.id}

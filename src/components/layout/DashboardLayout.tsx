@@ -74,7 +74,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 pb-20 lg:pb-0">
+      <main className="flex-1 flex flex-col min-w-0 pb-32 lg:pb-0">
         {/* Header - Stays at top */}
         <header className="h-16 lg:h-20 bg-white/80 backdrop-blur-md border-b border-border-light flex items-center justify-between px-6 lg:px-10 sticky top-0 z-30">
           <div className="flex items-center gap-4">

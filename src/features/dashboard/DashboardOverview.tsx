@@ -61,7 +61,7 @@ export const DashboardOverview: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 lg:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-10 lg:pb-0">
+    <div className="max-w-6xl mx-auto space-y-8 lg:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       {/* Header & Greeting */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1.5">

@@ -24,7 +24,7 @@ export const ServicesList: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12 lg:pb-0">
+    <div className="space-y-8 animate-in fade-in duration-500">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
          <div className="space-y-1">
             <h1 className="text-2xl font-black tracking-tight text-text-primary">Services</h1>

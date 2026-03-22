@@ -18,7 +18,6 @@ import {
   Eye,
   Type,
   Layout,
-  Star,
   Camera,
   Upload,
   ArrowLeft,
@@ -454,11 +453,11 @@ export const WebsiteCustomizer: React.FC = () => {
 
               <div className="flex-1 bg-bg-tertiary flex items-center justify-center overflow-hidden relative p-4 lg:p-12">
                  <div className={`bg-white shadow-2xl transition-all duration-700 overflow-hidden relative ${viewMode === 'desktop' ? 'w-full h-full rounded-[32px]' : 'w-[320px] max-w-full h-[640px] max-h-full rounded-[48px] border-12 border-text-primary shadow-2xl relative flex flex-col'}`}>
-                    <div className="w-full h-full overflow-y-auto custom-scrollbar">
-                       <div className="transform origin-top scale-100 min-h-full">
-                          <PublicWebsite />
-                       </div>
+                 <div className="w-full h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-white">
+                    <div className="min-h-full w-full">
+                       <PublicWebsite forcedView={viewMode} />
                     </div>
+                 </div>
                     {viewMode === 'mobile' && (
                       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-text-tertiary/20 rounded-full" />
                     )}
