@@ -14,7 +14,8 @@ export const Input: React.FC<InputProps> = ({ label, error, className = '', ...p
         </label>
       )}
       <input
-        className={`h-[44px] border border-border-default rounded-md px-3 text-sm focus:outline-none focus:border-brand transition-colors duration-200 bg-white ${error ? 'border-error' : ''} ${className}`}
+        className={`h-[44px] border border-border-default rounded-md px-3 text-base focus:outline-none focus:border-brand transition-colors duration-200 bg-white ${error ? 'border-error' : ''} ${className}`}
+        style={{ fontSize: '16px' }}
         {...props}
       />
       {error && (

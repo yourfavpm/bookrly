@@ -202,14 +202,18 @@ export const useAppStore = create<AppState>((set, get) => ({
         set({ 
           business: {
             ...business,
+            primaryColor: business.primary_color || '#4F46E5',
+            coverImage: business.cover_image || null,
+            logo: business.logo || null,
+            socials: business.socials || { instagram: '', facebook: '', twitter: '' },
             isPublished: business.is_published,
-            heroTitle: business.hero_title,
-            heroSubtitle: business.hero_subtitle,
-            ctaText: business.cta_text,
-            aboutTitle: business.about_title,
-            aboutDescription: business.about_description,
-            aboutImage: business.about_image,
-            trustSection: business.trust_section,
+            heroTitle: business.hero_title || '',
+            heroSubtitle: business.hero_subtitle || '',
+            ctaText: business.cta_text || '',
+            aboutTitle: business.about_title || '',
+            aboutDescription: business.about_description || '',
+            aboutImage: business.about_image || null,
+            trustSection: business.trust_section || 'none',
             stripeAccountId: business.stripe_account_id,
             stripeConnected: business.stripe_enabled || false,
             services: mappedServices,
@@ -242,6 +246,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       if ('aboutDescription' in updates) dbUpdates.about_description = updates.aboutDescription;
       if ('aboutImage' in updates) dbUpdates.about_image = updates.aboutImage;
       if ('trustSection' in updates) dbUpdates.trust_section = updates.trustSection;
+      if ('coverImage' in updates) dbUpdates.cover_image = updates.coverImage;
+      if ('primaryColor' in updates) dbUpdates.primary_color = updates.primaryColor;
 
       // Handle workingHours sync separately if present
       if ('workingHours' in updates && updates.workingHours) {
@@ -269,11 +275,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       delete dbUpdates.aboutDescription;
       delete dbUpdates.aboutImage;
       delete dbUpdates.trustSection;
+      delete dbUpdates.coverImage;
+      delete dbUpdates.primaryColor;
       delete dbUpdates.workingHours;
       delete dbUpdates.services;
       delete dbUpdates.bookings;
       delete dbUpdates.reviews;
       delete dbUpdates.proofOfWork;
+      delete dbUpdates.stripeConnected;
       delete dbUpdates.address;
       delete dbUpdates.socials;
 

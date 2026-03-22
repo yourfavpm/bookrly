@@ -298,6 +298,7 @@ export const OnboardingFlow: React.FC = () => {
                 autoFocus
               />
               <Button className="w-full h-12 rounded-xl font-bold mt-4" onClick={handleNext} disabled={!business.name}>Continue</Button>
+              <button onClick={handleNext} className="text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase mt-3">Skip for now</button>
             </StepWrapper>
           )}
 
@@ -399,7 +400,10 @@ export const OnboardingFlow: React.FC = () => {
                     <span className="ml-auto text-[10px] font-bold text-text-tertiary tracking-widest">CUSTOM</span>
                   </div>
                 </div>
-                <Button className="w-full h-12 rounded-xl font-bold mt-4" onClick={handleNext}>Continue</Button>
+                <div className="flex gap-4 mt-4">
+                  <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
+                  <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
+                </div>
                 <button onClick={handleBack} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
               </div>
               <PreviewCard business={business} />
@@ -484,7 +488,10 @@ export const OnboardingFlow: React.FC = () => {
                     onChange={(e) => updateBusiness({ heroSubtitle: e.target.value })}
                   />
                 </div>
-                <Button className="w-full h-12 rounded-xl font-bold mt-4" onClick={handleNext} disabled={!business.heroTitle}>Continue</Button>
+                <div className="flex gap-4 mt-4">
+                  <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
+                  <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext} disabled={!business.heroTitle}>Continue</Button>
+                </div>
                 <button onClick={handleBack} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
               </div>
               <PreviewCard business={{ ...business, headline: business.heroTitle, subtext: business.heroSubtitle } as any} />
@@ -502,7 +509,10 @@ export const OnboardingFlow: React.FC = () => {
                 }}
               />
               <p className="text-[10px] text-text-tertiary mt-2 text-center font-medium opacity-60 italic">You can add more services later in the dashboard.</p>
-              <Button className="w-full h-12 rounded-xl font-bold mt-8" onClick={handleNext}>Continue</Button>
+              <div className="flex gap-4 mt-8">
+                <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
+                <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
+              </div>
             </StepWrapper>
           )}
 
@@ -524,7 +534,10 @@ export const OnboardingFlow: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <Button className="w-full h-12 rounded-xl font-bold mt-8" onClick={handleNext}>Continue</Button>
+              <div className="flex gap-4 mt-8">
+                <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
+                <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
+              </div>
               <button onClick={handleBack} className="mt-6 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
             </StepWrapper>
           )}
@@ -550,7 +563,10 @@ export const OnboardingFlow: React.FC = () => {
                     <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-white"><Check size={14} strokeWidth={4} /></div>
                  </div>
               </div>
-              <Button className="w-full h-12 rounded-xl font-bold mt-8" onClick={handleNext}>Continue</Button>
+              <div className="flex gap-4 mt-8">
+                <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
+                <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
+              </div>
               <button onClick={handleBack} className="mt-6 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
             </StepWrapper>
           )}
@@ -602,7 +618,10 @@ export const OnboardingFlow: React.FC = () => {
                     </button>
                   ))}
                </div>
-               <Button className="w-full h-12 rounded-xl font-bold mt-8" onClick={handleNext} disabled={business.trustSection === 'none'}>Continue</Button>
+               <div className="flex gap-4 mt-8">
+                 <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
+                 <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext} disabled={business.trustSection === 'none'}>Continue</Button>
+               </div>
                <button onClick={handleBack} className="mt-6 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
             </StepWrapper>
           )}
@@ -640,7 +659,10 @@ export const OnboardingFlow: React.FC = () => {
                     </div>
                   ))}
                </div>
-               <Button className="w-full h-12 rounded-xl font-bold mt-8" onClick={handleNext}>Continue</Button>
+               <div className="flex gap-4 mt-8">
+                 <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
+                 <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
+               </div>
                <button onClick={handleBack} className="mt-6 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
             </StepWrapper>
           )}
