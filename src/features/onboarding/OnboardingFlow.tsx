@@ -158,10 +158,10 @@ export const OnboardingFlow: React.FC = () => {
           const days = [0, 1, 2, 3, 4, 5, 6];
           const availability = days.map(d => ({
             business_id: data.id,
-            dayOfWeek: d,
-            startTime: '09:00',
-            endTime: '17:00',
-            isOpen: d !== 0 && d !== 6
+            day_of_week: d,
+            start_time: '09:00',
+            end_time: '17:00',
+            is_open: d !== 0 && d !== 6
           }));
 
           await supabase.from('availability').insert(availability);

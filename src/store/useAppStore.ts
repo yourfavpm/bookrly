@@ -211,7 +211,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             aboutImage: business.about_image,
             trustSection: business.trust_section,
             stripeAccountId: business.stripe_account_id,
-            stripeEnabled: business.stripe_enabled,
+            stripeConnected: business.stripe_enabled || false,
             services: mappedServices,
             workingHours: (availability || []).map((h: any) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
             bookings: mappedBookings,

@@ -1,6 +1,6 @@
 import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, ChevronDown, Plus } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import React from 'react';
 
 interface NavItemProps {
@@ -28,9 +28,20 @@ const BottomNavItem: React.FC<NavItemProps> = ({ icon, label, to, active }) => (
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const business = useAppStore((state) => state.business);
+  const loading = useAppStore((state) => state.loading);
   const location = useLocation();
 
-  if (!business) return null;
+  if (!business && !loading) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (!business) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-secondary">
+        <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const navItems = [
     { icon: <LayoutDashboard />, label: 'Overview', to: '/dashboard/overview' },
