@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #fafafa;
+  --color-bg-tertiary: #f5f5f5;
+
+  --color-border-light: #eaeaea;
+  --color-border-default: #e0e0e0;
+
+  --color-text-primary: #111111;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
+
+  /* Brand - Default Indigo */
+  --color-brand: #4f46e5;
+  --color-brand-hover: #4338ca;
+  --color-brand-light: #eef2ff;
+
+  /* Feedback */
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+  /* Spacing - 8px Grid */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+}
+
+@layer base {
+  body {
+    @apply bg-bg-primary text-text-primary antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand text-white px-5 py-2.5 rounded-md font-medium transition-all duration-200 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent border border-border-default text-text-primary px-5 py-2.5 rounded-md font-medium transition-all duration-200 hover:bg-bg-secondary hover:-translate-y-0.5 active:scale-95;
+  }
+
+  .card {
+    @apply bg-white rounded-lg p-4 shadow-md border border-border-light;
+  }
+
+  .input {
+    @apply h-[44px] border border-border-default rounded-md px-3 text-sm focus:outline-none focus:border-brand transition-colors duration-200;
+  }
+}
