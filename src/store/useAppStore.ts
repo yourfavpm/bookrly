@@ -136,6 +136,12 @@ const generateSlug = (name: string): string => {
     .replace(/^-+|-+$/g, '');
 };
 
+const generateSubdomain = (name: string, businessId: string): string => {
+  const baseSlug = generateSlug(name);
+  // Use first 20 chars of slug or fallback to business ID prefix
+  return baseSlug ? baseSlug.substring(0, 20) : `biz-${businessId.substring(0, 8)}`;
+};
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -200,8 +206,6 @@ export const useAppStore = create<AppState>()(
         
         if (boError) throw boError;
 
-        if (boError) throw boError;
-
         // 5. Fetch Reviews
         const { data: reviews, error: rError } = await supabase
           .from('reviews')
@@ -237,9 +241,22 @@ export const useAppStore = create<AppState>()(
           paymentStatus: b.payment_status || 'pending'
         }));
 
+        // Auto-generate subdomain if missing
+        let businessSubdomain = business.subdomain;
+        if (!businessSubdomain && business.name) {
+          businessSubdomain = generateSubdomain(business.name, business.id);
+          // Save it to the database
+          await supabase
+            .from('businesses')
+            .update({ subdomain: businessSubdomain })
+            .eq('id', business.id)
+            .catch((err) => console.error('Failed to save auto-generated subdomain:', err));
+        }
+
         set({ 
           business: {
             ...business,
+            subdomain: businessSubdomain,
             primaryColor: business.primary_color || '#111111',
             coverImage: business.cover_image || null,
             logo: business.logo || null,
@@ -260,7 +277,7 @@ export const useAppStore = create<AppState>()(
             stripeChargesEnabled: business.stripe_charges_enabled || false,
             stripePayouts_enabled: business.stripe_payouts_enabled || false,
             stripeDetailsSubmitted: business.stripe_details_submitted || false,
-            templateKey: business.template_key || 'clean_classic',
+            templateKey: business.template_key || 'editorial_luxe',
             stripeCustomerId: business.stripe_customer_id || null,
             stripeSubscriptionId: business.stripe_subscription_id || null,
             subscriptionStatus: business.subscription_status || 'trialing',
@@ -465,16 +482,28 @@ export const useAppStore = create<AppState>()(
   },
 
   fetchPublicBusiness: async (identifier: string) => {
+    if (!identifier) {
+      set({ error: 'Invalid business identifier', loading: false });
+      return;
+    }
+
     set({ loading: true, error: null });
     try {
-      // Find business by subdomain, slug, or custom_domain
+      // Try to find business by subdomain first, then slug, then custom domain
+      // Use slug as fallback since it's always generated
       const { data: business, error } = await supabase
         .from('businesses')
         .select('*')
         .or(`subdomain.eq.${identifier},slug.eq.${identifier},custom_domain.eq.${identifier}`)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
+      if (!business) {
+        throw new Error('Business not found');
+      }
 
       const [servicesRes, availabilityRes, reviewsRes, proofRes, bookingsRes] = await Promise.all([
         supabase.from('services').select('*, addons(*)').eq('business_id', business.id).eq('active', true),
@@ -505,9 +534,22 @@ export const useAppStore = create<AppState>()(
         paymentStatus: b.payment_status || 'pending'
       }));
 
+      // Auto-generate subdomain if missing
+      let businessSubdomain = business.subdomain;
+      if (!businessSubdomain && business.name) {
+        businessSubdomain = generateSubdomain(business.name, business.id);
+        // Save it to the database (non-blocking)
+        await supabase
+          .from('businesses')
+          .update({ subdomain: businessSubdomain })
+          .eq('id', business.id)
+          .catch((err) => console.error('Failed to save auto-generated subdomain:', err));
+      }
+
       set({ 
         business: {
           ...business,
+          subdomain: businessSubdomain,
           isPublished: business.is_published,
           heroTitle: business.hero_title,
           heroSubtitle: business.hero_subtitle,
@@ -518,6 +560,7 @@ export const useAppStore = create<AppState>()(
           trustSection: business.trust_section,
           stripeAccountId: business.stripe_account_id,
           stripeEnabled: business.stripe_enabled,
+          templateKey: business.template_key || 'editorial_luxe',
           services: mappedServices,
           workingHours: (availabilityRes.data || []).map((h: any) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
           bookings: mappedBookings,

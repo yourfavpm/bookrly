@@ -369,9 +369,16 @@ export const WebsiteCustomizer: React.FC = () => {
                   <span className="font-bold text-text-tertiary uppercase tracking-widest">Public Domain</span>
                   <span className="font-bold text-brand">{rootDomain}</span>
                </div>
-               <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-border-polaris shadow-sm cursor-pointer hover:bg-bg-canvas/40 transition-colors" onClick={() => window.open(`/p/${business.subdomain}`, '_blank')}>
+               <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-border-polaris shadow-sm cursor-pointer hover:bg-bg-canvas/40 transition-colors" onClick={() => {
+                 const previewId = business.subdomain || business.slug;
+                 if (previewId) {
+                   window.open(`/p/${previewId}`, '_blank');
+                 }
+               }}>
                   <Link2 size={14} className="text-text-tertiary shrink-0" />
-                  <span className="text-[11px] font-medium text-text-primary truncate">{business.subdomain}.{rootDomain}</span>
+                  <span className="text-[11px] font-medium text-text-primary truncate">
+                    {(business.subdomain || business.slug)}.{rootDomain}
+                  </span>
                </div>
                <p className="text-[9px] text-text-tertiary uppercase tracking-widest">Click link above to view in new tab</p>
             </div>

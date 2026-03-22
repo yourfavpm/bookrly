@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { SectionProps } from '../templates/types';
 
 interface ServicesProps extends SectionProps {
@@ -68,27 +69,37 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
 
   if (variant === 'horizontal') {
     return (
-      <section id="services" className="py-24 px-6 w-full space-y-12">
-        <div className="max-w-6xl mx-auto space-y-3">
-          <span className="text-[10px] font-medium uppercase tracking-[0.3em]" style={{ color: business.primaryColor }}>Services</span>
-          <h2 className="text-3xl font-medium tracking-tight text-text-primary">What We Do</h2>
+      <section id="services" className="py-20 px-6 w-full space-y-12 bg-white">
+        <div className="max-w-7xl mx-auto space-y-2">
+          <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">Services</span>
+          <h2 className="text-4xl md:text-5xl font-light tracking-tight text-text-primary">What We Offer</h2>
         </div>
-        <div className="max-w-full overflow-x-auto pb-4">
-          <div className="flex gap-6 px-6 min-w-min">
-            {business.services.map(s => (
-              <div key={s.id} className="w-72 shrink-0 p-6 rounded-3xl border border-border-light bg-white hover:shadow-lg transition-all">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${business.primaryColor}10`, color: business.primaryColor }}>
-                    <Clock size={18} />
+        <div className="max-w-full overflow-x-auto pb-6 -mx-6 px-6">
+          <div className="flex gap-5 min-w-min">
+            {business.services.map((s, idx) => (
+              <motion.div 
+                key={s.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: idx * 0.05 }}
+                viewport={{ once: true }}
+                className="w-72 shrink-0 p-6 bg-white border border-text-primary/10 rounded-sm hover:border-text-primary/30 transition-all duration-300 group flex flex-col"
+              >
+                <h3 className="font-light text-lg mb-2 text-text-primary group-hover:text-text-primary transition-colors">{s.name}</h3>
+                <p className="text-xs text-text-secondary leading-relaxed mb-6 flex-1 font-light">{s.description}</p>
+                <div className="flex items-end justify-between pt-4 border-t border-text-primary/5">
+                  <div>
+                    <span className="text-2xl font-light tracking-tight text-text-primary">${s.price}</span>
+                    <span className="block text-[10px] text-text-tertiary uppercase tracking-widest mt-1">{s.duration} min</span>
                   </div>
-                  <span className="text-lg font-medium" style={{ color: business.primaryColor }}>${s.price}</span>
+                  <button 
+                    onClick={onBook}
+                    className="px-5 py-2 bg-text-primary text-white text-xs font-medium rounded-sm hover:bg-text-primary/90 transition-colors active:scale-95"
+                  >
+                    Book
+                  </button>
                 </div>
-                <h3 className="font-medium text-lg mb-2 text-text-primary">{s.name}</h3>
-                <p className="text-sm text-text-secondary line-clamp-2 mb-6">{s.description}</p>
-                <button onClick={onBook} className="w-full py-3 rounded-xl text-white text-xs font-medium transition-all hover:scale-[1.03] active:scale-95 border-none cursor-pointer" style={{ backgroundColor: business.primaryColor }}>
-                  Book
-                </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

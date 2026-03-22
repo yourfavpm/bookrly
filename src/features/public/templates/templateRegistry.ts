@@ -1,6 +1,6 @@
 import React from 'react';
 import type { TemplateInfo, TemplateLayoutProps } from './types';
-import { CleanClassicLayout, CleanClassicAltLayout } from './layouts/CleanClassic';
+import { EditorialLuxeLayout, EditorialLuxeAltLayout } from './layouts/EditorialLuxe';
 import { VisualStudioLayout, VisualStudioAltLayout } from './layouts/VisualStudio';
 import { HomeServicesLayout, HomeServicesAltLayout } from './layouts/HomeServices';
 import { ModernAppointmentsLayout, ModernAppointmentsAltLayout } from './layouts/ModernAppointments';
@@ -10,19 +10,19 @@ import { PersonalBrandLayout, PersonalBrandAltLayout } from './layouts/PersonalB
 export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProps> })[] = [
   {
     key: 'clean_classic',
-    name: 'Clean Classic',
-    category: 'Minimal',
-    description: 'Elegant and text-first — perfect for consultants',
-    color: '#6366f1',
-    component: CleanClassicLayout,
+    name: 'Editorial Luxe',
+    category: 'Premium',
+    description: 'Refined, minimal design for high-end brands',
+    color: '#111111',
+    component: EditorialLuxeLayout,
   },
   {
     key: 'clean_classic_alt',
-    name: 'Classic Split',
-    category: 'Minimal',
-    description: 'Split hero with vertical services list',
-    color: '#818cf8',
-    component: CleanClassicAltLayout,
+    name: 'Luxe Trust-First',
+    category: 'Premium',
+    description: 'Editorial style with reviews elevated',
+    color: '#333333',
+    component: EditorialLuxeAltLayout,
   },
   {
     key: 'visual_studio',
@@ -90,10 +90,10 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
   },
 ];
 
-// Get a template component by key, fallback to clean_classic
+// Get a template component by key, fallback to editorial_luxe
 export const getTemplateComponent = (key: string): React.FC<TemplateLayoutProps> => {
   const template = TEMPLATES.find(t => t.key === key);
-  return template ? template.component : CleanClassicLayout;
+  return template ? template.component : EditorialLuxeLayout;
 };
 
 // Get template metadata by key

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthLayout } from '../../components/layout/AuthLayout';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useAppStore } from '../../store/useAppStore';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +14,15 @@ export const Login: React.FC = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const user = useAppStore((state) => state.user);
+  const appLoading = useAppStore((state) => state.loading);
+
+  // Auto-navigate to dashboard when user is authenticated and loading is complete
+  useEffect(() => {
+    if (user && !appLoading) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, appLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,10 +36,9 @@ export const Login: React.FC = () => {
       });
 
       if (signInError) throw signInError;
-      navigate('/dashboard');
+      // Don't navigate here - let AuthObserver handle it via useEffect above
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
       setLoading(false);
     }
   };
@@ -45,6 +54,7 @@ export const Login: React.FC = () => {
         },
       });
       if (error) throw error;
+      // OAuth redirect will handle navigation
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setGoogleLoading(false);

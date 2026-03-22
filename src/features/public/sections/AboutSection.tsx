@@ -1,9 +1,10 @@
 import React from 'react';
 import { Instagram, Facebook, Twitter, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { SectionProps } from '../templates/types';
 
 interface AboutProps extends SectionProps {
-  variant?: 'split' | 'centered' | 'full-width';
+  variant?: 'split' | 'centered' | 'full-width' | 'editorial';
 }
 
 export const AboutSection: React.FC<AboutProps> = ({ business, onBook, variant = 'split' }) => {
@@ -11,11 +12,68 @@ export const AboutSection: React.FC<AboutProps> = ({ business, onBook, variant =
 
   const socials = (
     <div className="flex gap-6">
-      {business.socials?.instagram && <a href={business.socials.instagram} target="_blank" rel="noreferrer"><Instagram size={20} className="text-text-tertiary hover:text-brand transition-all cursor-pointer" /></a>}
-      {business.socials?.facebook && <a href={business.socials.facebook} target="_blank" rel="noreferrer"><Facebook size={20} className="text-text-tertiary hover:text-brand transition-all cursor-pointer" /></a>}
-      {business.socials?.twitter && <a href={business.socials.twitter} target="_blank" rel="noreferrer"><Twitter size={20} className="text-text-tertiary hover:text-brand transition-all cursor-pointer" /></a>}
+      {business.socials?.instagram && <a href={business.socials.instagram} target="_blank" rel="noreferrer"><Instagram size={20} className="text-text-tertiary hover:text-text-primary transition-all cursor-pointer" /></a>}
+      {business.socials?.facebook && <a href={business.socials.facebook} target="_blank" rel="noreferrer"><Facebook size={20} className="text-text-tertiary hover:text-text-primary transition-all cursor-pointer" /></a>}
+      {business.socials?.twitter && <a href={business.socials.twitter} target="_blank" rel="noreferrer"><Twitter size={20} className="text-text-tertiary hover:text-text-primary transition-all cursor-pointer" /></a>}
     </div>
   );
+
+  if (variant === 'editorial') {
+    return (
+      <section id="about" className="py-24 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-20 items-start">
+            {/* Narrow text column - left side */}
+            <motion.div 
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="md:col-span-5 space-y-8"
+            >
+              <div className="space-y-3">
+                <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">
+                  About
+                </span>
+                <h2 className="text-4xl md:text-5xl font-light tracking-tight text-text-primary leading-[1.15]">
+                  {business.aboutTitle || "About Us"}
+                </h2>
+              </div>
+
+              {/* Editorial text */}
+              <p className="text-sm leading-relaxed text-text-secondary font-light max-w-sm whitespace-pre-wrap">
+                {business.aboutDescription}
+              </p>
+
+              {/* Social links */}
+              <div className="flex gap-6 pt-4">
+                {socials}
+              </div>
+            </motion.div>
+
+            {/* Image on right - optional */}
+            {business.aboutImage && (
+              <motion.div 
+                initial={{ opacity: 0, x: 40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="md:col-span-7"
+              >
+                <div className="aspect-3/4 bg-text-primary/5 rounded-sm overflow-hidden">
+                  <img 
+                    src={business.aboutImage} 
+                    alt="About"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (variant === 'centered') {
     return (

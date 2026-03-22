@@ -4,7 +4,7 @@ import { Image as ImageIcon } from 'lucide-react';
 import type { SectionProps } from '../templates/types';
 
 interface ProofProps extends SectionProps {
-  variant?: 'grid' | 'masonry' | 'filmstrip';
+  variant?: 'grid' | 'masonry' | 'filmstrip' | 'overlap-gallery';
 }
 
 export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPreview, variant = 'grid' }) => {
@@ -16,6 +16,115 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
 
   if (items.length === 0 && !isPreview) {
     return null;
+  }
+
+  if (variant === 'overlap-gallery') {
+    const displayItems = items.slice(0, 3);
+    
+    return (
+      <section id="gallery" className="relative pt-0 pb-24 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          {/* Overlapping first image from hero - uses negative margin */}
+          {displayItems.length > 0 && displayItems[0].image_url && (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="mb-16 -mt-32 md:-mt-40 relative z-10 max-w-2xl"
+            >
+              <div className="aspect-4/5 bg-white p-2 rounded-sm shadow-lg">
+                <div className="w-full h-full bg-text-primary/5 rounded-sm overflow-hidden">
+                  <img 
+                    src={displayItems[0].image_url} 
+                    alt={displayItems[0].caption || 'Portfolio'} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              {displayItems[0].caption && (
+                <p className="mt-3 text-xs text-text-tertiary uppercase tracking-wider font-medium">
+                  {displayItems[0].caption}
+                </p>
+              )}
+            </motion.div>
+          )}
+
+          {/* Gallery section title */}
+          <div className="space-y-2 mb-16">
+            <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">
+              Portfolio
+            </span>
+            <h2 className="text-4xl md:text-5xl font-light tracking-tight text-text-primary">
+              Featured Work
+            </h2>
+          </div>
+
+          {/* 2 Large + 1 Small Mixed Grid */}
+          {displayItems.length > 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              {/* Large image top-left */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.1 }}
+                viewport={{ once: true }}
+                className="md:col-span-7 aspect-4/3 bg-text-primary/5 rounded-sm overflow-hidden group cursor-zoom-in"
+              >
+                {displayItems[1].image_url && (
+                  <img 
+                    src={displayItems[1].image_url} 
+                    alt={displayItems[1].caption || 'Portfolio'} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                )}
+              </motion.div>
+
+              {/* Right column: small on top, large below */}
+              <div className="md:col-span-5 space-y-6">
+                {displayItems.length > 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    viewport={{ once: true }}
+                    className="aspect-square bg-text-primary/5 rounded-sm overflow-hidden group cursor-zoom-in"
+                  >
+                    {displayItems[2].image_url && (
+                      <img 
+                        src={displayItems[2].image_url} 
+                        alt={displayItems[2].caption || 'Portfolio'} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    )}
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Captions below grid */}
+          {displayItems.length > 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-4">
+              <div className="md:col-span-7">
+                {displayItems[1].caption && (
+                  <p className="text-xs text-text-tertiary uppercase tracking-wider font-medium">
+                    {displayItems[1].caption}
+                  </p>
+                )}
+              </div>
+              <div className="md:col-span-5">
+                {displayItems.length > 2 && displayItems[2].caption && (
+                  <p className="text-xs text-text-tertiary uppercase tracking-wider font-medium">
+                    {displayItems[2].caption}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    );
   }
 
   if (variant === 'filmstrip') {

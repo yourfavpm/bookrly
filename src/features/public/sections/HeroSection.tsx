@@ -4,10 +4,81 @@ import type { SectionProps } from '../templates/types';
 
 interface HeroProps extends SectionProps {
   scrollTo: (id: string) => void;
-  variant?: 'centered' | 'split' | 'full-image' | 'card' | 'minimal';
+  variant?: 'centered' | 'split' | 'full-image' | 'card' | 'minimal' | 'editorial-luxe';
 }
 
 export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, isMobile, variant = 'centered' }) => {
+  if (variant === 'editorial-luxe') {
+    return (
+      <section className="relative min-h-[700px] md:min-h-[750px] flex items-center overflow-hidden bg-white">
+        <div className="absolute inset-0 grid grid-cols-12">
+          {/* Left text column - 35% */}
+          <motion.div 
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="col-span-12 md:col-span-5 px-6 md:px-12 py-20 md:py-0 flex flex-col justify-center space-y-12"
+          >
+            {/* Small intro text */}
+            <div className="space-y-1">
+              <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">
+                {business.category || 'Premium Service'}
+              </span>
+              <div className="w-8 h-0.5 bg-text-primary rounded-full" />
+            </div>
+
+            {/* Headline - refined */}
+            <h1 className={`${isMobile ? 'text-4xl' : 'text-5xl lg:text-6xl'} font-light tracking-tight leading-[1.15] text-text-primary`}>
+              {business.heroTitle || "Editorial\nluxe"}
+            </h1>
+
+            {/* Subtext */}
+            <p className="text-sm md:text-base text-text-secondary leading-relaxed max-w-xs font-light">
+              {business.heroSubtitle || "Refined, minimal design for the discerning professional."}
+            </p>
+
+            {/* CTA */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <button 
+                onClick={onBook}
+                className="px-8 py-3.5 bg-text-primary text-white rounded-sm text-sm font-medium tracking-wide hover:opacity-90 transition-opacity active:scale-95"
+              >
+                Schedule Now
+              </button>
+              <button 
+                onClick={() => scrollTo('services')}
+                className="px-8 py-3.5 border border-text-primary text-text-primary rounded-sm text-sm font-medium tracking-wide hover:bg-text-primary/5 transition-colors active:scale-95"
+              >
+                View Services
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Right image column - 65% */}
+          <div className="col-span-12 md:col-span-7 h-96 md:h-auto md:absolute md:right-0 md:inset-y-0 -z-10 md:z-0">
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full h-full"
+            >
+              {business.coverImage && (
+                <img 
+                  src={business.coverImage} 
+                  alt="Hero"
+                  className="w-full h-full object-cover"
+                />
+              )}
+              {!business.coverImage && (
+                <div className="w-full h-full bg-gradient-to-br from-text-primary/5 to-text-primary/10" />
+              )}
+            </motion.div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (variant === 'split') {
     return (
       <section className="min-h-[600px] flex items-center px-6 md:px-12 py-20">

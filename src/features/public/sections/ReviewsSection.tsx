@@ -1,9 +1,10 @@
 import React from 'react';
 import { Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { SectionProps } from '../templates/types';
 
 interface ReviewsProps extends SectionProps {
-  variant?: 'grid' | 'vertical' | 'featured';
+  variant?: 'grid' | 'vertical' | 'featured' | 'floating-stack';
 }
 
 export const ReviewsSection: React.FC<ReviewsProps> = ({ business, isMobile, isPreview, variant = 'grid' }) => {
@@ -22,6 +23,69 @@ export const ReviewsSection: React.FC<ReviewsProps> = ({ business, isMobile, isP
       {[1,2,3,4,5].map(s => <Star key={s} size={14} className={s <= (rating || 5) ? 'fill-current' : 'text-border-default'} />)}
     </div>
   );
+
+  if (variant === 'floating-stack') {
+    const displayReviews = reviews.slice(0, 3);
+    
+    return (
+      <section id="reviews" className="py-24 px-6 w-full bg-white">
+        <div className="max-w-7xl mx-auto">
+          {/* Section header */}
+          <div className="mb-20 space-y-2">
+            <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">
+              Reviews
+            </span>
+            <h2 className="text-4xl md:text-5xl font-light tracking-tight text-text-primary">
+              What clients say
+            </h2>
+          </div>
+
+          {/* Floating stacked cards */}
+          <div className="relative h-auto md:h-[450px] flex md:items-center">
+            {displayReviews.map((review, idx) => (
+              <motion.div
+                key={review.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                viewport={{ once: true }}
+                className="w-full md:w-96 bg-white border border-text-primary/10 rounded-sm p-6 space-y-4 shadow-lg mb-6 md:mb-0 md:absolute"
+                style={{
+                  top: isMobile ? 'auto' : `${idx * 24}px`,
+                  left: isMobile ? '0' : `${idx * 32}px`,
+                  zIndex: displayReviews.length - idx,
+                  transform: isMobile ? 'none' : `rotate(${idx * 1.5}deg)`,
+                }}
+              >
+                {/* Stars */}
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <Star
+                      key={s}
+                      size={14}
+                      className={s <= (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-border-default'}
+                    />
+                  ))}
+                </div>
+
+                {/* Comment */}
+                <p className="text-sm text-text-secondary leading-relaxed font-light">
+                  "{review.comment}"
+                </p>
+
+                {/* Author */}
+                <div className="pt-4 border-t border-text-primary/5">
+                  <p className="text-xs font-medium text-text-primary">
+                    {review.customer_name || 'Client'}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (variant === 'vertical') {
     return (

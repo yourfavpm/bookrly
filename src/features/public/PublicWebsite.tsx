@@ -46,7 +46,11 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
       }
 
       if (targetSubdomain) {
-        fetchPublicBusiness(targetSubdomain);
+        try {
+          await fetchPublicBusiness(targetSubdomain);
+        } catch (err) {
+          console.error('[PublicWebsite] Failed to fetch business:', err);
+        }
       }
     };
     resolveTenant();

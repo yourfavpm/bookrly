@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   ChevronRight, 
@@ -14,10 +14,21 @@ import {
   DollarSign
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
 
 export const LandingPage: React.FC = () => {
   const [email, setEmail] = useState('');
+  const user = useAppStore((state) => state.user);
+  const loading = useAppStore((state) => state.loading);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to dashboard if user is already authenticated
+    if (!loading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const companies = [
     { name: 'STUDIO', icon: <div className="w-5 h-5 bg-black rounded-lg" /> },
