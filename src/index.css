@@ -53,17 +53,18 @@
   body {
     @apply bg-bg-primary text-text-primary antialiased;
     font-family: var(--font-sans);
-    font-weight: 400;
+    font-weight: 400; /* Regular weight for base text */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-weight: 500;
+    @apply font-medium; /* medium (500) for headings */
+    letter-spacing: -0.01em;
   }
 
   p, span, label, li {
-    font-weight: 400;
+    @apply font-normal; /* regular (400) */
   }
 }
 

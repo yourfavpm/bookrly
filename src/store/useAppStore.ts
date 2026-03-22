@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 
 interface AddOn {
@@ -74,10 +75,13 @@ interface BusinessState {
   reviews: any[];
   proofOfWork: any[];
   isPublished: boolean;
+  slug: string;
+  customDomain: string | null;
   workingHours: WorkingHour[];
   services: Service[];
   bookings: Booking[];
   stripeConnected: boolean;
+  templateKey: string;
 }
 
 interface AppState {
@@ -109,7 +113,18 @@ interface AppState {
   updateProofItem: (id: string, updates: any) => Promise<void>;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
+export const useAppStore = create<AppState>()(
+  persist(
+    (set, get) => ({
   user: null,
   business: null,
   loading: false,
@@ -122,11 +137,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   setBusiness: (business) => set({ business }),
   setOnboardingStep: (step) => set({ onboardingStep: step }),
 
-  fetchBusiness: async () => {
-    const { user } = get();
+  fetchBusiness: async (force = false) => {
+    const { user, business } = get();
     if (!user) return;
+    
+    // Simple caching: skip fetch if we already have business data unless forced
+    if (business && !force) return;
 
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       // 1. Fetch Business Profile
       const { data: business, error: bError } = await supabase
@@ -207,6 +225,8 @@ export const useAppStore = create<AppState>((set, get) => ({
             logo: business.logo || null,
             socials: business.socials || { instagram: '', facebook: '', twitter: '' },
             isPublished: business.is_published,
+            slug: business.slug || (business.name ? generateSlug(business.name) : ''),
+            customDomain: business.custom_domain || null,
             heroTitle: business.hero_title || '',
             heroSubtitle: business.hero_subtitle || '',
             ctaText: business.cta_text || '',
@@ -216,6 +236,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             trustSection: business.trust_section || 'none',
             stripeAccountId: business.stripe_account_id,
             stripeConnected: business.stripe_enabled || false,
+            templateKey: business.template_key || 'clean_classic',
             services: mappedServices,
             workingHours: (availability || []).map((h: any) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
             bookings: mappedBookings,
@@ -261,6 +282,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         if ('subdomain' in updates) dbUpdates.subdomain = updates.subdomain;
         if ('logo' in updates) dbUpdates.logo = updates.logo;
         if ('isPublished' in updates) dbUpdates.is_published = updates.isPublished;
+        if ('slug' in updates) dbUpdates.slug = updates.slug;
+        if ('customDomain' in updates) dbUpdates.custom_domain = updates.customDomain;
         if ('heroTitle' in updates) dbUpdates.hero_title = updates.heroTitle;
         if ('heroSubtitle' in updates) dbUpdates.hero_subtitle = updates.heroSubtitle;
         if ('ctaText' in updates) dbUpdates.cta_text = updates.ctaText;
@@ -270,22 +293,27 @@ export const useAppStore = create<AppState>((set, get) => ({
         if ('trustSection' in updates) dbUpdates.trust_section = updates.trustSection;
         if ('coverImage' in updates) dbUpdates.cover_image = updates.coverImage;
         if ('primaryColor' in updates) dbUpdates.primary_color = updates.primaryColor;
+        if ('templateKey' in updates) dbUpdates.template_key = updates.templateKey;
         if ('address' in updates) dbUpdates.address = updates.address;
         if ('socials' in updates) dbUpdates.socials = updates.socials;
 
-        // Handle workingHours sync separately if present
+        // Handle workingHours sync: Delete existing and re-insert all for this business
         if ('workingHours' in updates && updates.workingHours) {
+          await supabase
+            .from('availability')
+            .delete()
+            .eq('business_id', latestBusiness.id);
+
           const { error: aError } = await supabase
             .from('availability')
-            .upsert(
+            .insert(
               updates.workingHours.map((h: any) => ({
                 business_id: latestBusiness.id,
                 day_of_week: h.dayOfWeek,
                 start_time: h.startTime,
                 end_time: h.endTime,
                 is_open: h.isOpen
-              })),
-              { onConflict: 'business_id,day_of_week' }
+              }))
             );
           if (aError) console.error('Availability sync error:', aError);
         }
@@ -406,16 +434,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!error) get().fetchBusiness();
   },
 
-  fetchPublicBusiness: async (subdomain) => {
+  fetchPublicBusiness: async (identifier: string) => {
     set({ loading: true, error: null });
     try {
-      const { data: business, error: bError } = await supabase
+      // Find business by subdomain, slug, or custom_domain
+      const { data: business, error } = await supabase
         .from('businesses')
         .select('*')
-        .eq('subdomain', subdomain)
+        .or(`subdomain.eq.${identifier},slug.eq.${identifier},custom_domain.eq.${identifier}`)
         .single();
       
-      if (bError) throw bError;
+      if (error) throw error;
 
       const [servicesRes, availabilityRes, reviewsRes, proofRes, bookingsRes] = await Promise.all([
         supabase.from('services').select('*, addons(*)').eq('business_id', business.id).eq('active', true),
@@ -533,4 +562,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { error } = await supabase.from('proof_items').update(updates).eq('id', id);
     if (!error) get().fetchBusiness();
   }
+}), {
+  name: 'bookflow-storage',
+  storage: createJSONStorage(() => localStorage),
+  partialize: (state) => ({ 
+    onboardingStep: state.onboardingStep,
+    // We can partialize more UI state here later
+  }),
 }));

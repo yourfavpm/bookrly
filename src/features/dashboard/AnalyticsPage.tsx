@@ -29,14 +29,14 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, trend, tren
         <div className={`p-3 rounded-2xl bg-${color}/5 text-${color} group-hover:scale-110 transition-transform duration-500`}>
            {icon}
         </div>
-        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold ${trend === 'up' ? 'text-success bg-success/5' : 'text-error bg-error/5'}`}>
+        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-normal ${trend === 'up' ? 'text-success bg-success/5' : 'text-error bg-error/5'}`}>
            {trend === 'up' ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
            {trendValue}%
         </div>
      </div>
      <div className="space-y-1">
-        <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">{title}</p>
-        <h3 className="text-2xl font-bold text-text-primary tracking-tight">{value}</h3>
+        <p className="text-[10px] font-normal text-text-tertiary uppercase tracking-widest">{title}</p>
+        <h3 className="text-2xl font-medium text-text-primary tracking-tight">{value}</h3>
      </div>
   </Card>
 );
@@ -61,8 +61,8 @@ export const AnalyticsPage: React.FC = () => {
   return (
     <div className="space-y-12 animate-in fade-in duration-700 pb-20">
       <header className="space-y-1">
-         <h1 className="text-2xl font-bold tracking-tight text-text-primary">Performance Analytics</h1>
-         <p className="text-xs text-text-secondary">A snapshot of your business health in Canada.</p>
+         <h1 className="text-2xl font-medium tracking-tight text-text-primary">Performance Analytics</h1>
+         <p className="text-xs text-text-secondary font-normal">A snapshot of your business health in Canada.</p>
       </header>
 
       {/* Metrics Row */}
@@ -106,10 +106,10 @@ export const AnalyticsPage: React.FC = () => {
          <Card className="p-8 space-y-8 h-[400px] flex flex-col border-transparent">
             <div className="flex items-center justify-between">
                <div className="space-y-1">
-                  <h3 className="font-bold text-sm text-text-primary tracking-tight">Bookings Activity</h3>
-                  <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-bold">Past 7 Days</p>
+                  <h3 className="font-medium text-sm text-text-primary tracking-tight">Bookings Activity</h3>
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-normal">Past 7 Days</p>
                </div>
-               <div className="flex items-center gap-4 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
+               <div className="flex items-center gap-4 text-[10px] font-normal text-text-tertiary uppercase tracking-widest">
                   <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-brand" /> Volume</span>
                </div>
             </div>
@@ -117,7 +117,7 @@ export const AnalyticsPage: React.FC = () => {
             <div className="flex-1 flex items-end justify-between gap-4 pt-4">
                {bookingsData.map((val, i) => (
                  <div key={i} className="flex-1 flex flex-col items-center gap-3 group relative">
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-text-primary text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-text-primary text-white text-[10px] font-normal px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                        {val}
                     </div>
                     <motion.div 
@@ -128,7 +128,7 @@ export const AnalyticsPage: React.FC = () => {
                     >
                        <div className="absolute top-0 left-0 right-0 h-1 bg-brand opacity-40 rounded-full" />
                     </motion.div>
-                    <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">{days[i]}</span>
+                    <span className="text-[10px] font-normal text-text-tertiary uppercase tracking-widest">{days[i]}</span>
                  </div>
                ))}
             </div>
@@ -138,10 +138,10 @@ export const AnalyticsPage: React.FC = () => {
          <Card className="p-8 space-y-8 h-[400px] flex flex-col border-transparent">
             <div className="flex items-center justify-between">
                <div className="space-y-1">
-                  <h3 className="font-bold text-sm text-text-primary tracking-tight">Revenue Trends</h3>
-                  <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-bold">Past 7 Days</p>
+                  <h3 className="font-medium text-sm text-text-primary tracking-tight">Revenue Trends</h3>
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-normal">Past 7 Days</p>
                </div>
-               <div className="flex items-center gap-4 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
+               <div className="flex items-center gap-4 text-[10px] font-normal text-text-tertiary uppercase tracking-widest">
                   <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-success" /> Revenue</span>
                </div>
             </div>
@@ -194,7 +194,7 @@ export const AnalyticsPage: React.FC = () => {
                
                <div className="flex justify-between items-center absolute -bottom-2 left-0 right-0">
                   {days.map((d, i) => (
-                    <span key={i} className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">{d}</span>
+                    <span key={i} className="text-[10px] font-normal text-text-tertiary uppercase tracking-widest">{d}</span>
                   ))}
                </div>
             </div>
@@ -206,10 +206,10 @@ export const AnalyticsPage: React.FC = () => {
          <Card className="lg:col-span-2 p-8 space-y-8 border-transparent">
             <div className="flex items-center justify-between">
                <div className="space-y-1">
-                  <h3 className="font-bold text-sm text-text-primary tracking-tight">Most Popular Services</h3>
-                  <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-bold">Top performers</p>
+                  <h3 className="font-medium text-sm text-text-primary tracking-tight">Most Popular Services</h3>
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-normal">Top performers</p>
                </div>
-               <button className="text-[10px] font-bold text-brand uppercase tracking-widest hover:underline flex items-center gap-1">
+               <button className="text-[10px] font-normal text-brand uppercase tracking-widest hover:underline flex items-center gap-1">
                   View All <ChevronRight size={12} />
                </button>
             </div>
@@ -222,11 +222,11 @@ export const AnalyticsPage: React.FC = () => {
                           <div className="w-8 h-8 rounded-lg bg-bg-secondary flex items-center justify-center text-text-secondary group-hover:bg-brand/5 group-hover:text-brand transition-colors">
                              <Scissors size={14} />
                           </div>
-                          <span className="font-bold text-text-primary">{service.name}</span>
+                          <span className="font-medium text-text-primary">{service.name}</span>
                        </div>
                        <div className="flex items-center gap-6">
-                          <span className="text-text-tertiary font-medium">84 bookings</span>
-                          <span className="font-bold text-text-primary">${(84 * service.price).toLocaleString()}</span>
+                          <span className="text-text-tertiary font-normal">84 bookings</span>
+                          <span className="font-medium text-text-primary">${(84 * service.price).toLocaleString()}</span>
                        </div>
                     </div>
                     <div className="h-2 w-full bg-bg-secondary rounded-full overflow-hidden">
@@ -243,21 +243,21 @@ export const AnalyticsPage: React.FC = () => {
          </Card>
 
          {/* Calendar Overview */}
-         <Card className="p-8 space-y-6 border-transparent bg-brand text-white overflow-hidden relative">
+         <Card className="p-8 space-y-6 border-transparent bg-brand text-white overflow-hidden relative rounded-[32px]">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
             <div className="relative z-10 space-y-6">
                <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
                   <Calendar size={20} />
                </div>
                <div className="space-y-1">
-                  <h3 className="text-lg font-bold tracking-tight">March Overview</h3>
-                  <p className="text-xs text-white/70">You have 48 upcoming appointments this month.</p>
+                  <h3 className="text-lg font-medium tracking-tight">March Overview</h3>
+                  <p className="text-xs text-white/70 font-normal">You have 48 upcoming appointments this month.</p>
                </div>
                <div className="pt-4 space-y-4">
                   <div className="flex justify-between items-end border-b border-white/10 pb-4">
                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Next Appointment</p>
-                        <p className="text-sm font-bold mt-1">Today at 2:00 PM</p>
+                        <p className="text-[10px] font-normal uppercase tracking-widest text-white/50">Next Appointment</p>
+                        <p className="text-sm font-medium mt-1">Today at 2:00 PM</p>
                      </div>
                      <button className="p-2 hover:bg-white/10 rounded-lg transition-all">
                         <ChevronRight size={16} />
@@ -265,13 +265,13 @@ export const AnalyticsPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-end">
                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Most Active Day</p>
-                        <p className="text-sm font-bold mt-1">Friday</p>
+                        <p className="text-[10px] font-normal uppercase tracking-widest text-white/50">Most Active Day</p>
+                        <p className="text-sm font-medium mt-1">Friday</p>
                      </div>
-                     <p className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full uppercase">Busy</p>
+                     <p className="text-[10px] font-normal bg-white/20 px-2 py-0.5 rounded-full uppercase">Busy</p>
                   </div>
                </div>
-               <Button variant="secondary" className="w-full bg-white text-brand hover:bg-white/90 border-none rounded-xl font-bold h-12 shadow-xl shadow-black/10">
+               <Button variant="secondary" className="w-full bg-white text-brand hover:bg-white/90 border-none rounded-xl font-medium h-12 shadow-xl shadow-black/10">
                   Open Schedule
                </Button>
             </div>

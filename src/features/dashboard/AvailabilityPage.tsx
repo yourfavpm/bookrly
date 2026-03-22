@@ -55,81 +55,135 @@ export const AvailabilityPage: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
       <header className="flex items-center justify-between">
          <div className="space-y-1">
-           <h1 className="text-2xl font-bold tracking-tight text-text-primary">Availability</h1>
-           <p className="text-xs text-text-secondary">Define when your business is open for bookings.</p>
+           <h1 className="text-2xl font-medium tracking-tight text-text-primary">Availability</h1>
+           <p className="text-xs text-text-secondary font-normal">Define when your business is open for bookings.</p>
          </div>
          <div className="flex items-center gap-2 bg-brand/5 px-4 py-2 rounded-2xl border border-brand/10">
             <AlertCircle size={14} className="text-brand" />
-            <p className="text-[10px] font-bold text-brand uppercase tracking-widest">Auto-saving Schedule</p>
+            <p className="text-[10px] font-normal text-brand uppercase tracking-widest">Auto-saving Schedule</p>
          </div>
       </header>
 
       <div className="space-y-4">
-        {sortedHours.map((config, index) => {
+        {DAY_NAMES.map((dayName, dayIdx) => {
+          const daySlots = sortedHours.filter(h => h.dayOfWeek === dayIdx);
+          const isOpen = daySlots.some(s => s.isOpen);
+
+          const handleAddSlot = () => {
+            const newSlot = { 
+              dayOfWeek: dayIdx, 
+              startTime: '09:00', 
+              endTime: '17:00', 
+              isOpen: true 
+            };
+            updateBusiness({ workingHours: [...business.workingHours, newSlot] });
+          };
+
+          const handleRemoveSlot = (indexInDay: number) => {
+            const targetSlot = daySlots[indexInDay];
+            const updatedHours = business.workingHours.filter(h => h !== targetSlot);
+            updateBusiness({ workingHours: updatedHours });
+          };
+
+          const handleUpdateSlot = (indexInDay: number, field: 'startTime' | 'endTime', value: string) => {
+            const targetSlot = daySlots[indexInDay];
+            const updatedHours = business.workingHours.map(h => 
+              h === targetSlot ? { ...h, [field]: value } : h
+            );
+            updateBusiness({ workingHours: updatedHours });
+          };
+
+          const handleToggleDay = () => {
+            if (isOpen) {
+              // Close all slots for this day
+              const updatedHours = business.workingHours.map(h => 
+                h.dayOfWeek === dayIdx ? { ...h, isOpen: false } : h
+              );
+              updateBusiness({ workingHours: updatedHours });
+            } else {
+              // If no slots exist at all for this day, create one
+              if (daySlots.length === 0) {
+                handleAddSlot();
+              } else {
+                // Open all existing slots
+                const updatedHours = business.workingHours.map(h => 
+                  h.dayOfWeek === dayIdx ? { ...h, isOpen: true } : h
+                );
+                updateBusiness({ workingHours: updatedHours });
+              }
+            }
+          };
+
           return (
             <motion.div 
-              key={config.dayOfWeek}
+              key={dayIdx}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              transition={{ delay: dayIdx * 0.05 }}
             >
-              <Card className={`p-6 transition-all duration-300 ${config.isOpen ? 'border-brand/10' : 'bg-bg-secondary opacity-70 grayscale'}`}>
-                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-6 min-w-[140px]">
-                       <button 
-                         onClick={() => handleToggleDay(config.dayOfWeek)}
-                         className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${config.isOpen ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'bg-white border-2 border-border-default text-text-tertiary shadow-sm'}`}
-                       >
-                         {config.isOpen ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
-                       </button>
-                       <div>
-                         <h3 className="font-bold text-sm capitalize text-text-primary">{DAY_NAMES[config.dayOfWeek]}</h3>
-                         <p className={`text-[10px] font-bold uppercase tracking-widest ${config.isOpen ? 'text-brand' : 'text-text-tertiary'}`}>
-                           {config.isOpen ? 'Open' : 'Closed'}
-                         </p>
+              <Card className={`p-6 transition-all duration-300 rounded-[28px] ${isOpen ? 'border-brand/10 bg-white' : 'bg-bg-secondary/50 opacity-70 grayscale'}`}>
+                 <div className="flex flex-col gap-6">
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-4">
+                          <button 
+                            onClick={handleToggleDay}
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isOpen ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'bg-white border border-border-default text-text-tertiary shadow-sm'}`}
+                          >
+                            {isOpen ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
+                          </button>
+                          <div>
+                            <h3 className="font-medium text-sm capitalize text-text-primary">{dayName}</h3>
+                            <p className={`text-[9px] font-normal uppercase tracking-widest ${isOpen ? 'text-brand' : 'text-text-tertiary'}`}>
+                              {isOpen ? 'Accepting Bookings' : 'Closed'}
+                            </p>
+                          </div>
                        </div>
+
+                       {isOpen && (
+                         <button 
+                           onClick={handleAddSlot}
+                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand/20 text-brand text-[9px] font-bold uppercase tracking-widest hover:bg-brand/5 transition-all"
+                         >
+                           <Plus size={12} />
+                           Add Slot
+                         </button>
+                       )}
                     </div>
 
-                    <div className={`flex items-center gap-4 transition-all duration-300 ${config.isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none translate-x-4'}`}>
-                       <div className="flex items-center gap-3">
-                         <div className="relative group">
-                            <Clock size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand transition-colors" />
-                            <input 
-                              type="time"
-                              value={config.startTime}
-                              onChange={(e) => handleUpdateHours(config.dayOfWeek, 'startTime', e.target.value)}
-                              className="h-11 pl-8 pr-4 rounded-xl border border-border-default bg-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all"
-                            />
+                    <div className="space-y-3">
+                       {daySlots.filter(s => s.isOpen).map((slot, sIdx) => (
+                         <div key={`${dayIdx}-${sIdx}`} className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                            <div className="relative flex-1 group">
+                               <Clock size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand transition-colors" />
+                               <input 
+                                 type="time"
+                                 value={slot.startTime}
+                                 onChange={(e) => handleUpdateSlot(sIdx, 'startTime', e.target.value)}
+                                 className="w-full h-10 pl-8 pr-4 rounded-xl border border-border-default bg-white text-xs font-normal focus:outline-none focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all"
+                               />
+                            </div>
+                            <div className="h-[1px] w-3 bg-border-default shrink-0" />
+                            <div className="relative flex-1 group">
+                               <Clock size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand transition-colors" />
+                               <input 
+                                 type="time"
+                                 value={slot.endTime}
+                                 onChange={(e) => handleUpdateSlot(sIdx, 'endTime', e.target.value)}
+                                 className="w-full h-10 pl-8 pr-4 rounded-xl border border-border-default bg-white text-xs font-normal focus:outline-none focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all"
+                               />
+                            </div>
+                            
+                            {daySlots.filter(s => s.isOpen).length > 1 && (
+                              <button 
+                                onClick={() => handleRemoveSlot(sIdx)}
+                                className="p-2 text-text-tertiary hover:text-error transition-colors"
+                              >
+                                <XCircle size={16} />
+                              </button>
+                            )}
                          </div>
-                         <div className="h-[2px] w-3 bg-border-default rounded-full" />
-                         <div className="relative group">
-                            <Clock size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand transition-colors" />
-                            <input 
-                              type="time"
-                              value={config.endTime}
-                              onChange={(e) => handleUpdateHours(config.dayOfWeek, 'endTime', e.target.value)}
-                              className="h-11 pl-8 pr-4 rounded-xl border border-border-default bg-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all"
-                            />
-                         </div>
-                       </div>
-                       
-                       <div className="h-8 w-px bg-border-light mx-2" />
-                       
-                       <button 
-                         onClick={() => copyToAll(config.dayOfWeek)}
-                         className="p-2.5 rounded-xl hover:bg-brand/5 text-text-tertiary hover:text-brand transition-all flex items-center gap-2 group"
-                         title="Apply to all days"
-                       >
-                         <Copy size={16} />
-                         <span className="text-[10px] font-bold uppercase tracking-widest hidden lg:inline">Apply to all</span>
-                       </button>
+                       ))}
                     </div>
-
-                    {!config.isOpen && (
-                       <div className="flex-1 flex justify-end items-center italic text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
-                          Not accepting bookings
-                       </div>
-                    )}
                  </div>
               </Card>
             </motion.div>
@@ -137,13 +191,13 @@ export const AvailabilityPage: React.FC = () => {
         })}
       </div>
 
-      <Card className="border-dashed py-10 flex flex-col items-center justify-center text-center bg-bg-secondary/30">
+      <Card className="border-dashed py-10 flex flex-col items-center justify-center text-center bg-bg-secondary/30 rounded-[32px]">
          <div className="p-3 bg-white rounded-2xl shadow-sm mb-4 border border-border-light text-text-tertiary">
             <Calendar size={24} />
          </div>
-         <p className="text-xs font-bold text-text-primary tracking-tight">Need specific dates blocked off?</p>
-         <p className="text-[10px] text-text-tertiary mt-1 max-w-[240px]">Our smart calendar integration and one-off holiday settings are coming soon.</p>
-         <Button variant="secondary" className="mt-6 rounded-xl text-[10px] font-bold uppercase tracking-widest opacity-50 cursor-not-allowed">
+         <p className="text-xs font-medium text-text-primary tracking-tight">Need specific dates blocked off?</p>
+         <p className="text-[10px] text-text-tertiary mt-1 max-w-[240px] font-normal">Our smart calendar integration and one-off holiday settings are coming soon.</p>
+         <Button variant="secondary" className="mt-6 rounded-xl text-[10px] font-medium uppercase tracking-widest opacity-50 cursor-not-allowed">
             View Vacation Mode
          </Button>
       </Card>

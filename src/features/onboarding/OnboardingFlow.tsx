@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ChevronRight, 
   ChevronLeft, 
   Upload, 
   Check, 
-  Globe, 
-  LayoutDashboard, 
   Plus, 
   Trash2,
-  Clock,
   ShieldCheck,
   Star,
-  Image as ImageIcon
+  Image as ImageIcon,
+  CreditCard,
+  ExternalLink,
+  CheckCircle2
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useNavigate } from 'react-router-dom';
@@ -21,109 +20,86 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
 
-const StepWrapper: React.FC<{ children: React.ReactNode, title: string, subtitle?: string, showPreview?: boolean }> = ({ children, title, subtitle, showPreview }) => (
+const StepWrapper: React.FC<{ 
+  children: React.ReactNode, 
+  title: string, 
+  subtitle?: string,
+  onNext?: () => void,
+  onBack?: () => void,
+  nextDisabled?: boolean,
+  showNext?: boolean,
+  showBack?: boolean,
+  nextLabel?: string
+}> = ({ 
+  children, 
+  title, 
+  subtitle, 
+  onNext, 
+  onBack, 
+  nextDisabled = false, 
+  showNext = true, 
+  showBack = true,
+  nextLabel = "Next"
+}) => (
   <motion.div 
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -10 }}
-    className={`w-full ${showPreview ? 'max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-12' : 'max-w-md mx-auto'} py-12 px-6`}
+    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+    className="w-full max-w-[420px] mx-auto pt-20 pb-12 px-6 flex flex-col min-h-[500px]"
   >
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-text-primary mb-2">{title}</h1>
-        {subtitle && <p className="text-sm text-text-secondary font-normal">{subtitle}</p>}
+    <div className="flex-1 flex flex-col justify-center space-y-10">
+      <div className="space-y-1 text-center">
+        <h1 className="text-xl font-medium tracking-tight text-text-primary px-4">{title}</h1>
+        {subtitle && <p className="text-[11px] text-text-tertiary font-normal max-w-[280px] mx-auto leading-relaxed">{subtitle}</p>}
       </div>
-      <div className="space-y-6">
+      
+      <div className="flex-1 flex flex-col justify-center">
         {children}
       </div>
+    </div>
+
+    <div className="pt-10 flex flex-col gap-3">
+      {showNext && (
+        <Button 
+          onClick={onNext} 
+          disabled={nextDisabled} 
+          className="w-full h-12 rounded-2xl bg-brand text-white font-medium text-[11px] uppercase tracking-widest shadow-lg shadow-brand/10 transition-all active:scale-[0.98] disabled:opacity-30"
+        >
+          {nextLabel}
+        </Button>
+      )}
+      {showBack && (
+        <button 
+          onClick={onBack} 
+          className="w-full py-2 text-[10px] font-normal text-text-tertiary uppercase tracking-widest hover:text-text-primary transition-colors flex items-center justify-center gap-1.5"
+        >
+          <ChevronLeft size={12} /> Back
+        </button>
+      )}
     </div>
   </motion.div>
 );
 
-const PreviewCard: React.FC<{ business: { name: string; category: string; logo: string | null; primaryColor: string; coverImage: string | null; headline?: string; heroTitle?: string; subtext?: string; heroSubtitle?: string } }> = ({ business }) => (
-  <div className="hidden lg:block sticky top-24">
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-border-light min-h-[500px] flex flex-col">
-      <div className="h-4 w-full bg-bg-secondary flex gap-1.5 px-3 items-center border-b border-border-light">
-        <div className="w-1.5 h-1.5 rounded-full bg-border-default" />
-        <div className="w-1.5 h-1.5 rounded-full bg-border-default" />
-        <div className="w-1.5 h-1.5 rounded-full bg-border-default" />
-      </div>
-      
-      {/* Header Preview */}
-      <div className="p-6 flex items-center justify-between border-b border-border-light bg-white">
-        <div className="flex items-center gap-2">
-           {business.logo ? (
-             <img src={business.logo} alt="Logo" className="h-6 w-auto" />
-           ) : (
-             <div className="w-6 h-6 rounded bg-brand flex items-center justify-center text-white text-[10px] font-bold">B</div>
-           )}
-           <span className="text-sm font-semibold tracking-tight">{business.name || 'Your Business'}</span>
-        </div>
-        <div className="flex gap-4">
-          <div className="h-2 w-10 bg-bg-secondary rounded" />
-          <div className="h-2 w-10 bg-bg-secondary rounded" />
-        </div>
-      </div>
-
-      {/* Hero Preview */}
-      <div className="relative flex-1">
-        <div className={`absolute inset-0 transition-all duration-700 ${business.coverImage ? 'bg-black/20' : 'bg-bg-tertiary'}`}>
-          {business.coverImage && <img src={business.coverImage} className="w-full h-full object-cover" alt="Hero" />}
-        </div>
-        <div className="relative h-full p-10 flex flex-col justify-center items-center text-center space-y-4">
-          <h2 className={`text-2xl font-bold tracking-tight transition-all ${business.coverImage ? 'text-white drop-shadow-md' : 'text-text-primary'}`}>
-            {business.headline || 'Your Headline Here'}
-          </h2>
-          <p className={`text-xs max-w-[240px] leading-relaxed ${business.coverImage ? 'text-white/90 drop-shadow-sm' : 'text-text-secondary'}`}>
-            {business.subtext || 'Provide more details about what you offer to your potential customers.'}
-          </p>
-          <div 
-            className="px-6 py-2.5 rounded-xl text-white text-xs font-bold shadow-lg transition-transform" 
-            style={{ backgroundColor: business.primaryColor }}
-          >
-            Book Now
-          </div>
-        </div>
-      </div>
-      
-      {/* Services Preview Mockup */}
-      <div className="p-8 bg-white space-y-4">
-        <div className="h-3 w-24 bg-bg-secondary rounded" />
-        <div className="grid grid-cols-2 gap-4">
-           <div className="h-20 border border-border-light rounded-xl bg-bg-secondary/50 p-4 space-y-2">
-              <div className="h-2 w-16 bg-border-light rounded" />
-              <div className="h-3 w-10 bg-border-default rounded" />
-           </div>
-           <div className="h-20 border border-border-light rounded-xl bg-bg-secondary/50 p-4 space-y-2">
-              <div className="h-2 w-16 bg-border-light rounded" />
-              <div className="h-3 w-10 bg-border-default rounded" />
-           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 export const OnboardingFlow: React.FC = () => {
-  const { onboardingStep, setOnboardingStep, business, updateBusiness, user, fetchBusiness } = useAppStore();
+  const { onboardingStep, setOnboardingStep, business, updateBusiness, user, fetchBusiness, addService } = useAppStore();
   const navigate = useNavigate();
   const [isSuccess, setIsSuccess] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [initError, setInitError] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(false);
 
-  // Initialize business if it doesn't exist
+  // Local state for complex steps
+  const [tempService, setTempService] = useState({ name: '', price: 0, duration: 60 });
+  const [tempAddOns, setTempAddOns] = useState<{name: string, price: number}[]>([]);
+  const [feeEnabled, setFeeEnabled] = useState(false);
+  const [feeAmount, setFeeAmount] = useState(0);
+
   useEffect(() => {
-    if (!user) return;
-    if (business) return;
-    if (initializing) return;
+    if (!user || business || initializing) return;
 
     const init = async () => {
       setInitializing(true);
-      setInitError(null);
-      
       try {
-        // First check if business already exists
         const { data: existing, error: fetchError } = await supabase
           .from('businesses')
           .select('id')
@@ -131,14 +107,11 @@ export const OnboardingFlow: React.FC = () => {
           .maybeSingle();
 
         if (fetchError) throw fetchError;
-
         if (existing) {
-          // Business exists, just fetch it fully
           await fetchBusiness();
           return;
         }
 
-        // Create new business
         const { data, error } = await supabase
           .from('businesses')
           .insert([{ 
@@ -146,15 +119,14 @@ export const OnboardingFlow: React.FC = () => {
             name: '',
             subdomain: `biz-${user.id.slice(0, 8)}`,
             primary_color: '#4F46E5',
-            trust_section: 'none'
+            trust_section: 'none',
+            template_key: 'clean_classic'
           }])
           .select()
           .single();
         
         if (error) throw error;
-
         if (data) {
-          // Initialize availability
           const days = [0, 1, 2, 3, 4, 5, 6];
           const availability = days.map(d => ({
             business_id: data.id,
@@ -163,13 +135,11 @@ export const OnboardingFlow: React.FC = () => {
             end_time: '17:00',
             is_open: d !== 0 && d !== 6
           }));
-
           await supabase.from('availability').insert(availability);
           await fetchBusiness();
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error('Onboarding init error:', err);
-        setInitError(err instanceof Error ? err.message : 'Failed to initialize. Please try again.');
       } finally {
         setInitializing(false);
       }
@@ -179,7 +149,14 @@ export const OnboardingFlow: React.FC = () => {
 
   const totalSteps = 13;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (onboardingStep === 7) {
+       // Save the first service
+       if (tempService.name) {
+          await addService({ ...tempService, active: true, bookingFeeEnabled: feeEnabled, bookingFeeAmount: feeAmount, addOns: tempAddOns });
+       }
+    }
+    
     if (onboardingStep < totalSteps) {
       setOnboardingStep(onboardingStep + 1);
     } else {
@@ -195,544 +172,513 @@ export const OnboardingFlow: React.FC = () => {
 
   const categories = ['Beauty', 'Fitness', 'Wellness', 'Education', 'Events', 'Professional', 'Other'];
 
-  if (isSuccess && business) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-700">
-        <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center text-white mb-8 shadow-xl shadow-success/20">
-          <Check size={32} strokeWidth={3} />
-        </div>
-        <h1 className="text-4xl font-bold tracking-tight text-text-primary mb-2">Your site is ready</h1>
-        <p className="text-text-secondary mb-12 text-center max-w-sm">Congratulations! You've successfully set up your professional booking presence.</p>
-        
-        <Card className="w-full max-w-sm p-6 mb-12 border-border-light shadow-xl shadow-black/5 overflow-hidden group">
-           <div className="h-40 bg-bg-secondary rounded-xl mb-6 relative overflow-hidden">
-              <div className="absolute inset-0 bg-brand/5 flex items-center justify-center">
-                 <Globe className="text-brand opacity-10" size={100} />
-              </div>
-              <div className="absolute inset-0 p-4 flex flex-col justify-end">
-                <p className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">Live Website</p>
-                <p className="text-sm font-semibold truncate">{business.name?.toLowerCase().replace(/\s+/g, '-') || 'site'}.bookflow.ca</p>
-              </div>
-           </div>
-           <div className="space-y-4">
-              <Button className="w-full h-12 rounded-xl text-sm font-bold shadow-lg" onClick={() => window.open('/p/preview', '_blank')}>
-                View website
-              </Button>
-              <Button variant="secondary" className="w-full h-12 rounded-xl text-sm font-bold border-border-default" onClick={() => navigate('/dashboard')}>
-                Go to dashboard
-              </Button>
-           </div>
-        </Card>
-      </div>
-    );
-  }
-
-  // Not logged in — redirect
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-bg-secondary gap-4">
-        <p className="text-sm text-text-secondary font-medium">Please sign in to continue</p>
-        <Button className="h-10 px-6 rounded-xl font-bold" onClick={() => navigate('/login')}>Go to Login</Button>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6">
+        <p className="text-sm text-text-tertiary font-normal mb-6">Access restricted. Please sign in.</p>
+        <Button className="h-12 px-8 rounded-2xl font-medium text-[11px] uppercase tracking-widest bg-brand text-white" onClick={() => navigate('/login')}>Sign In</Button>
       </div>
     );
   }
 
-  // Still loading business
   if (!business) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-bg-secondary gap-6">
-        {initError ? (
-          <>
-            <div className="w-12 h-12 bg-error/10 rounded-2xl flex items-center justify-center">
-              <span className="text-xl text-error">!</span>
-            </div>
-            <p className="text-sm text-error font-medium text-center max-w-xs">{initError}</p>
-            <Button className="h-10 px-6 rounded-xl font-bold" onClick={() => { setInitError(null); setInitializing(false); }}>
-              Try Again
-            </Button>
-          </>
-        ) : (
-          <>
-            <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs text-text-tertiary font-medium">Setting up your workspace...</p>
-          </>
-        )}
+      <div className="min-h-screen bg-white flex items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-4">
+           <div className="w-1.5 h-1.5 rounded-full bg-brand animate-ping" />
+           <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-normal">Initializing your workspace</p>
+        </div>
       </div>
+    );
+  }
+
+  if (isSuccess) {
+    return (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 animate-in fade-in duration-700">
+           <div className="w-full max-w-sm space-y-12 text-center">
+              <div className="space-y-4">
+                <div className="w-14 h-14 bg-success/5 rounded-3xl flex items-center justify-center text-success mx-auto">
+                    <CheckCircle2 size={32} />
+                </div>
+                <h1 className="text-2xl font-medium tracking-tight text-text-primary">Your site is ready</h1>
+                <p className="text-[11px] text-text-tertiary font-normal max-w-[280px] mx-auto leading-relaxed">Your professional booking site is live and ready for customers.</p>
+              </div>
+
+              <Card className="p-8 rounded-[38px] border-border-light/50 shadow-sm bg-bg-secondary/20 space-y-8">
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-normal text-text-tertiary uppercase tracking-widest leading-none">Live URL</p>
+                    <p className="text-sm font-medium text-brand truncate">{business.subdomain}.bookflow.ca</p>
+                 </div>
+                 <div className="space-y-3">
+                    <Button className="w-full h-12 rounded-2xl bg-brand text-white font-medium text-[11px] uppercase tracking-widest shadow-lg shadow-brand/10" onClick={() => window.open(`/p/${business.subdomain}`, '_blank')}>
+                        <ExternalLink size={14} className="mr-2" /> View Site
+                    </Button>
+                    <Button variant="secondary" className="w-full h-12 rounded-2xl font-medium text-[11px] uppercase tracking-widest border-border-light/50" onClick={() => navigate('/dashboard')}>
+                        Dashboard
+                    </Button>
+                 </div>
+              </Card>
+           </div>
+        </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg-secondary flex flex-col items-center">
-      {/* Navigation & Progress */}
-      <header className="w-full h-20 bg-white/80 backdrop-blur-md border-b border-border-light sticky top-0 z-50 flex items-center px-6 lg:px-12 justify-between">
-         <div className="flex items-center gap-3">
-           <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic">B</div>
-           <span className="font-semibold text-lg tracking-tight hidden sm:block">Bookflow</span>
-         </div>
-         
-         <div className="flex flex-col items-center gap-2 flex-1 max-w-md px-10">
-            <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-               <motion.div 
-                 className="h-full bg-brand" 
-                 initial={false}
-                 animate={{ width: `${(onboardingStep / totalSteps) * 100}%` }}
-               />
-            </div>
-            <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Setup step {onboardingStep} of {totalSteps}</span>
-         </div>
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="fixed top-0 left-0 w-full h-[3px] bg-bg-tertiary z-60">
+        <motion.div 
+          className="h-full bg-brand" 
+          initial={false}
+          animate={{ width: `${(onboardingStep / totalSteps) * 100}%` }}
+          transition={{ duration: 0.5, ease: "circOut" }}
+        />
+      </div>
 
-         <div className="flex gap-2">
-            <Button variant="ghost" size="sm" className="hidden sm:flex text-text-secondary hover:text-text-primary px-3" onClick={() => navigate('/dashboard')}>Exit</Button>
+      <header className="fixed top-0 left-0 w-full h-20 flex items-center justify-between px-8 z-50">
+         <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-brand flex items-center justify-center text-white italic font-bold text-xs shadow-sm">B</div>
+            <span className="text-[11px] font-medium tracking-[0.2em] uppercase text-text-primary">Bukd</span>
          </div>
+         <button onClick={() => navigate('/dashboard')} className="text-[10px] font-normal text-text-tertiary uppercase tracking-widest hover:text-text-primary transition-colors">Exit</button>
       </header>
 
-      <main className="flex-1 w-full flex justify-center">
+      <main className="flex-1 flex flex-col justify-center">
         <AnimatePresence mode="wait">
           {onboardingStep === 1 && (
-            <StepWrapper key="step1" title="What’s your business called?" subtitle="This is the primary name your customers will see.">
+            <StepWrapper 
+              key="step1" 
+              title="What’s your business called?" 
+              onNext={handleNext}
+              showBack={false}
+              nextDisabled={!business.name}
+            >
               <Input 
-                placeholder="e.g. Glow Beauty Bar" 
+                placeholder="e.g. Lavender Spa" 
                 value={business.name} 
-                className="h-14 text-lg"
                 onChange={(e) => updateBusiness({ name: e.target.value })}
+                className="h-14 border-none bg-bg-secondary/30 rounded-2xl text-center text-lg placeholder:text-text-tertiary focus:bg-white focus:shadow-sm transition-all"
                 autoFocus
               />
-              <Button className="w-full h-12 rounded-xl font-bold mt-4" onClick={handleNext} disabled={!business.name}>Continue</Button>
-              <button onClick={handleNext} className="text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase mt-3">Skip for now</button>
             </StepWrapper>
           )}
 
           {onboardingStep === 2 && (
-            <StepWrapper key="step2" title="Pick your category" subtitle="Help us tailor the experience for your industry.">
+            <StepWrapper 
+              key="step2" 
+              title="What do you offer?" 
+              onNext={handleNext}
+              onBack={handleBack}
+              nextDisabled={!business.category}
+            >
               <div className="grid grid-cols-2 gap-3">
                 {categories.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => { updateBusiness({ category: cat }); handleNext(); }}
-                    className={`h-14 rounded-xl border-2 transition-all flex items-center justify-center text-sm font-semibold ${business.category === cat ? 'border-brand bg-brand-light text-brand shadow-sm shadow-brand/10' : 'border-border-default bg-white hover:border-border-light hover:bg-bg-tertiary text-text-secondary'}`}
+                    className={`h-16 rounded-2xl border transition-all text-[11px] font-medium uppercase tracking-widest ${business.category === cat ? 'border-brand/40 bg-brand/5 text-brand' : 'border-border-light/50 bg-white text-text-tertiary hover:bg-bg-secondary/40'}`}
                   >
                     {cat}
                   </button>
                 ))}
               </div>
-              <div className="pt-6">
-                <button onClick={handleBack} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
-              </div>
             </StepWrapper>
           )}
 
           {onboardingStep === 3 && (
-            <StepWrapper key="step3" title="Add your logo" subtitle="PNG or JPG preferred. We recommend a square icon." showPreview>
-              <div className="space-y-6 flex-1">
-                <div className="h-48 rounded-2xl border-2 border-dashed border-border-default flex flex-col items-center justify-center bg-white group hover:border-brand/40 transition-colors cursor-pointer relative overflow-hidden">
-                  {business.logo ? (
-                    <img src={business.logo} className="h-20 w-auto" alt="Logo preview" />
-                  ) : (
-                    <>
-                      <Upload className="text-text-tertiary mb-3 group-hover:text-brand transition-colors" size={24} />
-                      <p className="text-sm font-medium text-text-secondary group-hover:text-text-primary transition-colors">Click to upload</p>
-                    </>
-                  )}
-                  <input 
-                    type="file" 
-                    className="absolute inset-0 opacity-0 cursor-pointer" 
-                    disabled={uploading}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file && business) {
-                        setUploading(true);
-                        try {
-                          const fileExt = file.name.split('.').pop();
-                          const fileName = `logo-${Date.now()}.${fileExt}`;
-                          const filePath = `${business.id}/${fileName}`;
-
-                          const { error: uploadError } = await supabase.storage
-                            .from('business-assets')
-                            .upload(filePath, file);
-
-                          if (uploadError) throw uploadError;
-
-                          const { data: { publicUrl } } = supabase.storage
-                            .from('business-assets')
-                            .getPublicUrl(filePath);
-
-                          await updateBusiness({ logo: publicUrl });
-                        } catch (err: any) {
-                          alert(err.message);
-                        } finally {
-                          setUploading(false);
-                        }
-                      }
-                    }}
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip for now</Button>
-                  <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext} disabled={!business.logo}>Continue</Button>
-                </div>
-                <button onClick={handleBack} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
+            <StepWrapper 
+              key="step3" 
+              title="Add your logo" 
+              onNext={handleNext}
+              onBack={handleBack}
+            >
+              <div className="flex flex-col items-center gap-6">
+                 <div className="w-24 h-24 rounded-[32px] border border-dashed border-border-light bg-bg-secondary/20 flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer hover:bg-bg-secondary/40 transition-all">
+                    {uploading ? (
+                      <div className="w-4 h-4 rounded-full bg-brand animate-pulse" />
+                    ) : (
+                      business.logo ? (
+                        <img src={business.logo} className="w-full h-full object-cover p-3" alt="Logo preview" />
+                      ) : (
+                        <Upload className="text-text-tertiary group-hover:text-brand transition-colors" size={20} />
+                      )
+                    )}
+                    <input 
+                       type="file" 
+                       className="absolute inset-0 opacity-0 cursor-pointer"
+                       onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                             setUploading(true);
+                             const fileExt = file.name.split('.').pop();
+                             const filePath = `${business.id}/logo-${Date.now()}.${fileExt}`;
+                             const { error } = await supabase.storage.from('business-assets').upload(filePath, file);
+                             if (!error) {
+                                const { data: { publicUrl } } = supabase.storage.from('business-assets').getPublicUrl(filePath);
+                                await updateBusiness({ logo: publicUrl });
+                             }
+                             setUploading(false);
+                          }
+                       }}
+                    />
+                 </div>
+                 <p className="text-[10px] text-text-tertiary font-normal text-center opacity-60">PNG or JPG, square preferred.</p>
               </div>
-              <PreviewCard business={{ ...business, headline: business.heroTitle || '', subtext: business.heroSubtitle || '', logo: business.logo, primaryColor: business.primaryColor, coverImage: business.coverImage, category: business.category, name: business.name } as any} />
             </StepWrapper>
           )}
 
           {onboardingStep === 4 && (
-            <StepWrapper key="step4" title="Pick your brand color" subtitle="This will be used for buttons, links, and highlights." showPreview>
-              <div className="space-y-6 flex-1">
-                <div className="grid grid-cols-4 gap-4">
-                  {['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6', '#3B82F6', '#111111'].map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => updateBusiness({ primaryColor: color })}
-                      className={`h-12 w-full rounded-xl transition-transform hover:scale-105 ${business.primaryColor === color ? 'ring-4 ring-offset-2 ring-brand/10 border-4 border-white' : ''}`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                  <div className="col-span-4 relative h-12 rounded-xl border border-border-default overflow-hidden flex items-center px-4 bg-white">
-                    <input 
-                      type="color" 
-                      value={business.primaryColor} 
-                      onChange={(e) => updateBusiness({ primaryColor: e.target.value })}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    <div className="w-5 h-5 rounded-full mr-3" style={{ backgroundColor: business.primaryColor }} />
-                    <span className="text-sm font-medium uppercase">{business.primaryColor}</span>
-                    <span className="ml-auto text-[10px] font-bold text-text-tertiary tracking-widest">CUSTOM</span>
-                  </div>
-                </div>
-                <div className="flex gap-4 mt-4">
-                  <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
-                  <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
-                </div>
-                <button onClick={handleBack} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
+            <StepWrapper 
+              key="step4" 
+              title="Pick a color" 
+              onNext={handleNext}
+              onBack={handleBack}
+            >
+              <div className="space-y-8">
+                 <div className="flex flex-wrap justify-center gap-3">
+                    {['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6', '#3B82F6', '#111111'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => updateBusiness({ primaryColor: color })}
+                        className={`w-9 h-9 rounded-xl transition-all ${business.primaryColor === color ? 'ring-4 ring-brand/10 border-2 border-white scale-110 shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                 </div>
+                 <div className="flex justify-center flex-col items-center gap-3">
+                    <div className="relative w-full h-12 bg-bg-secondary/30 rounded-2xl flex items-center px-4 overflow-hidden border border-border-light/20">
+                       <input 
+                         type="color" 
+                         value={business.primaryColor} 
+                         onChange={(e) => updateBusiness({ primaryColor: e.target.value })}
+                         className="absolute inset-0 opacity-0 cursor-pointer"
+                       />
+                       <div className="w-4 h-4 rounded-full mr-3 border border-border-light/50" style={{ backgroundColor: business.primaryColor }} />
+                       <span className="text-[11px] font-medium uppercase tabular-nums text-text-primary">{business.primaryColor}</span>
+                       <span className="ml-auto text-[9px] font-normal text-text-tertiary uppercase tracking-widest">Custom</span>
+                    </div>
+                 </div>
               </div>
-              <PreviewCard business={business} />
             </StepWrapper>
           )}
 
           {onboardingStep === 5 && (
-            <StepWrapper key="step5" title="Set a cover image" subtitle="The first thing customers see when they land on your site." showPreview>
-              <div className="space-y-6 flex-1">
-                <div className="h-64 rounded-2xl border-2 border-dashed border-border-default flex flex-col items-center justify-center bg-white group hover:border-brand/40 transition-colors cursor-pointer relative overflow-hidden">
-                  {business.coverImage ? (
-                    <img src={business.coverImage} className="w-full h-full object-cover" alt="Cover preview" />
-                  ) : (
-                    <>
-                      <ImageIcon className="text-text-tertiary mb-3 group-hover:text-brand transition-colors" size={32} />
-                      <p className="text-sm font-medium text-text-secondary group-hover:text-text-primary transition-colors">Add your business photo</p>
-                      <p className="text-[10px] text-text-tertiary mt-2">Landscape works best</p>
-                    </>
-                  )}
-                  <input 
-                    type="file" 
-                    className="absolute inset-0 opacity-0 cursor-pointer" 
-                    disabled={uploading}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file && business) {
-                        setUploading(true);
-                        try {
-                          const fileExt = file.name.split('.').pop();
-                          const fileName = `cover-${Date.now()}.${fileExt}`;
-                          const filePath = `${business.id}/${fileName}`;
-
-                          const { error: uploadError } = await supabase.storage
-                            .from('business-assets')
-                            .upload(filePath, file);
-
-                          if (uploadError) throw uploadError;
-
-                          const { data: { publicUrl } } = supabase.storage
-                            .from('business-assets')
-                            .getPublicUrl(filePath);
-
-                          await updateBusiness({ coverImage: publicUrl });
-                        } catch (err: any) {
-                          alert(err.message);
-                        } finally {
-                          setUploading(false);
-                        }
-                      }
-                    }}
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip for now</Button>
-                  <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext} disabled={!business.coverImage}>Continue</Button>
-                </div>
-                <button onClick={handleBack} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
+            <StepWrapper 
+              key="step5" 
+              title="Add a cover image" 
+              onNext={handleNext}
+              onBack={handleBack}
+            >
+              <div className="flex flex-col items-center gap-6">
+                 <div className="w-full h-44 rounded-[32px] border border-dashed border-border-light bg-bg-secondary/10 flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer hover:bg-bg-secondary/20 transition-all">
+                    {uploading ? (
+                      <div className="w-4 h-4 rounded-full bg-brand animate-pulse" />
+                    ) : (
+                      business.coverImage ? (
+                        <img src={business.coverImage} className="w-full h-full object-cover" alt="Cover preview" />
+                      ) : (
+                        <ImageIcon className="text-text-tertiary group-hover:text-brand transition-colors" size={24} />
+                      )
+                    )}
+                    <input 
+                       type="file" 
+                       className="absolute inset-0 opacity-0 cursor-pointer"
+                       onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                             setUploading(true);
+                             const fileExt = file.name.split('.').pop();
+                             const filePath = `${business.id}/cover-${Date.now()}.${fileExt}`;
+                             await supabase.storage.from('business-assets').upload(filePath, file);
+                             const { data: { publicUrl } } = supabase.storage.from('business-assets').getPublicUrl(filePath);
+                             await updateBusiness({ coverImage: publicUrl });
+                             setUploading(false);
+                          }
+                       }}
+                    />
+                 </div>
+                 <p className="text-[10px] text-text-tertiary font-normal text-center opacity-60 px-8">This background defines your brand's atmosphere.</p>
               </div>
-              <PreviewCard business={business} />
             </StepWrapper>
           )}
 
-          {onboardingStep === 6 && business && (
-            <StepWrapper key="step6" title="Welcome your customers" subtitle="Write a clear headline and subtext for your hero section." showPreview>
-              <div className="space-y-6 flex-1">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Headline</label>
-                  <Input 
-                    placeholder="e.g. Look your best with curated beauty" 
-                    value={business.heroTitle || ''} 
-                    className="h-12"
-                    onChange={(e) => updateBusiness({ heroTitle: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Subtext</label>
-                  <textarea 
-                    placeholder="Briefly explain what you do..." 
-                    value={business.heroSubtitle || ''} 
-                    rows={3}
-                    className="w-full rounded-xl border border-border-default p-4 text-sm focus:outline-none focus:border-brand transition-colors"
-                    onChange={(e) => updateBusiness({ heroSubtitle: e.target.value })}
-                  />
-                </div>
-                <div className="flex gap-4 mt-4">
-                  <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
-                  <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext} disabled={!business.heroTitle}>Continue</Button>
-                </div>
-                <button onClick={handleBack} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
+          {onboardingStep === 6 && (
+            <StepWrapper 
+              key="step6" 
+              title="Describe your service" 
+              onNext={handleNext}
+              onBack={handleBack}
+              nextDisabled={!business.heroTitle}
+            >
+              <div className="space-y-4">
+                 <Input 
+                   label="Headline"
+                   placeholder="e.g. Masterful Skin Care"
+                   value={business.heroTitle}
+                   onChange={(e) => updateBusiness({ heroTitle: e.target.value })}
+                   className="rounded-2xl bg-bg-secondary/20 border-border-light/40"
+                 />
+                 <Input 
+                   label="Subtext"
+                   placeholder="e.g. Luxury treatments in a calm environment."
+                   value={business.heroSubtitle}
+                   onChange={(e) => updateBusiness({ heroSubtitle: e.target.value })}
+                   className="rounded-2xl bg-bg-secondary/20 border-border-light/40"
+                 />
               </div>
-              <PreviewCard business={{ ...business, headline: business.heroTitle, subtext: business.heroSubtitle } as any} />
             </StepWrapper>
           )}
 
           {onboardingStep === 7 && (
-            <StepWrapper key="step7" title="Add your first service" subtitle="What is the main service you want to start with?">
-              <Input 
-                placeholder="e.g. Signature Haircut or Consultation" 
-                className="h-14 text-lg"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleNext();
-                }}
-              />
-              <p className="text-[10px] text-text-tertiary mt-2 text-center font-medium opacity-60 italic">You can add more services later in the dashboard.</p>
-              <div className="flex gap-4 mt-8">
-                <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
-                <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
+            <StepWrapper 
+              key="step7" 
+              title="Add your first service" 
+              onNext={handleNext}
+              onBack={handleBack}
+              nextDisabled={!tempService.name}
+            >
+              <div className="space-y-4">
+                 <Input 
+                    label="Name" 
+                    placeholder="e.g. Classic Mani" 
+                    value={tempService.name}
+                    onChange={e => setTempService(p => ({ ...p, name: e.target.value }))}
+                    className="rounded-2xl bg-bg-secondary/20 border-border-light/40" 
+                 />
+                 <div className="grid grid-cols-2 gap-4">
+                    <Input 
+                      label="Price ($)" 
+                      placeholder="0" 
+                      type="number" 
+                      value={tempService.price || ''}
+                      onChange={e => setTempService(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+                      className="rounded-2xl bg-bg-secondary/20 border-border-light/40" 
+                    />
+                    <Input 
+                      label="Duration (m)" 
+                      placeholder="60" 
+                      type="number" 
+                      value={tempService.duration || ''}
+                      onChange={e => setTempService(p => ({ ...p, duration: parseInt(e.target.value) || 0 }))}
+                      className="rounded-2xl bg-bg-secondary/20 border-border-light/40" 
+                    />
+                 </div>
               </div>
             </StepWrapper>
           )}
 
           {onboardingStep === 8 && (
-            <StepWrapper key="step8" title="Set price and duration" subtitle="Help your customers know what to expect.">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2 text-center">
-                  <label className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Base Price</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary font-bold">$</span>
-                    <Input placeholder="0" className="h-14 pl-10 text-xl font-bold text-center pr-4" type="number" />
-                  </div>
-                </div>
-                <div className="space-y-2 text-center">
-                  <label className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Duration</label>
-                  <div className="relative">
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-text-tertiary tracking-widest uppercase">MIN</span>
-                    <Input placeholder="30" className="h-14 pr-12 text-xl font-bold text-center pl-4" type="number" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-4 mt-8">
-                <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
-                <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
-              </div>
-              <button onClick={handleBack} className="mt-6 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
+            <StepWrapper 
+              key="step8" 
+              title="Require a booking fee?" 
+              onNext={handleNext}
+              onBack={handleBack}
+            >
+              <Card className="p-6 rounded-[32px] border-border-light/50 bg-bg-secondary/10 space-y-6">
+                 <div className="flex items-center justify-between">
+                    <div>
+                       <p className="text-xs font-medium text-text-primary">Enable Fee</p>
+                       <p className="text-[10px] text-text-tertiary font-normal">Collect deposit upfront</p>
+                    </div>
+                    <button 
+                      onClick={() => setFeeEnabled(!feeEnabled)}
+                      className={`w-11 h-6.5 rounded-full transition-all duration-300 relative flex items-center px-1 cursor-pointer ${feeEnabled ? 'bg-brand shadow-lg shadow-brand/10' : 'bg-bg-tertiary'}`}
+                    >
+                      <div className={`w-4.5 h-4.5 rounded-full bg-white shadow-sm transition-all duration-300 ${feeEnabled ? 'translate-x-4.5' : 'translate-x-0'}`} />
+                    </button>
+                 </div>
+                 {feeEnabled && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+                      <Input 
+                        placeholder="Deposit Amount ($)" 
+                        type="number"
+                        value={feeAmount || ''}
+                        onChange={e => setFeeAmount(parseFloat(e.target.value) || 0)}
+                        className="rounded-2xl bg-white border-border-light/40 text-center"
+                      />
+                    </motion.div>
+                 )}
+              </Card>
             </StepWrapper>
           )}
 
           {onboardingStep === 9 && (
-            <StepWrapper key="step9" title="Add a booking fee?" subtitle="Collect a non-refundable deposit to secure appointments.">
-              <div className="grid grid-cols-1 gap-4">
-                 <button className="h-20 w-full rounded-2xl border-2 border-border-default bg-white p-6 flex items-center justify-between group hover:border-brand transition-all">
-                    <div className="text-left">
-                      <p className="font-semibold text-text-primary">No booking fee</p>
-                      <p className="text-[10px] text-text-tertiary mt-0.5">Customers pay full amount after service.</p>
-                    </div>
-                    <div className="w-6 h-6 rounded-full border-2 border-border-default" />
-                 </button>
-                 <div className="h-24 w-full rounded-2xl border-2 border-brand bg-brand-light/20 p-6 flex items-center justify-between">
-                    <div className="text-left flex-1 mr-6">
-                      <p className="font-semibold text-brand">Add deposit</p>
-                      <div className="relative mt-2 max-w-[120px]">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand font-bold text-sm">$</span>
-                        <input className="w-full h-10 border-2 border-brand/20 rounded-lg bg-white pl-7 pr-3 text-sm font-bold focus:outline-none focus:border-brand" placeholder="25" />
+            <StepWrapper 
+              key="step9" 
+              title="Add extras (optional)" 
+              onNext={handleNext} 
+              onBack={handleBack}
+              nextLabel={tempAddOns.length > 0 ? "Continue" : "Skip for now"}
+            >
+              <div className="space-y-3">
+                 {tempAddOns.map((addon, i) => (
+                   <div key={i} className="flex gap-2 p-4 rounded-2xl bg-bg-secondary/20 border border-border-light/40 items-center">
+                      <div className="flex-1 min-w-0">
+                         <p className="text-[11px] font-medium text-text-primary truncate">{addon.name}</p>
+                         <p className="text-[9px] text-text-tertiary font-normal">${addon.price}</p>
                       </div>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-white"><Check size={14} strokeWidth={4} /></div>
-                 </div>
+                      <button 
+                        onClick={() => setTempAddOns(p => p.filter((_, idx) => idx !== i))}
+                        className="p-2 text-text-tertiary hover:text-error transition-colors"
+                      >
+                         <Trash2 size={12} />
+                      </button>
+                   </div>
+                 ))}
+                 <button 
+                    onClick={() => {
+                        const name = prompt('Add-on Name?');
+                        const price = parseFloat(prompt('Price?') || '0');
+                        if (name) setTempAddOns(p => [...p, { name, price }]);
+                    }}
+                    className="w-full h-12 rounded-2xl border border-dashed border-border-light flex items-center justify-center gap-2 text-[10px] font-medium text-text-tertiary uppercase tracking-widest hover:border-brand/40 hover:text-brand transition-all"
+                 >
+                    <Plus size={14} /> Add option
+                 </button>
               </div>
-              <div className="flex gap-4 mt-8">
-                <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
-                <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
-              </div>
-              <button onClick={handleBack} className="mt-6 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
             </StepWrapper>
           )}
 
           {onboardingStep === 10 && (
-            <StepWrapper key="step10" title="Offer any add-ons?" subtitle="Perfect for upsells like 'Extra hydration mask' or '+15 min massage'.">
-               <div className="space-y-4">
-                  <div className="flex gap-4 p-4 rounded-xl bg-white border border-border-light items-center group">
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold">Extra hot stones</p>
-                      <p className="text-[10px] text-text-tertiary">+$15</p>
-                    </div>
-                    <button className="p-2 text-text-tertiary hover:text-error hover:bg-error/5 rounded-lg"><Trash2 size={16} /></button>
-                  </div>
-                  <button className="w-full h-12 rounded-xl border-2 border-dashed border-border-default flex items-center justify-center gap-2 text-xs font-bold text-text-tertiary hover:border-brand/40 hover:text-brand transition-all">
-                     <Plus size={16} />
-                     Add option
-                  </button>
-               </div>
-               <div className="flex gap-4 pt-8">
-                  <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Maybe later</Button>
-                  <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
-               </div>
-               <button onClick={handleBack} className="mt-6 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
+            <StepWrapper 
+              key="step10" 
+              title="Show reviews or work?" 
+              onNext={handleNext}
+              onBack={handleBack}
+            >
+              <div className="space-y-3">
+                 {[
+                   { id: 'reviews', label: 'Reviews', icon: <Star size={16} className="text-amber-400" /> },
+                   { id: 'gallery', label: 'Photos', icon: <ImageIcon size={16} className="text-blue-400" /> },
+                   { id: 'both', label: 'Both Sections', icon: <ShieldCheck size={16} className="text-success" /> }
+                 ].map((opt) => (
+                   <button
+                    key={opt.id}
+                    onClick={() => { updateBusiness({ trustSection: opt.id as any }); handleNext(); }}
+                    className={`w-full p-5 rounded-3xl border transition-all flex items-center gap-4 ${business.trustSection === opt.id ? 'border-brand/40 bg-brand/5' : 'border-border-light/50 bg-white hover:bg-bg-secondary/10'}`}
+                   >
+                     <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${business.trustSection === opt.id ? 'bg-white shadow-sm' : 'bg-bg-secondary/50'}`}>
+                        {opt.icon}
+                     </div>
+                     <span className="text-[11px] font-medium text-text-primary uppercase tracking-widest">{opt.label}</span>
+                     {business.trustSection === opt.id && <Check size={14} className="ml-auto text-brand" />}
+                   </button>
+                 ))}
+              </div>
             </StepWrapper>
           )}
 
           {onboardingStep === 11 && (
-            <StepWrapper key="step11" title="Build direct trust" subtitle="Which sections should we include to show your expertise?">
-               <div className="grid grid-cols-1 gap-4">
-                  {[
-                    { id: 'reviews' as const, label: 'Client Reviews' as const, sub: 'Import or add text reviews.' as const, icon: <Star className="text-amber-400" size={20} /> },
-                    { id: 'proof' as const, label: 'Proof of Work' as const, sub: 'Photos of your best results.' as const, icon: <ImageIcon className="text-blue-400" size={20} /> },
-                    { id: 'both' as const, label: 'Both Sections' as const, sub: 'The ultimate professional look.' as const, icon: <ShieldCheck className="text-success" size={20} /> },
-                  ].map((option) => (
-                    <button
-                      key={option.id}
-                      onClick={() => updateBusiness({ trustSection: option.id })}
-                      className={`p-5 rounded-2xl border-2 transition-all flex items-center gap-5 text-left ${business.trustSection === option.id ? 'border-brand bg-brand-light/30 shadow-sm' : 'border-border-default bg-white hover:border-border-light'}`}
-                    >
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${business.trustSection === option.id ? 'bg-white shadow-sm' : 'bg-bg-secondary'}`}>
-                        {option.icon}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-text-primary">{option.label}</h4>
-                        <p className="text-[10px] text-text-secondary">{option.sub}</p>
-                      </div>
-                      {business.trustSection === option.id && <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-white"><Check size={14} strokeWidth={4} /></div>}
-                    </button>
-                  ))}
-               </div>
-               <div className="flex gap-4 mt-8">
-                 <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
-                 <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext} disabled={business.trustSection === 'none'}>Continue</Button>
-               </div>
-               <button onClick={handleBack} className="mt-6 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
+            <StepWrapper 
+              key="step11" 
+              title="When are you available?" 
+              onNext={handleNext}
+              onBack={handleBack}
+            >
+              <div className="space-y-2">
+                 {[
+                   { id: 1, label: 'Mon' },
+                   { id: 2, label: 'Tue' },
+                   { id: 3, label: 'Wed' },
+                   { id: 4, label: 'Thu' },
+                   { id: 5, label: 'Fri' },
+                 ].map((day) => {
+                   const hours = business.workingHours.find(h => h.dayOfWeek === day.id);
+                   return (
+                    <div key={day.id} className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${hours?.isOpen ? 'bg-bg-secondary/20 border-border-light/30' : 'bg-transparent border-dashed border-border-light/50 opacity-40'}`}>
+                        <span className="text-[11px] font-medium uppercase tracking-widest text-text-primary w-12">{day.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-text-tertiary font-medium tabular-nums">{hours?.startTime || '09:00'}</span>
+                          <span className="text-text-tertiary">/</span>
+                          <span className="text-[10px] text-text-tertiary font-medium tabular-nums">{hours?.endTime || '17:00'}</span>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            const updated = business.workingHours.map(h => h.dayOfWeek === day.id ? { ...h, isOpen: !h.isOpen } : h);
+                            updateBusiness({ workingHours: updated });
+                          }}
+                          className={`w-10 h-6 rounded-full transition-all relative flex items-center px-0.5 ${hours?.isOpen ? 'bg-brand' : 'bg-bg-tertiary'}`}
+                        >
+                          <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all ${hours?.isOpen ? 'translate-x-4.5' : 'translate-x-0'}`} />
+                        </button>
+                    </div>
+                   );
+                 })}
+                 <p className="text-[9px] text-text-tertiary font-normal text-center pt-2 opacity-60 uppercase tracking-widest">Adjust full hours in settings later.</p>
+              </div>
             </StepWrapper>
           )}
 
           {onboardingStep === 12 && (
-            <StepWrapper key="step12" title="When are you open?" subtitle="Define your default working hours for the week.">
-                <div className="space-y-3">
-                  {business.workingHours.map((hours) => (
-                    <div key={hours.dayOfWeek} className={`flex items-center justify-between p-4 rounded-xl border ${hours.isOpen ? 'border-border-light bg-white' : 'border-dashed border-border-default opacity-50 bg-bg-secondary'}`}>
-                       <div className="flex items-center gap-4">
-                          <input 
-                            type="checkbox" 
-                            checked={hours.isOpen} 
-                            onChange={() => {
-                              const updated = business.workingHours.map(h => 
-                                h.dayOfWeek === hours.dayOfWeek ? { ...h, isOpen: !h.isOpen } : h
-                              );
-                              updateBusiness({ workingHours: updated });
-                            }}
-                            className="w-4 h-4 rounded text-brand focus:ring-brand"
-                          />
-                          <span className="text-sm font-semibold capitalize w-24">
-                            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][hours.dayOfWeek]}
-                          </span>
-                       </div>
-                       {hours.isOpen ? (
-                         <div className="flex items-center gap-3">
-                            <input className="w-20 px-2 py-1.5 border border-border-default rounded-lg text-xs font-medium" type="time" value={hours.startTime} readOnly />
-                            <span className="text-text-tertiary">–</span>
-                            <input className="w-20 px-2 py-1.5 border border-border-default rounded-lg text-xs font-medium" type="time" value={hours.endTime} readOnly />
-                         </div>
-                       ) : (
-                         <span className="text-[10px] font-bold text-text-tertiary tracking-widest uppercase">Closed</span>
-                       )}
-                    </div>
-                  ))}
-               </div>
-               <div className="flex gap-4 mt-8">
-                 <Button variant="secondary" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Skip</Button>
-                 <Button className="flex-1 h-12 rounded-xl font-bold" onClick={handleNext}>Continue</Button>
-               </div>
-               <button onClick={handleBack} className="mt-6 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
+            <StepWrapper 
+              key="step12" 
+              title="Set up payments" 
+              onNext={handleNext}
+              onBack={handleBack}
+              nextLabel="Skip for now"
+            >
+              <div className="flex flex-col items-center gap-8 py-4">
+                 <div className="w-16 h-16 rounded-[28px] bg-[#635BFF]/5 flex items-center justify-center text-[#635BFF]">
+                    <CreditCard size={28} />
+                 </div>
+                 <Button 
+                    className="w-full h-13 bg-[#635BFF] text-white rounded-2xl font-medium text-[11px] uppercase tracking-widest shadow-lg shadow-[#635bff20]"
+                    onClick={() => {
+                       alert('Stripe integration coming soon!');
+                       handleNext();
+                    }}
+                 >
+                    Connect Stripe
+                 </Button>
+                 <p className="text-[10px] text-text-tertiary font-normal text-center max-w-[240px] leading-relaxed">Accept secure card payments and deposits directly to your bank account.</p>
+              </div>
             </StepWrapper>
           )}
 
           {onboardingStep === 13 && (
-            <StepWrapper key="step13" title="Review & Publish" subtitle="Take a final look. Your beautiful booking site is just a click away.">
-               <div className="space-y-10">
-                  <div className="space-y-4">
-                     <div className="bg-white p-6 rounded-2xl border border-border-light shadow-sm flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-xl bg-bg-secondary flex items-center justify-center p-2">
-                           {business.logo ? <img src={business.logo} className="w-full h-auto" alt="Logo" /> : <ImageIcon className="text-text-tertiary" />}
+            <StepWrapper 
+              key="step13" 
+              title="Your site is ready" 
+              onNext={handleNext}
+              onBack={handleBack}
+              nextLabel="Publish My Site"
+            >
+              <div className="space-y-8">
+                 <Card className="p-0 overflow-hidden rounded-[40px] border-border-light/40 bg-white flex flex-col h-64 relative shadow-2xl shadow-black/5 group">
+                     <div className="h-28 bg-bg-secondary relative overflow-hidden">
+                        {business.coverImage ? (
+                          <motion.img 
+                            initial={{ scale: 1.1 }}
+                            animate={{ scale: 1 }}
+                            src={business.coverImage} 
+                            className="w-full h-full object-cover opacity-90 transition-transform duration-1000" 
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-linear-to-br from-bg-secondary to-bg-tertiary/30" />
+                        )}
+                        <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-white/20 text-[8px] font-medium uppercase tracking-widest text-text-tertiary">Preview</div>
+                     </div>
+                     <div className="flex-1 px-8 py-6 flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-white shadow-xl shadow-black/5 border border-border-light/20 flex items-center justify-center p-2.5 -mt-12 relative z-10">
+                           {business.logo ? <img src={business.logo} className="w-full h-full object-contain" /> : <div className="text-brand font-medium italic text-xl">B</div>}
                         </div>
                         <div className="flex-1 min-w-0">
-                           <h4 className="font-semibold truncate">{business.name || 'Setup Pending'}</h4>
-                           <p className="text-xs text-text-secondary">{business.category}</p>
-                           <div className="flex gap-1.5 mt-2">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: business.primaryColor }} />
-                              <div className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">{business.primaryColor}</div>
-                           </div>
+                           <h4 className="text-sm font-medium text-text-primary tracking-tight truncate">{business.name || 'Your Brand'}</h4>
+                           <p className="text-[10px] text-text-tertiary font-normal truncate opacity-70">{business.subdomain}.bookflow.ca</p>
                         </div>
-                        <button className="text-xs font-bold text-brand hover:underline" onClick={() => setOnboardingStep(1)}>Edit</button>
                      </div>
-                     
-                     <div className="grid grid-cols-2 gap-4">
-                        <Card className="p-5 flex flex-col gap-2">
-                           <Clock size={18} className="text-text-tertiary" />
-                           <p className="text-[10px] font-bold text-text-tertiary tracking-widest uppercase">Availability</p>
-                           <p className="text-xs font-semibold">5 Days Active</p>
-                        </Card>
-                        <Card className="p-5 flex flex-col gap-2">
-                           <LayoutDashboard size={18} className="text-text-tertiary" />
-                           <p className="text-[10px] font-bold text-text-tertiary tracking-widest uppercase">Services</p>
-                           <p className="text-xs font-semibold">Ready to launch</p>
-                        </Card>
-                     </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="p-6 bg-brand/5 border border-brand/10 rounded-2xl">
-                       <p className="text-xs text-brand font-medium leading-relaxed">
-                         By publishing, you agree to our Terms of Service and Privacy Policy. You can unpublish your site at any time from the dashboard.
-                       </p>
-                    </div>
-                    <Button 
-                      className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-brand/20 group relative overflow-hidden" 
-                      onClick={() => {
-                        updateBusiness({ isPublished: true });
-                        handleNext();
-                      }}
-                    >
-                      <span className="relative z-10 flex items-center justify-center gap-2">
-                        Publish My Website
-                        <ChevronRight size={18} />
-                      </span>
-                      <motion.div 
-                        className="absolute inset-0 bg-brand-hover opacity-0 group-hover:opacity-100 transition-opacity"
-                        whileTap={{ scale: 0.98 }}
-                      />
-                    </Button>
-                  </div>
-               </div>
-               <button onClick={handleBack} className="mt-10 flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
+                 </Card>
+                 <div className="px-6 text-center space-y-1">
+                    <p className="text-[10px] text-text-tertiary font-normal leading-relaxed italic opacity-60">"The best way to predict the future is to create it."</p>
+                    <p className="text-[9px] text-brand/60 font-medium uppercase tracking-[0.2em]">Ready to Launch</p>
+                 </div>
+              </div>
             </StepWrapper>
           )}
         </AnimatePresence>
       </main>
-      
-      {/* Footer Disclaimer */}
-      <footer className="w-full py-8 px-6 text-center">
-         <p className="text-[10px] text-text-tertiary font-bold tracking-[0.2em] uppercase">Built with Bookflow Canada &bull; Secure Setup</p>
+
+      <footer className="fixed bottom-0 left-0 w-full py-8 text-center pointer-events-none opacity-40">
+         <p className="text-[9px] font-normal text-text-tertiary uppercase tracking-[0.3em]">Pure Flow &bull; Bukd</p>
       </footer>
     </div>
   );

@@ -12,6 +12,7 @@ import { BookingsPage } from './features/dashboard/BookingsPage';
 import { AnalyticsPage } from './features/dashboard/AnalyticsPage';
 import { DashboardOverview } from './features/dashboard/DashboardOverview';
 import { SettingsPage } from './features/dashboard/SettingsPage';
+import { TemplateSelector } from './features/dashboard/TemplateSelector';
 import { PublicWebsite } from './features/public/PublicWebsite';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { AuthObserver } from './components/auth/AuthObserver';
@@ -35,50 +36,22 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* Dashboard Routes */}
-          <Route path="/dashboard" element={<Navigate to="/dashboard/overview" replace />} />
-          
-          <Route path="/dashboard/overview" element={
+          {/* Dashboard Routes - Nested to prevent Layout remounting */}
+          <Route path="/dashboard" element={
             <ProtectedRoute>
-              <DashboardLayout><DashboardOverview /></DashboardLayout>
+              <DashboardLayout />
             </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/website" element={
-            <ProtectedRoute>
-              <DashboardLayout><WebsiteCustomizer /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/services" element={
-            <ProtectedRoute>
-              <DashboardLayout><ServicesList /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/availability" element={
-            <ProtectedRoute>
-              <DashboardLayout><AvailabilityPage /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/bookings" element={
-            <ProtectedRoute>
-              <DashboardLayout><BookingsPage /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/analytics" element={
-            <ProtectedRoute>
-              <DashboardLayout><AnalyticsPage /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/settings" element={
-            <ProtectedRoute>
-              <DashboardLayout><SettingsPage /></DashboardLayout>
-            </ProtectedRoute>
-          } />
+          }>
+            <Route index element={<Navigate to="overview" replace />} />
+            <Route path="overview" element={<DashboardOverview />} />
+            <Route path="website" element={<WebsiteCustomizer />} />
+            <Route path="templates" element={<TemplateSelector />} />
+            <Route path="services" element={<ServicesList />} />
+            <Route path="availability" element={<AvailabilityPage />} />
+            <Route path="bookings" element={<BookingsPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
           
           {/* Public Site (Direct View) */}
           <Route path="/p/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />

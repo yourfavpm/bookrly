@@ -1,6 +1,6 @@
-import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, ChevronDown, Plus } from 'lucide-react';
+import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, ChevronDown, Plus, Palette, Clock } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';
 import React from 'react';
 
 interface NavItemProps {
@@ -22,11 +22,11 @@ const BottomNavItem: React.FC<NavItemProps> = ({ icon, label, to, active }) => (
     <div className={`transition-transform duration-300 ${active ? 'scale-110' : ''}`}>
       {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 20 }) : icon}
     </div>
-    <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
+    <span className="text-[10px] font-normal uppercase tracking-tighter">{label}</span>
   </Link>
 );
 
-export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const DashboardLayout: React.FC = () => {
   const business = useAppStore((state) => state.business);
   const loading = useAppStore((state) => state.loading);
   const location = useLocation();
@@ -46,26 +46,27 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
   const navItems = [
     { icon: <LayoutDashboard />, label: 'Overview', to: '/dashboard/overview' },
     { icon: <Globe />, label: 'Website', to: '/dashboard/website' },
+    { icon: <Palette />, label: 'Templates', to: '/dashboard/templates' },
     { icon: <Scissors />, label: 'Services', to: '/dashboard/services' },
+    { icon: <Clock />, label: 'Availability', to: '/dashboard/availability' },
     { icon: <Calendar />, label: 'Bookings', to: '/dashboard/bookings' },
-    { icon: <BarChart3 />, label: 'Analytics', to: '/dashboard/analytics' },
-    { icon: <Settings />, label: 'Settings', to: '/dashboard/settings' }
+    { icon: <BarChart3 />, label: 'Analytics', to: '/dashboard/analytics' }
   ];
 
   const currentPath = location.pathname;
   const isSelected = (to: string) => currentPath === to || (to === '/dashboard/overview' && currentPath === '/dashboard');
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-bg-secondary font-sans">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-bg-secondary font-sans overflow-x-hidden">
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-border-light sticky top-0 h-screen p-6 shrink-0">
+      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-border-light fixed left-0 top-0 bottom-0 p-6 shrink-0 z-40">
         <div className="flex items-center gap-2 px-2 mb-10">
-          <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic shadow-sm">B</div>
-          <span className="font-bold text-xl tracking-tight text-text-primary">Bookflow</span>
+          <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-medium italic shadow-sm">B</div>
+          <span className="font-medium text-xl tracking-tight text-text-primary">Bookflow</span>
         </div>
 
         <nav className="flex flex-col gap-1.5 flex-1">
-          {navItems.slice(0, 5).map(item => (
+          {navItems.map(item => (
             <SidebarItem 
               key={item.to} 
               icon={React.isValidElement(item.icon) ? React.cloneElement(item.icon as React.ReactElement<{ size?: number }>, { size: 18 }) : item.icon} 
@@ -75,37 +76,35 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
             />
           ))}
         </nav>
-
-        <div className="pt-6 border-t border-border-light">
-          <SidebarItem 
-            icon={<Settings size={18} />} 
-            label="Settings" 
-            to="/dashboard/settings" 
-            active={isSelected('/dashboard/settings')} 
-          />
-        </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 pb-32 lg:pb-0">
+      <main className="flex-1 flex flex-col min-w-0 pb-32 lg:pb-0 lg:pl-64">
         {/* Header - Stays at top */}
         <header className="h-16 lg:h-20 bg-white/80 backdrop-blur-md border-b border-border-light flex items-center justify-between px-6 lg:px-10 sticky top-0 z-30">
           <div className="flex items-center gap-4">
-            <div className="lg:hidden w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic">B</div>
+            <div className="lg:hidden w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-medium italic">B</div>
             <div className="flex flex-col lg:flex-row lg:items-center gap-0 lg:gap-2">
-               <span className="text-sm font-bold text-text-primary leading-none">{business.name || 'Your Business'}</span>
-               <span className="text-[9px] uppercase tracking-widest text-text-tertiary px-1.5 py-0.5 bg-bg-tertiary rounded-md font-bold w-fit mt-1 lg:mt-0">Pro</span>
+               <span className="text-sm font-medium text-text-primary leading-none">{business.name || 'Your Business'}</span>
+               <span className="text-[9px] uppercase tracking-widest text-text-tertiary px-1.5 py-0.5 bg-bg-tertiary rounded-md font-normal w-fit mt-1 lg:mt-0">Pro</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Link to={`/p/${business.id}`} target="_blank" className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-border-default rounded-xl text-[10px] font-bold uppercase tracking-widest text-text-primary hover:bg-bg-secondary transition-all shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link to={`/p/${business.subdomain}`} target="_blank" className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-border-default rounded-xl text-[10px] font-normal uppercase tracking-widest text-text-primary hover:bg-bg-secondary transition-all shadow-sm">
               <ExternalLink size={12} />
               Preview
             </Link>
+
+            <Link 
+              to="/dashboard/settings" 
+              className={`p-2 rounded-full transition-all ${isSelected('/dashboard/settings') ? 'bg-brand/10 text-brand' : 'text-text-tertiary hover:bg-bg-secondary hover:text-text-primary'}`}
+            >
+              <Settings size={20} />
+            </Link>
             
             <button className="flex items-center gap-2 px-1 py-1 rounded-full hover:bg-bg-secondary transition-all group">
-              <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-brand-light border border-brand/10 flex items-center justify-center text-brand font-black text-xs">
+              <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-brand-light border border-brand/10 flex items-center justify-center text-brand font-medium text-xs">
                 {business.name?.charAt(0) || 'B'}
               </div>
               <ChevronDown size={12} className="text-text-tertiary hidden sm:block" />
@@ -115,7 +114,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
         {/* Content - Full width on mobile */}
         <div className="p-5 md:p-10 max-w-7xl mx-auto w-full flex-1">
-          {children}
+          <Outlet />
         </div>
       </main>
 
@@ -128,8 +127,8 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               <Plus size={28} />
            </Link>
         </div>
-        <BottomNavItem icon={<Calendar />} label="Book" to="/dashboard/bookings" active={isSelected('/dashboard/bookings')} />
-        <BottomNavItem icon={<Settings />} label="Misc" to="/dashboard/settings" active={isSelected('/dashboard/settings')} />
+        <BottomNavItem icon={<Palette />} label="Design" to="/dashboard/templates" active={isSelected('/dashboard/templates')} />
+        <BottomNavItem icon={<BarChart3 />} label="Stats" to="/dashboard/analytics" active={isSelected('/dashboard/analytics')} />
       </nav>
     </div>
   );

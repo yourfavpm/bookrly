@@ -9,7 +9,7 @@ export const Input: React.FC<InputProps> = ({ label, error, className = '', ...p
   return (
     <div className="flex flex-col gap-1.5 w-full">
       {label && (
-        <label className="text-xs font-medium text-text-secondary ml-1">
+        <label className="text-xs font-normal text-text-secondary ml-1">
           {label}
         </label>
       )}
@@ -19,7 +19,7 @@ export const Input: React.FC<InputProps> = ({ label, error, className = '', ...p
         {...props}
       />
       {error && (
-        <span className="text-[10px] text-error ml-1">
+        <span className="text-xs text-error/80 ml-1">
           {error}
         </span>
       )}
