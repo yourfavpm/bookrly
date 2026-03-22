@@ -2,6 +2,7 @@ import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, Extern
 import { useAppStore } from '../../store/useAppStore';
 import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
+import { InstallAppPrompt } from '../../components/ui/InstallAppPrompt';
 import React from 'react';
 
 interface NavItemProps {
@@ -221,6 +222,8 @@ export const DashboardLayout: React.FC = () => {
           </div>
         </div>
       )}
+
+      <InstallAppPrompt />
     </div>
   );
 };

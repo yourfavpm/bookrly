@@ -387,7 +387,7 @@ export const SettingsPage: React.FC = () => {
                   {isTrialing ? 'Free Trial' : isActive ? 'Pro Plan' : 'No Active Plan'}
                 </span>
                 <h3 className="text-2xl font-semibold text-text-primary tracking-tight">
-                  {isActive ? 'Bukd Pro' : isTrialing ? '14-Day Free Trial' : 'Upgrade required'}
+                  {isActive ? 'GetBukd Pro' : isTrialing ? '14-Day Free Trial' : 'Upgrade required'}
                 </h3>
                 <p className="text-xs text-text-tertiary leading-relaxed font-normal">
                   {isActive 

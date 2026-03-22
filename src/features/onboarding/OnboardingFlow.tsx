@@ -239,7 +239,7 @@ export const OnboardingFlow: React.FC = () => {
       <header className="fixed top-0 left-0 w-full h-20 flex items-center justify-between px-8 z-50">
          <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-brand flex items-center justify-center text-white italic font-bold text-xs shadow-sm">B</div>
-            <span className="text-[11px] font-medium tracking-[0.2em] uppercase text-text-primary">Bukd</span>
+            <span className="text-[11px] font-medium tracking-[0.2em] uppercase text-text-primary">GetBukd</span>
          </div>
          <button onClick={() => navigate('/dashboard')} className="text-[10px] font-normal text-text-tertiary uppercase tracking-widest hover:text-text-primary transition-colors">Exit</button>
       </header>
@@ -680,7 +680,7 @@ export const OnboardingFlow: React.FC = () => {
       </main>
 
       <footer className="fixed bottom-0 left-0 w-full py-8 text-center pointer-events-none opacity-40">
-         <p className="text-[9px] font-normal text-text-tertiary uppercase tracking-[0.3em]">Pure Flow &bull; Bukd</p>
+         <p className="text-[9px] font-normal text-text-tertiary uppercase tracking-[0.3em]">Pure Flow &bull; GetBukd</p>
       </footer>
     </div>
   );

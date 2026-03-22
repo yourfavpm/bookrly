@@ -67,7 +67,7 @@ export const SignUp: React.FC = () => {
   return (
     <AuthLayout>
       <div className="space-y-2 mb-10">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Create your booking website</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Launch your booking website</h1>
         <p className="text-sm text-text-secondary font-normal">Set up your business in minutes</p>
       </div>
 

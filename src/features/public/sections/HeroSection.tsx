@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Star, Calendar as CalendarIcon, ShieldCheck, CheckCircle2, Zap, ChevronRight } from 'lucide-react';
+import { Star, Calendar as CalendarIcon, ShieldCheck, CheckCircle2, Zap, ChevronRight } from 'lucide-react';
 import type { SectionProps } from '../templates/types';
 
 interface HeroProps extends SectionProps {

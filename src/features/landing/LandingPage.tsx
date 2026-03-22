@@ -77,7 +77,7 @@ export const LandingPage: React.FC = () => {
                   className="space-y-6"
                 >
                   <h1 className="text-4xl lg:text-6xl font-medium tracking-tight leading-[1.08] text-black">
-                    Create your booking website <span className="text-brand">in minutes</span>
+                    Launch your booking website <span className="text-brand">in minutes</span>
                   </h1>
                   
                   <p className="text-xl text-black/70 font-medium leading-relaxed max-w-md">
@@ -270,7 +270,7 @@ export const LandingPage: React.FC = () => {
         <section className="py-28">
           <div className="max-w-2xl mx-auto px-6 text-center space-y-8">
             <h2 className="text-4xl lg:text-5xl font-medium tracking-tight text-black leading-tight">
-              Start your booking website today
+              Launch your booking website today
             </h2>
             <p className="text-lg text-black/50 font-medium">
               It takes just a few minutes
@@ -309,7 +309,7 @@ export const LandingPage: React.FC = () => {
                 <span className="text-lg font-bold tracking-tight">Bookflow</span>
               </Link>
               <p className="text-sm text-white/40 font-medium leading-relaxed max-w-xs">
-                The easiest way to create a booking website and accept payments for your service business.
+                The easiest way to launch a booking website and accept payments for your service business.
               </p>
               <div className="flex items-center gap-3">
                 <a href="#" className="w-9 h-9 bg-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 transition-colors">
