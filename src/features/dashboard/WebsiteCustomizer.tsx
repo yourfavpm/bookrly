@@ -14,7 +14,7 @@ import {
   Trash2,
   Image as ImageIcon,
   Save,
-  Eye,
+  ExternalLink,
   Type,
   Layout,
   Camera,
@@ -131,28 +131,28 @@ export const WebsiteCustomizer: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-24 relative animate-in fade-in duration-700">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-1 sticky top-0 bg-bg-secondary/80 backdrop-blur-md pt-4 pb-4 z-40 border-b border-border-light/20 -mx-1">
+       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-1 sticky top-0 bg-bg-secondary/80 backdrop-blur-md pt-4 pb-4 z-40 border-b border-border-light/20 -mx-1">
          <div className="space-y-1">
-            <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-text-primary">Website Studio</h1>
-            <p className="text-[10px] lg:text-xs text-text-tertiary uppercase tracking-widest font-bold">Design your public brand identity</p>
+            <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight text-text-primary">Website Studio</h1>
+            <p className="text-[10px] lg:text-xs text-text-tertiary uppercase tracking-widest font-medium">Design your public brand identity</p>
          </div>
          <div className="flex items-center gap-3">
-            <Button 
-               variant="secondary" 
-               size="sm"
-               className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold bg-white shadow-sm border-border-light text-xs uppercase tracking-widest"
-               onClick={() => setShowPreview(true)}
+            <a 
+               href={`/p/${business.subdomain}`}
+               target="_blank"
+               rel="noopener noreferrer"
+               className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-semibold bg-white shadow-sm border border-border-light text-xs uppercase tracking-widest text-text-primary flex items-center justify-center gap-2 hover:bg-bg-secondary transition-colors"
             >
-              <Eye size={16} className="mr-2" />
-              Preview Mode
-            </Button>
+              <ExternalLink size={14} />
+              View Live Site
+            </a>
             <Button 
               size="sm"
-              className="flex-1 sm:flex-none h-11 px-8 rounded-xl font-bold shadow-xl shadow-brand/20 transition-all text-xs uppercase tracking-widest bg-brand text-white"
-              onClick={() => {}}
+              className="flex-1 sm:flex-none h-11 px-8 rounded-xl font-semibold shadow-xl shadow-brand/20 transition-all text-xs uppercase tracking-widest bg-brand text-white"
+              onClick={() => updateBusiness({ isPublished: true })}
             >
               <Save size={16} className="mr-2" />
-              Publish Changes
+              {business.isPublished ? 'Published ✓' : 'Publish Site'}
             </Button>
          </div>
       </header>

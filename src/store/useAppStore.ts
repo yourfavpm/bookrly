@@ -235,76 +235,73 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { business, user } = get();
     if (!business || !user) return;
 
-    try {
-      // Map frontend camelCase to Postgres snake_case
-      const dbUpdates: any = { ...updates };
-      if ('isPublished' in updates) dbUpdates.is_published = updates.isPublished;
-      if ('heroTitle' in updates) dbUpdates.hero_title = updates.heroTitle;
-      if ('heroSubtitle' in updates) dbUpdates.hero_subtitle = updates.heroSubtitle;
-      if ('ctaText' in updates) dbUpdates.cta_text = updates.ctaText;
-      if ('aboutTitle' in updates) dbUpdates.about_title = updates.aboutTitle;
-      if ('aboutDescription' in updates) dbUpdates.about_description = updates.aboutDescription;
-      if ('aboutImage' in updates) dbUpdates.about_image = updates.aboutImage;
-      if ('trustSection' in updates) dbUpdates.trust_section = updates.trustSection;
-      if ('coverImage' in updates) dbUpdates.cover_image = updates.coverImage;
-      if ('primaryColor' in updates) dbUpdates.primary_color = updates.primaryColor;
+    // 1. Update local state IMMEDIATELY (no await, no network)
+    set((state) => ({
+      business: state.business ? { ...state.business, ...updates } : null
+    }));
 
-      // Handle workingHours sync separately if present
-      if ('workingHours' in updates && updates.workingHours) {
-        const { error: aError } = await supabase
-          .from('availability')
-          .upsert(
-            updates.workingHours.map((h: any) => ({
-              business_id: business.id,
-              day_of_week: h.dayOfWeek,
-              start_time: h.startTime,
-              end_time: h.endTime,
-              is_open: h.isOpen
-            })),
-            { onConflict: 'business_id,day_of_week' }
-          );
-        if (aError) throw aError;
-      }
-
-      // Clean up keys not in 'businesses' table
-      delete dbUpdates.isPublished;
-      delete dbUpdates.heroTitle;
-      delete dbUpdates.heroSubtitle;
-      delete dbUpdates.ctaText;
-      delete dbUpdates.aboutTitle;
-      delete dbUpdates.aboutDescription;
-      delete dbUpdates.aboutImage;
-      delete dbUpdates.trustSection;
-      delete dbUpdates.coverImage;
-      delete dbUpdates.primaryColor;
-      delete dbUpdates.workingHours;
-      delete dbUpdates.services;
-      delete dbUpdates.bookings;
-      delete dbUpdates.reviews;
-      delete dbUpdates.proofOfWork;
-      delete dbUpdates.stripeConnected;
-      delete dbUpdates.address;
-      delete dbUpdates.socials;
-
-      // Add address and socials if they are in the updates
-      if ('address' in updates) dbUpdates.address = updates.address;
-      if ('socials' in updates) dbUpdates.socials = updates.socials;
-
-      if (Object.keys(dbUpdates).length > 0) {
-        const { error } = await supabase
-          .from('businesses')
-          .update(dbUpdates)
-          .eq('id', business.id);
-
-        if (error) throw error;
-      }
-
-      set((state) => ({
-        business: state.business ? { ...state.business, ...updates } : null
-      }));
-    } catch (err: any) {
-      set({ error: err.message });
+    // 2. Debounce the DB persist
+    if ((window as any).__bookrly_save_timer) {
+      clearTimeout((window as any).__bookrly_save_timer);
     }
+
+    (window as any).__bookrly_save_timer = setTimeout(async () => {
+      const latestBusiness = get().business;
+      if (!latestBusiness) return;
+
+      try {
+        // Map frontend camelCase to Postgres snake_case
+        const dbUpdates: any = {};
+        
+        // Only persist the fields that were in the original update
+        if ('name' in updates) dbUpdates.name = updates.name;
+        if ('email' in updates) dbUpdates.email = updates.email;
+        if ('phone' in updates) dbUpdates.phone = updates.phone;
+        if ('category' in updates) dbUpdates.category = updates.category;
+        if ('subdomain' in updates) dbUpdates.subdomain = updates.subdomain;
+        if ('logo' in updates) dbUpdates.logo = updates.logo;
+        if ('isPublished' in updates) dbUpdates.is_published = updates.isPublished;
+        if ('heroTitle' in updates) dbUpdates.hero_title = updates.heroTitle;
+        if ('heroSubtitle' in updates) dbUpdates.hero_subtitle = updates.heroSubtitle;
+        if ('ctaText' in updates) dbUpdates.cta_text = updates.ctaText;
+        if ('aboutTitle' in updates) dbUpdates.about_title = updates.aboutTitle;
+        if ('aboutDescription' in updates) dbUpdates.about_description = updates.aboutDescription;
+        if ('aboutImage' in updates) dbUpdates.about_image = updates.aboutImage;
+        if ('trustSection' in updates) dbUpdates.trust_section = updates.trustSection;
+        if ('coverImage' in updates) dbUpdates.cover_image = updates.coverImage;
+        if ('primaryColor' in updates) dbUpdates.primary_color = updates.primaryColor;
+        if ('address' in updates) dbUpdates.address = updates.address;
+        if ('socials' in updates) dbUpdates.socials = updates.socials;
+
+        // Handle workingHours sync separately if present
+        if ('workingHours' in updates && updates.workingHours) {
+          const { error: aError } = await supabase
+            .from('availability')
+            .upsert(
+              updates.workingHours.map((h: any) => ({
+                business_id: latestBusiness.id,
+                day_of_week: h.dayOfWeek,
+                start_time: h.startTime,
+                end_time: h.endTime,
+                is_open: h.isOpen
+              })),
+              { onConflict: 'business_id,day_of_week' }
+            );
+          if (aError) console.error('Availability sync error:', aError);
+        }
+
+        if (Object.keys(dbUpdates).length > 0) {
+          const { error } = await supabase
+            .from('businesses')
+            .update(dbUpdates)
+            .eq('id', latestBusiness.id);
+
+          if (error) console.error('Business update error:', error);
+        }
+      } catch (err: any) {
+        console.error('Save error:', err.message);
+      }
+    }, 800);
   },
 
   signOut: async () => {
