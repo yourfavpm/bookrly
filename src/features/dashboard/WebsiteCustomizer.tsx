@@ -411,26 +411,20 @@ export const WebsiteCustomizer: React.FC = () => {
             </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setShowMobilePreview(!showMobilePreview)}
-            className="lg:hidden p-2.5 rounded-xl bg-bg-canvas/50 text-text-secondary hover:text-text-primary transition-all"
-          >
-            <Eye size={20} />
-          </button>
-          
-          <Button 
-            onClick={() => {
-              if (business.isPublished && !confirm('Are you sure you want to unpublish your site? It will no longer be visible to customers.')) return;
-              updateBusiness({ isPublished: !business.isPublished });
-            }}
-            variant={business.isPublished ? "secondary" : "primary"}
-            className="h-10 px-8 rounded-xl font-bold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-brand/10 transition-all active:scale-95"
-          >
-            {business.isPublished ? "Unpublish Site" : "Publish Site"}
-          </Button>
-        </div>
+        <button 
+          onClick={() => {
+            const previewId = business.subdomain || business.slug;
+            if (previewId) {
+              window.open(`/p/${previewId}`, '_blank');
+            } else {
+              alert('Save your site details first (at least Business Name and Info)');
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-brand/20 bg-brand/5 text-brand font-bold text-[10px] uppercase tracking-widest hover:bg-brand/10 transition-all shadow-sm"
+        >
+          <Eye size={14} />
+          View Live Site
+        </button>
       </header>
 
       {/* Progress Bar Container */}

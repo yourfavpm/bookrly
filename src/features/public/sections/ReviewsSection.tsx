@@ -28,60 +28,98 @@ export const ReviewsSection: React.FC<ReviewsProps> = ({ business, isMobile, isP
     const displayReviews = reviews.slice(0, 3);
     
     return (
-      <section id="reviews" className="py-24 px-6 w-full bg-white">
+      <section id="reviews" className="py-16 md:py-24 px-6 w-full bg-white">
         <div className="max-w-7xl mx-auto">
           {/* Section header */}
-          <div className="mb-20 space-y-2">
+          <div className="mb-12 md:mb-20 space-y-2">
             <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">
               Reviews
             </span>
-            <h2 className="text-4xl md:text-5xl font-light tracking-tight text-text-primary">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-text-primary">
               What clients say
             </h2>
           </div>
 
-          {/* Floating stacked cards */}
-          <div className="relative h-auto md:h-[450px] flex md:items-center">
-            {displayReviews.map((review, idx) => (
-              <motion.div
-                key={review.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                viewport={{ once: true }}
-                className="w-full md:w-96 bg-white border border-text-primary/10 rounded-sm p-6 space-y-4 shadow-lg mb-6 md:mb-0 md:absolute"
-                style={{
-                  top: isMobile ? 'auto' : `${idx * 24}px`,
-                  left: isMobile ? '0' : `${idx * 32}px`,
-                  zIndex: displayReviews.length - idx,
-                  transform: isMobile ? 'none' : `rotate(${idx * 1.5}deg)`,
-                }}
-              >
-                {/* Stars */}
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map(s => (
-                    <Star
-                      key={s}
-                      size={14}
-                      className={s <= (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-border-default'}
-                    />
-                  ))}
-                </div>
+          {/* Mobile: vertical list, Desktop: floating stacked cards */}
+          {isMobile ? (
+            <div className="space-y-4">
+              {displayReviews.map((review, idx) => (
+                <motion.div
+                  key={review.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: idx * 0.1 }}
+                  viewport={{ once: true }}
+                  className="w-full bg-white border border-text-primary/10 rounded-sm p-6 space-y-4"
+                >
+                  {/* Stars */}
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <Star
+                        key={s}
+                        size={14}
+                        className={s <= (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-border-default'}
+                      />
+                    ))}
+                  </div>
 
-                {/* Comment */}
-                <p className="text-sm text-text-secondary leading-relaxed font-light">
-                  "{review.comment}"
-                </p>
-
-                {/* Author */}
-                <div className="pt-4 border-t border-text-primary/5">
-                  <p className="text-xs font-medium text-text-primary">
-                    {review.customer_name || 'Client'}
+                  {/* Comment */}
+                  <p className="text-sm text-text-secondary leading-relaxed font-light">
+                    "{review.comment}"
                   </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+
+                  {/* Author */}
+                  <div className="pt-4 border-t border-text-primary/5">
+                    <p className="text-xs font-medium text-text-primary">
+                      {review.customer_name || 'Client'}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="relative h-[450px] flex items-center">
+              {displayReviews.map((review, idx) => (
+                <motion.div
+                  key={review.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: idx * 0.1 }}
+                  viewport={{ once: true }}
+                  className="w-96 bg-white border border-text-primary/10 rounded-sm p-6 space-y-4 shadow-lg absolute"
+                  style={{
+                    top: `${idx * 24}px`,
+                    left: `${idx * 32}px`,
+                    zIndex: displayReviews.length - idx,
+                    transform: `rotate(${idx * 1.5}deg)`,
+                  }}
+                >
+                  {/* Stars */}
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <Star
+                        key={s}
+                        size={14}
+                        className={s <= (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-border-default'}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Comment */}
+                  <p className="text-sm text-text-secondary leading-relaxed font-light">
+                    "{review.comment}"
+                  </p>
+
+                  {/* Author */}
+                  <div className="pt-4 border-t border-text-primary/5">
+                    <p className="text-xs font-medium text-text-primary">
+                      {review.customer_name || 'Client'}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     );

@@ -10,14 +10,14 @@ interface HeroProps extends SectionProps {
 export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, isMobile, variant = 'centered' }) => {
   if (variant === 'editorial-luxe') {
     return (
-      <section className="relative min-h-[700px] md:min-h-[750px] flex items-center overflow-hidden bg-white">
-        <div className="absolute inset-0 grid grid-cols-12">
-          {/* Left text column - 35% */}
+      <section className="relative min-h-[600px] md:min-h-[700px] lg:min-h-[750px] flex items-center overflow-hidden bg-white">
+        <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-0">
+          {/* Left text column - full width on mobile, 35% on desktop */}
           <motion.div 
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="col-span-12 md:col-span-5 px-6 md:px-12 py-20 md:py-0 flex flex-col justify-center space-y-12"
+            className="col-span-1 md:col-span-5 px-6 md:px-8 lg:px-12 py-16 md:py-20 lg:py-0 flex flex-col justify-center space-y-8 md:space-y-12 order-2 md:order-1"
           >
             {/* Small intro text */}
             <div className="space-y-1">
@@ -27,8 +27,8 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
               <div className="w-8 h-0.5 bg-text-primary rounded-full" />
             </div>
 
-            {/* Headline - refined */}
-            <h1 className={`${isMobile ? 'text-4xl' : 'text-5xl lg:text-6xl'} font-light tracking-tight leading-[1.15] text-text-primary`}>
+            {/* Headline - responsive sizing */}
+            <h1 className={`${isMobile ? 'text-3xl' : 'text-4xl md:text-5xl lg:text-5xl'} font-light tracking-tight leading-[1.15] text-text-primary max-w-xs`}>
               {business.heroTitle || "Editorial\nluxe"}
             </h1>
 
@@ -38,24 +38,24 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
             </p>
 
             {/* CTA */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button 
                 onClick={onBook}
-                className="px-8 py-3.5 bg-text-primary text-white rounded-sm text-sm font-medium tracking-wide hover:opacity-90 transition-opacity active:scale-95"
+                className="px-6 md:px-8 py-3 md:py-3.5 bg-text-primary text-white rounded-sm text-sm font-medium tracking-wide hover:opacity-90 transition-opacity active:scale-95"
               >
                 Schedule Now
               </button>
               <button 
                 onClick={() => scrollTo('services')}
-                className="px-8 py-3.5 border border-text-primary text-text-primary rounded-sm text-sm font-medium tracking-wide hover:bg-text-primary/5 transition-colors active:scale-95"
+                className="px-6 md:px-8 py-3 md:py-3.5 border border-text-primary text-text-primary rounded-sm text-sm font-medium tracking-wide hover:bg-text-primary/5 transition-colors active:scale-95"
               >
                 View Services
               </button>
             </div>
           </motion.div>
 
-          {/* Right image column - 65% */}
-          <div className="col-span-12 md:col-span-7 h-96 md:h-auto md:absolute md:right-0 md:inset-y-0 -z-10 md:z-0">
+          {/* Right image column - responsive height */}
+          <div className="col-span-1 md:col-span-7 h-64 md:h-80 lg:h-auto lg:absolute lg:right-0 lg:inset-y-0 order-1 md:order-2 md:relative md:h-full">
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}

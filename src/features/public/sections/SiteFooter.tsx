@@ -9,13 +9,13 @@ interface FooterProps extends SectionProps {
 export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }) => {
   if (variant === 'editorial') {
     return (
-      <footer className="py-20 px-6 bg-white border-t border-text-primary/10">
+      <footer className="py-12 md:py-20 px-6 bg-white border-t border-text-primary/10">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-20">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-20">
             {/* Brand/Contact - left narrow */}
-            <div className="md:col-span-5 space-y-8">
+            <div className="col-span-1 md:col-span-5 space-y-8">
               <div className="space-y-4">
-                <h3 className="text-2xl font-light tracking-tight text-text-primary">
+                <h3 className="text-xl md:text-2xl font-light tracking-tight text-text-primary">
                   {business.name}
                 </h3>
                 <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">
@@ -28,7 +28,7 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }
                 {business.email && (
                   <p className="flex items-center gap-3">
                     <Mail size={16} className="text-text-tertiary flex-shrink-0" />
-                    <a href={`mailto:${business.email}`} className="hover:text-text-primary transition-colors">
+                    <a href={`mailto:${business.email}`} className="hover:text-text-primary transition-colors break-all">
                       {business.email}
                     </a>
                   </p>
@@ -70,7 +70,7 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }
             </div>
 
             {/* Right side - legal/credit */}
-            <div className="md:col-span-7 text-right space-y-6">
+            <div className="col-span-1 md:col-span-7 space-y-6 md:text-right">
               <p className="text-[10px] text-text-tertiary uppercase tracking-widest">
                 Powered by <span className="font-medium text-text-primary">Bookflow</span>
               </p>

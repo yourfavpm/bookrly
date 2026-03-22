@@ -72,35 +72,37 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
       <section id="services" className="py-20 px-6 w-full space-y-12 bg-white">
         <div className="max-w-7xl mx-auto space-y-2">
           <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">Services</span>
-          <h2 className="text-4xl md:text-5xl font-light tracking-tight text-text-primary">What We Offer</h2>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-text-primary">What We Offer</h2>
         </div>
-        <div className="max-w-full overflow-x-auto pb-6 -mx-6 px-6">
-          <div className="flex gap-5 min-w-min">
-            {business.services.map((s, idx) => (
-              <motion.div 
-                key={s.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: idx * 0.05 }}
-                viewport={{ once: true }}
-                className="w-72 shrink-0 p-6 bg-white border border-text-primary/10 rounded-sm hover:border-text-primary/30 transition-all duration-300 group flex flex-col"
-              >
-                <h3 className="font-light text-lg mb-2 text-text-primary group-hover:text-text-primary transition-colors">{s.name}</h3>
-                <p className="text-xs text-text-secondary leading-relaxed mb-6 flex-1 font-light">{s.description}</p>
-                <div className="flex items-end justify-between pt-4 border-t border-text-primary/5">
-                  <div>
-                    <span className="text-2xl font-light tracking-tight text-text-primary">${s.price}</span>
-                    <span className="block text-[10px] text-text-tertiary uppercase tracking-widest mt-1">{s.duration} min</span>
+        <div className="max-w-7xl mx-auto">
+          <div className={isMobile ? "space-y-4" : "overflow-x-auto pb-4 -mx-6 px-6"}>
+            <div className={isMobile ? "grid grid-cols-1 gap-4" : "flex gap-5 min-w-min"}>
+              {business.services.map((s, idx) => (
+                <motion.div 
+                  key={s.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: idx * 0.05 }}
+                  viewport={{ once: true }}
+                  className={`${isMobile ? 'w-full' : 'w-72 shrink-0'} p-6 bg-white border border-text-primary/10 rounded-sm hover:border-text-primary/30 transition-all duration-300 group flex flex-col`}
+                >
+                  <h3 className="font-light text-base md:text-lg mb-2 text-text-primary group-hover:text-text-primary transition-colors">{s.name}</h3>
+                  <p className="text-xs md:text-sm text-text-secondary leading-relaxed mb-6 flex-1 font-light">{s.description}</p>
+                  <div className="flex items-end justify-between pt-4 border-t border-text-primary/5">
+                    <div>
+                      <span className="text-xl md:text-2xl font-light tracking-tight text-text-primary">${s.price}</span>
+                      <span className="block text-[10px] text-text-tertiary uppercase tracking-widest mt-1">{s.duration} min</span>
+                    </div>
+                    <button 
+                      onClick={onBook}
+                      className="px-5 py-2 bg-text-primary text-white text-xs font-medium rounded-sm hover:bg-text-primary/90 transition-colors active:scale-95"
+                    >
+                      Book
+                    </button>
                   </div>
-                  <button 
-                    onClick={onBook}
-                    className="px-5 py-2 bg-text-primary text-white text-xs font-medium rounded-sm hover:bg-text-primary/90 transition-colors active:scale-95"
-                  >
-                    Book
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

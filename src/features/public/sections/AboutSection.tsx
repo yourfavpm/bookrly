@@ -20,28 +20,28 @@ export const AboutSection: React.FC<AboutProps> = ({ business, onBook, variant =
 
   if (variant === 'editorial') {
     return (
-      <section id="about" className="py-24 px-6 bg-white">
+      <section id="about" className="py-16 md:py-24 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-20 items-start">
-            {/* Narrow text column - left side */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-20 items-start">
+            {/* Narrow text column - full width on mobile, left side on desktop */}
             <motion.div 
               initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
-              className="md:col-span-5 space-y-8"
+              className="col-span-1 md:col-span-5 space-y-8"
             >
               <div className="space-y-3">
                 <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">
                   About
                 </span>
-                <h2 className="text-4xl md:text-5xl font-light tracking-tight text-text-primary leading-[1.15]">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-text-primary leading-[1.15]">
                   {business.aboutTitle || "About Us"}
                 </h2>
               </div>
 
               {/* Editorial text */}
-              <p className="text-sm leading-relaxed text-text-secondary font-light max-w-sm whitespace-pre-wrap">
+              <p className="text-sm md:text-base leading-relaxed text-text-secondary font-light whitespace-pre-wrap">
                 {business.aboutDescription}
               </p>
 
@@ -51,16 +51,16 @@ export const AboutSection: React.FC<AboutProps> = ({ business, onBook, variant =
               </div>
             </motion.div>
 
-            {/* Image on right - optional */}
+            {/* Image on right - full width on mobile, right side on desktop */}
             {business.aboutImage && (
               <motion.div 
                 initial={{ opacity: 0, x: 40 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8 }}
                 viewport={{ once: true }}
-                className="md:col-span-7"
+                className="col-span-1 md:col-span-7"
               >
-                <div className="aspect-3/4 bg-text-primary/5 rounded-sm overflow-hidden">
+                <div className="aspect-4/5 md:aspect-3/4 bg-text-primary/5 rounded-sm overflow-hidden">
                   <img 
                     src={business.aboutImage} 
                     alt="About"
