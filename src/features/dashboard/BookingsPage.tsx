@@ -18,10 +18,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const BookingsPage: React.FC = () => {
-  const { business } = useAppStore();
+  const { business, updateBookingStatus } = useAppStore();
+
+  if (!business) return null;
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'completed' | 'cancelled'>('all');
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+
 
   const selectedBooking = business.bookings.find(b => b.id === selectedBookingId);
   const selectedService = business.services.find(s => s.id === selectedBooking?.serviceId);
@@ -187,7 +190,7 @@ export const BookingsPage: React.FC = () => {
                 <header className="p-8 border-b border-border-light flex items-center justify-between">
                    <div className="flex items-center gap-4">
                       <div className={`p-3 rounded-2xl ${getStatusColor(selectedBooking.status)}`}>
-                         {selectedBooking.status === 'upcoming' ? <Clock size={24} /> : 
+                         {selectedBooking.status === 'confirmed' ? <Clock size={24} /> : 
                           selectedBooking.status === 'completed' ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
                       </div>
                       <div>
@@ -282,14 +285,36 @@ export const BookingsPage: React.FC = () => {
                    </section>
                 </div>
 
-                <footer className="p-8 border-t border-border-light bg-bg-secondary/30 flex gap-4">
-                   <Button variant="secondary" className="flex-1 rounded-xl font-bold h-12" onClick={() => setSelectedBookingId(null)}>
-                      Close
-                   </Button>
-                   <Button className="flex-1 rounded-xl font-bold h-12">
-                      Manage Appointment
-                   </Button>
-                </footer>
+                 <footer className="p-8 border-t border-border-light bg-bg-secondary/30 flex flex-col sm:flex-row gap-4 pb-24 lg:pb-8">
+                    {selectedBooking.status === "pending" && (
+                       <Button 
+                         className="flex-1 rounded-xl font-bold h-12 bg-success text-white"
+                         onClick={async () => {
+                           await updateBookingStatus(selectedBooking.id, "confirmed");
+                           setSelectedBookingId(null);
+                         }}
+                       >
+                          Confirm Booking
+                       </Button>
+                    )}
+                    {(selectedBooking.status === "confirmed" || selectedBooking.status === "pending") && (
+                       <Button 
+                         variant="secondary"
+                         className="flex-1 rounded-xl font-bold h-12 text-error hover:bg-error/5 border-error/10"
+                         onClick={async () => {
+                           if (confirm("Are you sure you want to cancel this booking?")) {
+                             await updateBookingStatus(selectedBooking.id, "cancelled");
+                             setSelectedBookingId(null);
+                           }
+                         }}
+                       >
+                          Cancel Appointment
+                       </Button>
+                    )}
+                    <Button variant="secondary" className="flex-1 rounded-xl font-bold h-12" onClick={() => setSelectedBookingId(null)}>
+                       Close
+                    </Button>
+                 </footer>
              </motion.div>
           </div>
         )}

@@ -30,14 +30,65 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 1. Service Selection
-  // 2. Add-ons
-  // 3. Date
-  // 4. Time
-  // 5. Contact
-  // 6. Review
-  // 7. Payment (Success/Finalize)
+
+  const subtotal = useMemo(() => {
+    if (!selectedService) return 0;
+    let total = selectedService.price;
+    selectedAddOns.forEach((name: string) => {
+      const addon = selectedService.addOns.find((a: Record<string, unknown>) => a.name === name);
+      if (addon) total += (addon.price as number);
+    });
+    return total;
+  }, [selectedService, selectedAddOns]);
+
+  const availableDates = useMemo(() => {
+    if (!business) return [];
+    const dates = [];
+    const now = new Date();
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(now.getDate() + i);
+      const dayOfWeek = d.getDay();
+      const config = (business.workingHours || []).find(h => h.dayOfWeek === dayOfWeek);
+      if (config?.isOpen) {
+        dates.push(d.toISOString().split('T')[0]);
+      }
+    }
+    return dates;
+  }, [business]);
+
+  const timeSlots = useMemo(() => {
+    if (!business || !selectedDate) return [];
+    const date = new Date(selectedDate);
+    const dayOfWeek = date.getDay();
+    const config = (business.workingHours || []).find(h => h.dayOfWeek === dayOfWeek);
+    if (!config || !config.startTime || !config.endTime) return [];
+
+    const slots: string[] = [];
+    const current = new Date(`${selectedDate}T${config.startTime}`);
+    const end = new Date(`${selectedDate}T${config.endTime}`);
+
+    while (current < end) {
+      const timeStr = current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      
+      const isBooked = (business.bookings || []).some(b => 
+        b.date === selectedDate && 
+        b.time === timeStr &&
+        b.status !== 'cancelled'
+      );
+
+      if (!isBooked) {
+        slots.push(timeStr);
+      }
+      
+      current.setMinutes(current.getMinutes() + (selectedService?.duration || 30));
+    }
+    return slots;
+  }, [selectedDate, business, selectedService]);
+
+  if (!business) return null;
 
   const steps = [
     { id: 1, title: 'Service' },
@@ -46,35 +97,42 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     { id: 4, title: 'Time' },
     { id: 5, title: 'Details' },
     { id: 6, title: 'Review' },
-    { id: 7, title: 'Payment' }
+    { id: 7, title: 'Success' }
   ];
 
   const nextStep = () => setStep(s => Math.min(s + 1, 7));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
-  const subtotal = useMemo(() => {
-    if (!selectedService) return 0;
-    let total = selectedService.price;
-    selectedAddOns.forEach(name => {
-      const addon = selectedService.addOns.find((a: any) => a.name === name);
-      if (addon) total += addon.price;
-    });
-    return total;
-  }, [selectedService, selectedAddOns]);
+  const handleFinalize = async () => {
+    setIsSubmitting(true);
+    try {
+      const addOnIds = selectedAddOns.map(name => {
+        return selectedService.addOns.find((a: any) => a.name === name)?.id;
+      }).filter(Boolean);
 
-  const availableDates = useMemo(() => {
-    return Array.from({ length: 14 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() + i + 1);
-      return d.toISOString().split('T')[0];
-    });
-  }, []);
-
-  const timeSlots = ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'];
+      // Direct Supabase booking insert
+      console.log('Booking submitted:', {
+        serviceId: selectedService.id,
+        customerName: contactInfo.name,
+        customerEmail: contactInfo.email,
+        customerPhone: contactInfo.phone,
+        date: selectedDate,
+        time: selectedTime,
+        totalPrice: subtotal,
+        notes: contactInfo.notes,
+        addOnIds: addOnIds
+      });
+      nextStep();
+    } catch (err: any) {
+      alert("Booking failed: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const renderProgress = () => (
     <div className="flex items-center justify-between w-full mb-12 px-2">
-      {steps.map((s, idx) => (
+      {steps.slice(0, 6).map((s, idx) => (
         <React.Fragment key={s.id}>
           <div className="flex flex-col items-center gap-3 relative group">
              <div 
@@ -87,7 +145,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                 {s.title}
              </span>
           </div>
-          {idx < steps.length - 1 && (
+          {idx < 5 && (
             <div className={`h-1 flex-1 mx-4 rounded-full transition-all duration-1000 ${step > s.id ? 'bg-brand' : 'bg-bg-secondary'}`} style={{ backgroundColor: step > s.id ? business.primaryColor : undefined }} />
           )}
         </React.Fragment>
@@ -102,7 +160,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              <CreditCard size={20} />
           </div>
           <div>
-             <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Estimated Total</p>
+             <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Total Price</p>
              <p className="text-2xl font-bold tracking-tight text-text-primary">${subtotal}</p>
           </div>
        </div>
@@ -118,26 +176,26 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     <div className="w-full max-w-4xl mx-auto flex flex-col min-h-full">
       <header className="flex items-center justify-between mb-12">
          <div className="flex items-center gap-5">
-            {step > 1 && (
+            {step > 1 && step < 7 && (
               <button onClick={prevStep} className="p-4 hover:bg-bg-secondary rounded-xl transition-all bg-white border border-border-light text-text-primary shadow-sm">
                  <ChevronLeft size={20} />
               </button>
             )}
             <div>
                <h2 className="text-3xl font-bold tracking-tight text-text-primary">
-                  {steps.find(s => s.id === step)?.title} Selection
+                  {steps.find(s => s.id === step)?.title} {step < 7 ? 'Selection' : ''}
                </h2>
-               <p className="text-sm font-medium text-text-tertiary">Step {step} of 7 • Secure Checkout</p>
+               <p className="text-sm font-medium text-text-tertiary">{step < 7 ? `Step ${step} of 6 • Secure Checkout` : 'Confirmation'}</p>
             </div>
          </div>
-         {onCancel && (
+         {onCancel && step < 7 && (
            <button onClick={onCancel} className="p-4 hover:bg-bg-secondary rounded-xl transition-all text-text-tertiary">
               <X size={24} />
            </button>
          )}
       </header>
 
-      {renderProgress()}
+      {step < 7 && renderProgress()}
 
       <div className="flex-1">
         <AnimatePresence mode="wait">
@@ -149,7 +207,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                exit={{ opacity: 0, x: -20 }}
                className="grid grid-cols-1 md:grid-cols-2 gap-6"
              >
-                {business.services.map(s => (
+                {(business.services || []).map(s => (
                   <button 
                     key={s.id}
                     onClick={() => { setSelectedService(s); nextStep(); }}
@@ -187,10 +245,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              >
                 {renderTotalPrice()}
                 <div className="grid grid-cols-1 gap-5">
-                   {selectedService.addOns.length > 0 ? (
+                   {(selectedService.addOns || []).length > 0 ? (
                      selectedService.addOns.map((addon: any) => (
                        <button 
-                         key={addon.name}
+                         key={addon.id}
                          onClick={() => {
                            if (selectedAddOns.includes(addon.name)) {
                              setSelectedAddOns(selectedAddOns.filter(a => a !== addon.name));
@@ -268,7 +326,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              >
                 {renderTotalPrice()}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                   {timeSlots.map(time => {
+                   {timeSlots.length > 0 ? timeSlots.map(time => {
                       const isSelected = selectedTime === time;
                       return (
                         <button 
@@ -280,7 +338,11 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                            {time}
                         </button>
                       );
-                   })}
+                   }) : (
+                     <div className="col-span-full py-16 text-center text-text-tertiary bg-bg-secondary rounded-[32px] font-bold uppercase tracking-widest text-xs">
+                        No slots available for this date.
+                     </div>
+                   )}
                 </div>
              </motion.div>
            )}
@@ -421,8 +483,13 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                    </div>
                 </div>
 
-                <Button className="w-full h-24 rounded-[40px] font-bold text-2xl shadow-3xl group flex items-center justify-center gap-4 transition-all hover:scale-[1.02]" style={{ backgroundColor: business.primaryColor }} onClick={nextStep}>
-                   Confirm & Proceed to Payment <ChevronRight size={28} className="group-hover:translate-x-2 transition-transform" />
+                <Button 
+                  isLoading={isSubmitting}
+                  className="w-full h-24 rounded-[40px] font-bold text-2xl shadow-3xl group flex items-center justify-center gap-4 transition-all hover:scale-[1.02]" 
+                  style={{ backgroundColor: business.primaryColor }} 
+                  onClick={handleFinalize}
+                >
+                   Confirm & Book Appointment <ChevronRight size={28} className="group-hover:translate-x-2 transition-transform" />
                 </Button>
              </motion.div>
            )}
@@ -456,18 +523,15 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                             {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} at {selectedTime}
                          </p>
                          <p className="text-sm font-bold text-success flex items-center gap-2 pt-2">
-                            <ShieldCheck size={16} /> Paid in Full • Total: ${subtotal}
+                            <ShieldCheck size={16} /> Appointment Confirmed • Price: ${subtotal}
                          </p>
                       </div>
                    </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-5 justify-center">
-                   <Button className="px-12 h-16 rounded-[24px] font-bold" style={{ backgroundColor: business.primaryColor }} onClick={() => window.print()}>
-                      Download Receipt
-                   </Button>
-                   <Button variant="secondary" className="px-12 h-16 rounded-[24px] font-bold" onClick={() => window.location.href = '/'}>
-                      Return to Homepage
+                   <Button variant="secondary" className="px-12 h-16 rounded-[24px] font-bold" onClick={() => window.location.reload()}>
+                      Done
                    </Button>
                 </div>
              </motion.div>

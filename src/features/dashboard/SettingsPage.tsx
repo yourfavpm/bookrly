@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
-  const { business, updateBusiness, isPublished, setPublished } = useAppStore();
+  const { business, updateBusiness } = useAppStore();
   const [formData, setFormData] = useState({ ...business });
 
-  const handleUpdate = (updates: Partial<typeof business>) => {
+  if (!business) return null;
+
+  const handleUpdate = (updates: Partial<NonNullable<typeof business>>) => {
     setFormData(prev => ({ ...prev, ...updates }));
     updateBusiness(updates);
   };
@@ -91,7 +93,7 @@ export const SettingsPage: React.FC = () => {
                              className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl border-none cursor-pointer p-0 overflow-hidden shadow-sm hover:scale-105 transition-transform"
                           />
                           <div className="space-y-0.5">
-                             <span className="text-xs font-black block tracking-tight">{formData.primaryColor.toUpperCase()}</span>
+                             <span className="text-xs font-black block tracking-tight">{(formData.primaryColor || '#4F46E5').toUpperCase()}</span>
                              <span className="text-[8px] font-bold text-text-tertiary uppercase tracking-widest">Brand Accent</span>
                           </div>
                        </div>
@@ -170,7 +172,7 @@ export const SettingsPage: React.FC = () => {
               </div>
               {!formData.stripeConnected && (
                 <div className="px-6 lg:px-8 py-3 bg-brand/5 flex items-center justify-between border-t border-border-light/40">
-                   <p className="text-[7px] font-bold text-brand uppercase tracking-[0.3em] flex items-center gap-1.5" style={{ color: business.primaryColor }}>
+                   <p className="text-[7px] font-bold text-brand uppercase tracking-[0.3em] flex items-center gap-1.5">
                       <ShieldCheck size={10} /> PCI-Compliant Data Security
                    </p>
                 </div>
@@ -205,16 +207,15 @@ export const SettingsPage: React.FC = () => {
                     <div className="p-4 rounded-xl bg-bg-secondary/30 border border-border-light/50 flex items-center justify-between group">
                        <div className="space-y-0.5">
                           <h4 className="text-xs font-bold text-text-primary tracking-tight">
-                             {isPublished ? 'Site is Live' : 'Under Maintenance'}
+                             {business.isPublished ? 'Site is Live' : 'Under Maintenance'}
                           </h4>
                           <p className="text-[8px] font-bold text-text-tertiary uppercase tracking-widest">Public discovery</p>
                        </div>
                        <button 
-                         onClick={() => setPublished(!isPublished)}
-                         className={`w-11 h-6.5 rounded-full transition-all duration-300 relative flex items-center px-1 cursor-pointer ${isPublished ? 'bg-success shadow-lg shadow-success/20' : 'bg-bg-tertiary'}`}
-                         style={{ backgroundColor: isPublished ? business.primaryColor : undefined }}
+                         onClick={() => updateBusiness({ isPublished: !business.isPublished })}
+                         className={`w-11 h-6.5 rounded-full transition-all duration-300 relative flex items-center px-1 cursor-pointer ${business.isPublished ? 'bg-brand shadow-lg shadow-brand/20' : 'bg-bg-tertiary'}`}
                        >
-                          <div className={`w-4.5 h-4.5 rounded-full bg-white shadow-sm transition-all duration-300 ${isPublished ? 'translate-x-4.5' : 'translate-x-0'}`} />
+                          <div className={`w-4.5 h-4.5 rounded-full bg-white shadow-sm transition-all duration-300 ${business.isPublished ? 'translate-x-4.5' : 'translate-x-0'}`} />
                        </button>
                     </div>
                  </div>
@@ -232,8 +233,7 @@ export const SettingsPage: React.FC = () => {
          </div>
          <Button 
             size="sm"
-            className="h-11 px-6 lg:px-8 rounded-xl font-bold text-[10px] lg:text-xs shadow-xl shadow-brand/10 transition-all uppercase tracking-widest"
-            style={{ backgroundColor: business.primaryColor }}
+            className="h-11 px-6 lg:px-8 rounded-xl font-bold text-[10px] lg:text-xs shadow-xl shadow-brand/10 transition-all uppercase tracking-widest bg-brand text-white"
             onClick={() => window.open(`/p/${formData.subdomain}`, '_blank')}
          >
             <ExternalLink size={12} className="mr-2" /> View Site

@@ -12,34 +12,43 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const DAYS = [
-  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+const DAY_NAMES = [
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 ];
 
 export const AvailabilityPage: React.FC = () => {
   const { business, updateBusiness } = useAppStore();
 
-  const handleToggleDay = (day: string) => {
-    const updatedHours = { ...business.workingHours };
-    updatedHours[day].active = !updatedHours[day].active;
-    updateBusiness({ workingHours: updatedHours });
+  if (!business) return null;
+
+  // Ensure workingHours exists and is sorted by dayOfWeek
+  const sortedHours = [...(business.workingHours || [])].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+
+  const handleToggleDay = (dayOfWeek: number) => {
+    const updated = sortedHours.map(h => 
+      h.dayOfWeek === dayOfWeek ? { ...h, isOpen: !h.isOpen } : h
+    );
+    updateBusiness({ workingHours: updated });
   };
 
-  const handleUpdateHours = (day: string, field: 'start' | 'end', value: string) => {
-    const updatedHours = { ...business.workingHours };
-    updatedHours[day][field] = value;
-    updateBusiness({ workingHours: updatedHours });
+  const handleUpdateHours = (dayOfWeek: number, field: 'startTime' | 'endTime', value: string) => {
+    const updated = sortedHours.map(h => 
+      h.dayOfWeek === dayOfWeek ? { ...h, [field]: value } : h
+    );
+    updateBusiness({ workingHours: updated });
   };
 
-  const copyToAll = (sourceDay: string) => {
-    const source = business.workingHours[sourceDay];
-    const updatedHours = { ...business.workingHours };
-    DAYS.forEach(day => {
-      if (day !== sourceDay) {
-        updatedHours[day] = { ...source };
-      }
-    });
-    updateBusiness({ workingHours: updatedHours });
+  const copyToAll = (sourceDayIndex: number) => {
+    const source = sortedHours.find(h => h.dayOfWeek === sourceDayIndex);
+    if (!source) return;
+
+    const updated = sortedHours.map(h => ({
+      ...h,
+      startTime: source.startTime,
+      endTime: source.endTime,
+      isOpen: source.isOpen
+    }));
+    updateBusiness({ workingHours: updated });
   };
 
   return (
@@ -56,40 +65,39 @@ export const AvailabilityPage: React.FC = () => {
       </header>
 
       <div className="space-y-4">
-        {DAYS.map((day, index) => {
-          const config = business.workingHours[day];
+        {sortedHours.map((config, index) => {
           return (
             <motion.div 
-              key={day}
+              key={config.dayOfWeek}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <Card className={`p-6 transition-all duration-300 ${config.active ? 'border-brand/10' : 'bg-bg-secondary opacity-70 grayscale'}`}>
+              <Card className={`p-6 transition-all duration-300 ${config.isOpen ? 'border-brand/10' : 'bg-bg-secondary opacity-70 grayscale'}`}>
                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-6 min-w-[140px]">
                        <button 
-                         onClick={() => handleToggleDay(day)}
-                         className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${config.active ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'bg-white border-2 border-border-default text-text-tertiary shadow-sm'}`}
+                         onClick={() => handleToggleDay(config.dayOfWeek)}
+                         className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${config.isOpen ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'bg-white border-2 border-border-default text-text-tertiary shadow-sm'}`}
                        >
-                         {config.active ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
+                         {config.isOpen ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
                        </button>
                        <div>
-                         <h3 className="font-bold text-sm capitalize text-text-primary">{day}</h3>
-                         <p className={`text-[10px] font-bold uppercase tracking-widest ${config.active ? 'text-brand' : 'text-text-tertiary'}`}>
-                           {config.active ? 'Open' : 'Closed'}
+                         <h3 className="font-bold text-sm capitalize text-text-primary">{DAY_NAMES[config.dayOfWeek]}</h3>
+                         <p className={`text-[10px] font-bold uppercase tracking-widest ${config.isOpen ? 'text-brand' : 'text-text-tertiary'}`}>
+                           {config.isOpen ? 'Open' : 'Closed'}
                          </p>
                        </div>
                     </div>
 
-                    <div className={`flex items-center gap-4 transition-all duration-300 ${config.active ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none translate-x-4'}`}>
+                    <div className={`flex items-center gap-4 transition-all duration-300 ${config.isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none translate-x-4'}`}>
                        <div className="flex items-center gap-3">
                          <div className="relative group">
                             <Clock size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand transition-colors" />
                             <input 
                               type="time"
-                              value={config.start}
-                              onChange={(e) => handleUpdateHours(day, 'start', e.target.value)}
+                              value={config.startTime}
+                              onChange={(e) => handleUpdateHours(config.dayOfWeek, 'startTime', e.target.value)}
                               className="h-11 pl-8 pr-4 rounded-xl border border-border-default bg-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all"
                             />
                          </div>
@@ -98,8 +106,8 @@ export const AvailabilityPage: React.FC = () => {
                             <Clock size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand transition-colors" />
                             <input 
                               type="time"
-                              value={config.end}
-                              onChange={(e) => handleUpdateHours(day, 'end', e.target.value)}
+                              value={config.endTime}
+                              onChange={(e) => handleUpdateHours(config.dayOfWeek, 'endTime', e.target.value)}
                               className="h-11 pl-8 pr-4 rounded-xl border border-border-default bg-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all"
                             />
                          </div>
@@ -108,7 +116,7 @@ export const AvailabilityPage: React.FC = () => {
                        <div className="h-8 w-px bg-border-light mx-2" />
                        
                        <button 
-                         onClick={() => copyToAll(day)}
+                         onClick={() => copyToAll(config.dayOfWeek)}
                          className="p-2.5 rounded-xl hover:bg-brand/5 text-text-tertiary hover:text-brand transition-all flex items-center gap-2 group"
                          title="Apply to all days"
                        >
@@ -117,7 +125,7 @@ export const AvailabilityPage: React.FC = () => {
                        </button>
                     </div>
 
-                    {!config.active && (
+                    {!config.isOpen && (
                        <div className="flex-1 flex justify-end items-center italic text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
                           Not accepting bookings
                        </div>

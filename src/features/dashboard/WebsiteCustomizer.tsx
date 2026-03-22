@@ -6,7 +6,6 @@ import { Input } from '../../components/ui/Input';
 import { 
   Monitor, 
   Smartphone,
-  MapPin,
   Instagram,
   Facebook,
   Twitter,
@@ -20,14 +19,23 @@ import {
   Layout,
   Camera,
   Upload,
-  ArrowLeft,
-  Settings,
-  Building2
+  Building2,
+  X,
+  Star,
+  Globe
 } from 'lucide-react';
 import { PublicWebsite } from '../public/PublicWebsite';
 import { AnimatePresence, motion } from 'framer-motion';
+import { supabase } from '../../lib/supabase';
 
-const SettingsSection: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, icon, children, defaultOpen = false }) => {
+interface SettingsSectionProps {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+const SettingsSection: React.FC<SettingsSectionProps> = ({ title, icon, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
     <Card className="p-0 border-border-light/60 shadow-sm bg-white rounded-[28px] overflow-hidden transition-all duration-300">
@@ -66,6 +74,9 @@ export const WebsiteCustomizer: React.FC = () => {
   const { business, updateBusiness } = useAppStore();
   const [showPreview, setShowPreview] = useState(false);
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  if (!business) return null;
 
   const handleSocialChange = (key: keyof typeof business.socials, value: string) => {
     updateBusiness({
@@ -76,27 +87,50 @@ export const WebsiteCustomizer: React.FC = () => {
     });
   };
 
-  const handleAddField = (field: 'reviews' | 'proofOfWork') => {
+  const handleAddField = async (field: 'reviews' | 'proofOfWork') => {
+    const { addReview, addProofItem } = useAppStore.getState();
     if (field === 'reviews') {
-      const newReview = { id: Date.now().toString(), name: 'New Customer', text: 'Amazing service!', rating: 5 };
-      updateBusiness({ reviews: [...business.reviews, newReview] });
+      await addReview({ customer_name: 'New Customer', comment: 'Amazing service!', rating: 5 });
     } else {
-      const newProof = { id: Date.now().toString(), image: '', caption: 'New Work' };
-      updateBusiness({ proofOfWork: [...business.proofOfWork, newProof] });
+      await addProofItem({ image_url: '', caption: 'New Work' });
     }
   };
 
-  const handleDeleteField = (field: 'reviews' | 'proofOfWork', id: string) => {
+  const handleDeleteField = async (field: 'reviews' | 'proofOfWork', id: string) => {
+    const { deleteReview, deleteProofItem } = useAppStore.getState();
     if (field === 'reviews') {
-      updateBusiness({ reviews: business.reviews.filter(r => r.id !== id) });
+      await deleteReview(id);
     } else {
-      updateBusiness({ proofOfWork: business.proofOfWork.filter(p => p.id !== id) });
+      await deleteProofItem(id);
+    }
+  };
+
+  const handleUpload = async (file: File, type: 'logo' | 'cover' | 'about' | 'proof', extraId?: string) => {
+    if (!file) return;
+    setUploading(extraId || type);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${type}-${Date.now()}.${fileExt}`;
+      const filePath = `${business.id}/${fileName}`;
+      await supabase.storage.from('business-assets').upload(filePath, file);
+      const { data: { publicUrl } } = supabase.storage.from('business-assets').getPublicUrl(filePath);
+      
+      if (type === 'logo') await updateBusiness({ logo: publicUrl });
+      else if (type === 'cover') await updateBusiness({ coverImage: publicUrl });
+      else if (type === 'about') await updateBusiness({ aboutImage: publicUrl });
+      else if (type === 'proof' && extraId) {
+        const { updateProofItem } = useAppStore.getState();
+        await updateProofItem(extraId, { image_url: publicUrl });
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setUploading(null);
     }
   };
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-24 relative animate-in fade-in duration-700">
-      {/* Header Sticky */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-1 sticky top-0 bg-bg-secondary/80 backdrop-blur-md pt-4 pb-4 z-40 border-b border-border-light/20 -mx-1">
          <div className="space-y-1">
             <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-text-primary">Website Studio</h1>
@@ -114,8 +148,8 @@ export const WebsiteCustomizer: React.FC = () => {
             </Button>
             <Button 
               size="sm"
-              className="flex-1 sm:flex-none h-11 px-8 rounded-xl font-bold shadow-xl shadow-brand/20 transition-all text-xs uppercase tracking-widest"
-              style={{ backgroundColor: business.primaryColor }}
+              className="flex-1 sm:flex-none h-11 px-8 rounded-xl font-bold shadow-xl shadow-brand/20 transition-all text-xs uppercase tracking-widest bg-brand text-white"
+              onClick={() => {}}
             >
               <Save size={16} className="mr-2" />
               Publish Changes
@@ -124,11 +158,9 @@ export const WebsiteCustomizer: React.FC = () => {
       </header>
 
       <div className="space-y-6">
-        {/* Core Branding Section */}
         <SettingsSection title="Visual Identity" icon={<Layout />} defaultOpen>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-6">
-                 {/* Business Name */}
                  <div className="space-y-2.5">
                     <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Business Name</label>
                     <Input 
@@ -137,8 +169,6 @@ export const WebsiteCustomizer: React.FC = () => {
                        className="h-12 rounded-xl bg-bg-secondary/40 border-border-light/40 focus:bg-white text-sm"
                     />
                  </div>
-
-                 {/* Main Accent Color */}
                  <div className="space-y-2.5">
                     <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Accent Theme</label>
                     <div className="flex items-center gap-4 bg-bg-secondary/40 p-3 rounded-2xl border border-border-light/40">
@@ -156,22 +186,18 @@ export const WebsiteCustomizer: React.FC = () => {
                  </div>
               </div>
 
-              {/* Logo Upload Simulation */}
               <div className="space-y-6">
                  <div className="space-y-2.5">
                     <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Company Logo</label>
                     <div className="flex items-center gap-5 bg-bg-secondary/40 p-4 rounded-2xl border border-border-light/40">
-                       <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center border border-border-light shadow-sm overflow-hidden p-2">
+                       <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center border border-border-light shadow-sm overflow-hidden p-2 relative">
                           {business.logo ? <img src={business.logo} className="object-contain w-full h-full" alt="Logo" /> : <Upload size={18} className="text-text-tertiary" />}
+                          {uploading === 'logo' && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>}
+                          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'logo')} />
                        </div>
                        <div className="flex-1 space-y-2">
-                          <Input 
-                             placeholder="Logo URL (simulation)"
-                             value={business.logo || ''}
-                             onChange={e => updateBusiness({ logo: e.target.value })}
-                             className="h-9 rounded-lg bg-white/50 border-border-light/50 text-[10px]"
-                          />
-                          <p className="text-[8px] text-text-tertiary uppercase tracking-widest px-1">Transparent PNG recommended</p>
+                          <p className="text-[10px] font-bold text-text-primary uppercase">Click to upload brand logo</p>
+                          <p className="text-[8px] text-text-tertiary uppercase tracking-widest">Transparent PNG recommended</p>
                        </div>
                     </div>
                  </div>
@@ -179,7 +205,6 @@ export const WebsiteCustomizer: React.FC = () => {
            </div>
         </SettingsSection>
 
-        {/* Hero Section Strategy */}
         <SettingsSection title="Hero & Entrance" icon={<Type />}>
            <div className="space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -187,287 +212,292 @@ export const WebsiteCustomizer: React.FC = () => {
                     <div className="space-y-2.5">
                        <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Main Headline</label>
                        <Input 
-                          value={business.headline} 
-                          onChange={e => updateBusiness({ headline: e.target.value })}
-                          placeholder="Your Bold Catchphrase"
+                          value={business.heroTitle} 
+                          onChange={e => updateBusiness({ heroTitle: e.target.value })}
                           className="h-12 rounded-xl bg-bg-secondary/40 border-border-light/40 focus:bg-white text-sm"
                        />
                     </div>
                     <div className="space-y-2.5">
-                       <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Supportive Subtext</label>
-                       <textarea 
-                          value={business.subtext}
-                          onChange={e => updateBusiness({ subtext: e.target.value })}
-                          placeholder="Briefly explain your value proposition..."
-                          className="w-full h-24 rounded-xl p-4 bg-bg-secondary/40 border-border-light/40 focus:bg-white text-sm transition-all outline-none resize-none font-medium leading-relaxed"
+                       <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Sub-headline</label>
+                       <Input 
+                          value={business.heroSubtitle} 
+                          onChange={e => updateBusiness({ heroSubtitle: e.target.value })}
+                          className="h-12 rounded-xl bg-bg-secondary/40 border-border-light/40 focus:bg-white text-sm"
+                       />
+                    </div>
+                    <div className="space-y-2.5">
+                       <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Button Text</label>
+                       <Input 
+                          value={business.ctaText} 
+                          onChange={e => updateBusiness({ ctaText: e.target.value })}
+                          className="h-12 rounded-xl bg-bg-secondary/40 border-border-light/40 focus:bg-white text-sm"
                        />
                     </div>
                  </div>
-
                  <div className="space-y-2.5">
-                    <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Cover Image (Hero)</label>
-                    <div className="relative aspect-video rounded-3xl bg-bg-secondary/40 border border-border-light/40 overflow-hidden group">
+                    <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Hero Image</label>
+                    <div className="aspect-video rounded-3xl bg-bg-secondary/40 border border-border-light/40 flex items-center justify-center relative overflow-hidden group">
                        {business.coverImage ? (
                          <img src={business.coverImage} className="w-full h-full object-cover" alt="Cover" />
                        ) : (
-                         <div className="absolute inset-0 flex flex-col items-center justify-center text-text-tertiary space-y-2">
-                            <Camera size={24} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Select Image</span>
+                         <div className="text-center space-y-2">
+                           <ImageIcon className="mx-auto text-text-tertiary" size={32} />
+                           <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">No Image</p>
                          </div>
                        )}
-                       <div className="absolute inset-x-4 bottom-4">
-                          <Input 
-                             placeholder="Cover Image URL"
-                             value={business.coverImage || ''}
-                             onChange={e => updateBusiness({ coverImage: e.target.value })}
-                             className="h-10 bg-white shadow-xl rounded-xl border-none text-[10px] w-full"
-                          />
-                       </div>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </SettingsSection>
-
-        {/* Gallery / Proof of Work */}
-        <SettingsSection title="Portfolio Gallery" icon={<ImageIcon />}>
-           <div className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                 {business.proofOfWork.map((item) => (
-                   <div key={item.id} className="relative aspect-square rounded-2xl bg-bg-secondary overflow-hidden border border-border-light group">
-                      {item.image ? (
-                        <img src={item.image} className="w-full h-full object-cover" alt="Portfolio" />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-text-tertiary/40">
-                           <Camera size={20} />
-                        </div>
-                      )}
-                      
-                      <div className="absolute inset-x-2 bottom-2 space-y-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                         <div className="flex justify-end pr-1">
-                            <button 
-                               onClick={() => handleDeleteField('proofOfWork', item.id)}
-                               className="bg-white/90 backdrop-blur-md text-error p-1 rounded-lg hover:bg-error hover:text-white transition-all border-none cursor-pointer shadow-lg"
-                            >
-                               <Trash2 size={10} />
-                            </button>
-                         </div>
-                         <Input 
-                            placeholder="Image URL"
-                            value={item.image}
-                            onChange={(e) => {
-                               const updated = business.proofOfWork.map(p => p.id === item.id ? { ...p, image: e.target.value } : p);
-                               updateBusiness({ proofOfWork: updated });
-                            }}
-                            className="h-7 bg-white/90 border-none rounded-md text-[8px] p-2 w-full shadow-lg"
-                         />
-                         <Input 
-                            placeholder="Caption"
-                            value={item.caption}
-                            onChange={(e) => {
-                               const updated = business.proofOfWork.map(p => p.id === item.id ? { ...p, caption: e.target.value } : p);
-                               updateBusiness({ proofOfWork: updated });
-                            }}
-                            className="h-7 bg-white/90 border-none rounded-md text-[8px] p-2 w-full shadow-lg"
-                         />
-                      </div>
-                   </div>
-                 ))}
-                 <button 
-                   onClick={() => handleAddField('proofOfWork')}
-                   className="aspect-square rounded-2xl border-2 border-dashed border-border-light flex flex-col items-center justify-center gap-2 text-text-tertiary hover:border-brand/40 hover:text-brand transition-all group cursor-pointer bg-transparent"
-                 >
-                    <Plus size={20} className="group-hover:scale-110 transition-transform" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Add item</span>
-                 </button>
-              </div>
-           </div>
-        </SettingsSection>
-
-        {/* About Experience */}
-        <SettingsSection title="Our Story" icon={<Building2 />}>
-           <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
-              <div className="md:col-span-3 space-y-6">
-                 <div className="space-y-2.5">
-                    <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">About Text</label>
-                    <textarea 
-                       value={business.aboutText}
-                       onChange={e => updateBusiness({ aboutText: e.target.value })}
-                       placeholder="Tell your clients who you are..."
-                       className="w-full h-48 rounded-xl p-4 bg-bg-secondary/40 border-border-light/40 focus:bg-white text-sm transition-all outline-none resize-none font-medium leading-relaxed"
-                    />
-                 </div>
-              </div>
-              <div className="md:col-span-2 space-y-6">
-                 <div className="space-y-2.5">
-                    <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Side Image</label>
-                    <div className="relative aspect-3/4 rounded-3xl bg-bg-secondary/40 border border-border-light/40 overflow-hidden group">
-                       {business.aboutImage ? (
-                          <img src={business.aboutImage} className="w-full h-full object-cover" alt="About" />
-                       ) : (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-text-tertiary space-y-2">
-                             <ImageIcon size={24} />
-                             <span className="text-[10px] font-bold uppercase tracking-widest">About Image</span>
+                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                          <div className="flex flex-col items-center gap-2 text-white">
+                             <Camera size={24} />
+                             <span className="text-[10px] font-bold uppercase tracking-widest">Change Photo</span>
                           </div>
-                       )}
-                       <div className="absolute inset-x-4 bottom-4">
-                          <Input 
-                             placeholder="About Image URL"
-                             value={business.aboutImage || ''}
-                             onChange={e => updateBusiness({ aboutImage: e.target.value })}
-                             className="h-10 bg-white shadow-xl rounded-xl border-none text-[10px]"
-                          />
+                          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'cover')} />
                        </div>
+                       {uploading === 'cover' && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-6 h-6 border-4 border-brand border-t-transparent rounded-full animate-spin" /></div>}
                     </div>
                  </div>
               </div>
            </div>
         </SettingsSection>
 
-        {/* Global Connections */}
-        <SettingsSection title="Social & Footer" icon={<Settings />}>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <div className="space-y-6">
-                 <div className="space-y-2.5">
-                    <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Store Location</label>
-                    <div className="relative flex items-center">
-                       <MapPin size={16} className="absolute left-4 text-text-tertiary" />
-                       <Input 
-                         value={business.address || ''} 
-                         placeholder="Street address city, country"
-                         onChange={e => updateBusiness({ address: e.target.value })}
-                         className="h-11 pl-12 rounded-xl bg-bg-secondary/40 border-border-light/40 focus:bg-white text-xs"
-                       />
-                    </div>
+        <SettingsSection title="Proof & Showcase" icon={<ImageIcon />}>
+           <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                 <div>
+                    <h4 className="text-[10px] font-bold text-text-primary uppercase tracking-widest">Portfolio Gallery</h4>
+                    <p className="text-[9px] text-text-tertiary">Showcase your best work and transformations.</p>
                  </div>
-                 
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2.5">
-                       <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Public Email</label>
-                       <Input 
-                         value={business.email || ''} 
-                         onChange={e => updateBusiness({ email: e.target.value })}
-                         className="h-11 rounded-xl bg-bg-secondary/40 border-border-light/40 focus:bg-white text-xs"
-                       />
-                    </div>
-                    <div className="space-y-2.5">
-                       <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Public Phone</label>
-                       <Input 
-                         value={business.phone || ''} 
-                         onChange={e => updateBusiness({ phone: e.target.value })}
-                         className="h-11 rounded-xl bg-bg-secondary/40 border-border-light/40 focus:bg-white text-xs"
-                       />
-                    </div>
-                 </div>
+                 <Button variant="secondary" size="sm" className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase tracking-widest" onClick={() => handleAddField('proofOfWork')}>
+                    <Plus size={14} className="mr-2" />
+                    Add Entry
+                 </Button>
               </div>
 
-              <div className="space-y-6">
-                 <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1 block">Social Presence</label>
-                 <div className="space-y-3">
-                    <div className="flex items-center gap-3 bg-bg-secondary/40 p-3 rounded-xl border border-border-light/40 focus-within:bg-white transition-all">
-                       <Instagram size={14} className="text-text-tertiary" />
-                       <input 
-                          placeholder="Instagram URL"
-                          value={business.socials?.instagram || ''}
-                          onChange={e => handleSocialChange('instagram', e.target.value)}
-                          className="bg-transparent border-none focus:ring-0 text-[11px] p-0 w-full font-medium"
-                       />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {(business.proofOfWork || []).map((item: any) => (
+                    <div key={item.id} className="group flex flex-col bg-bg-secondary/40 rounded-2xl border border-border-light/40 overflow-hidden relative">
+                       <div className="aspect-video bg-bg-tertiary flex items-center justify-center relative">
+                          {item.image_url ? (
+                            <img src={item.image_url} className="w-full h-full object-cover" alt="Proof" />
+                          ) : (
+                            <ImageIcon className="text-text-tertiary" size={24} />
+                          )}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                             <Camera className="text-white cursor-pointer" size={20} />
+                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'proof', item.id)} />
+                          </div>
+                          {uploading === item.id && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-5 h-5 border-3 border-brand border-t-transparent rounded-full animate-spin" /></div>}
+                       </div>
+                       <div className="p-3 pr-10">
+                          <Input 
+                             value={item.caption || ''} 
+                             onChange={e => {
+                               const { updateProofItem } = useAppStore.getState();
+                               updateProofItem(item.id, { caption: e.target.value });
+                             }}
+                             className="h-8 bg-transparent border-none text-[10px] p-0 font-medium placeholder:text-text-tertiary"
+                             placeholder="Add a caption..."
+                          />
+                          <button 
+                             onClick={() => handleDeleteField('proofOfWork', item.id)}
+                             className="absolute bottom-3 right-3 p-1.5 text-text-tertiary hover:text-error transition-colors"
+                          >
+                             <Trash2 size={12} />
+                          </button>
+                       </div>
                     </div>
-                    <div className="flex items-center gap-3 bg-bg-secondary/40 p-3 rounded-xl border border-border-light/40 focus-within:bg-white transition-all">
-                       <Facebook size={14} className="text-text-tertiary" />
-                       <input 
-                          placeholder="Facebook URL"
-                          value={business.socials?.facebook || ''}
-                          onChange={e => handleSocialChange('facebook', e.target.value)}
-                          className="bg-transparent border-none focus:ring-0 text-[11px] p-0 w-full font-medium"
-                       />
-                    </div>
-                    <div className="flex items-center gap-3 bg-bg-secondary/40 p-3 rounded-xl border border-border-light/40 focus-within:bg-white transition-all">
-                       <Twitter size={14} className="text-text-tertiary" />
-                       <input 
-                          placeholder="Twitter URL"
-                          value={business.socials?.twitter || ''}
-                          onChange={e => handleSocialChange('twitter', e.target.value)}
-                          className="bg-transparent border-none focus:ring-0 text-[11px] p-0 w-full font-medium"
-                       />
-                    </div>
+                 ))}
+              </div>
+           </div>
+        </SettingsSection>
+
+        <SettingsSection title="Consumer Reviews" icon={<Star />}>
+           <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                 <div>
+                    <h4 className="text-[10px] font-bold text-text-primary uppercase tracking-widest">Testimonials</h4>
+                    <p className="text-[9px] text-text-tertiary">What your customers say about you.</p>
                  </div>
+                 <Button variant="secondary" size="sm" className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase tracking-widest" onClick={() => handleAddField('reviews')}>
+                    <Plus size={14} className="mr-2" />
+                    Add Review
+                 </Button>
+              </div>
+
+              <div className="space-y-4">
+                 {(business.reviews || []).map((review: any) => (
+                    <div key={review.id} className="p-5 bg-bg-secondary/40 rounded-2xl border border-border-light/40 relative group">
+                       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                          <div className="space-y-1.5">
+                             <label className="text-[8px] font-bold text-text-tertiary uppercase tracking-widest">Customer</label>
+                             <Input 
+                                value={review.customer_name} 
+                                onChange={e => {
+                                  const { updateReview } = useAppStore.getState();
+                                  updateReview(review.id, { customer_name: e.target.value });
+                                }}
+                                className="h-10 bg-white border-border-light/60 rounded-xl text-xs font-bold"
+                             />
+                          </div>
+                          <div className="md:col-span-3 space-y-1.5">
+                             <label className="text-[8px] font-bold text-text-tertiary uppercase tracking-widest">Comment</label>
+                             <Input 
+                                value={review.comment} 
+                                onChange={e => {
+                                  const { updateReview } = useAppStore.getState();
+                                  updateReview(review.id, { comment: e.target.value });
+                                }}
+                                className="h-10 bg-white border-border-light/60 rounded-xl text-xs"
+                             />
+                          </div>
+                       </div>
+                       <button 
+                          onClick={() => handleDeleteField('reviews', review.id)}
+                          className="absolute top-4 right-4 p-1.5 text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity hover:text-error"
+                       >
+                          <Trash2 size={14} />
+                       </button>
+                    </div>
+                 ))}
+              </div>
+           </div>
+        </SettingsSection>
+
+        <SettingsSection title="About & Story" icon={<Building2 />}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+               <div className="space-y-6">
+                  <div className="space-y-2.5">
+                     <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">About Title</label>
+                     <Input 
+                        value={business.aboutTitle} 
+                        onChange={e => updateBusiness({ aboutTitle: e.target.value })}
+                        className="h-11 rounded-xl bg-bg-secondary/40 border-border-light/40 text-xs font-bold"
+                     />
+                  </div>
+                  <div className="space-y-2.5">
+                     <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">Description</label>
+                     <textarea 
+                        value={business.aboutDescription} 
+                        onChange={e => updateBusiness({ aboutDescription: e.target.value })}
+                        rows={6}
+                        className="w-full p-4 rounded-2xl bg-bg-secondary/40 border border-border-light/40 focus:bg-white text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all"
+                     />
+                  </div>
+               </div>
+               <div className="space-y-6">
+                  <div className="space-y-2.5">
+                     <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest ml-1">About Photo</label>
+                     <div className="aspect-square rounded-3xl bg-bg-secondary/40 border border-border-light/40 flex items-center justify-center relative overflow-hidden group">
+                        {business.aboutImage ? (
+                          <img src={business.aboutImage} className="w-full h-full object-cover" alt="About" />
+                        ) : (
+                          <div className="text-center space-y-2">
+                             <ImageIcon className="mx-auto text-text-tertiary" size={24} />
+                             <p className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">No Selection</p>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                           <Camera className="text-white" size={24} />
+                           <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'about')} />
+                        </div>
+                        {uploading === 'about' && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-6 h-6 border-4 border-brand border-t-transparent rounded-full animate-spin" /></div>}
+                     </div>
+                  </div>
+               </div>
+            </div>
+        </SettingsSection>
+
+        <SettingsSection title="Social Presence" icon={<Globe />}>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2.5">
+                 <div className="flex items-center gap-2 ml-1">
+                    <Instagram size={14} className="text-text-tertiary" />
+                    <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">Instagram</label>
+                 </div>
+                 <Input 
+                   value={business.socials.instagram}
+                   onChange={e => handleSocialChange('instagram', e.target.value)}
+                   className="h-11 rounded-xl bg-bg-secondary/40 border-border-light/40 text-xs"
+                   placeholder="@yourhandle"
+                 />
+              </div>
+              <div className="space-y-2.5">
+                 <div className="flex items-center gap-2 ml-1">
+                    <Facebook size={14} className="text-text-tertiary" />
+                    <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">Facebook</label>
+                  </div>
+                 <Input 
+                   value={business.socials.facebook}
+                   onChange={e => handleSocialChange('facebook', e.target.value)}
+                   className="h-11 rounded-xl bg-bg-secondary/40 border-border-light/40 text-xs"
+                   placeholder="Facebook ID"
+                 />
+              </div>
+              <div className="space-y-2.5">
+                 <div className="flex items-center gap-2 ml-1">
+                    <Twitter size={14} className="text-text-tertiary" />
+                    <label className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">Twitter/X</label>
+                 </div>
+                 <Input 
+                   value={business.socials.twitter}
+                   onChange={e => handleSocialChange('twitter', e.target.value)}
+                   className="h-11 rounded-xl bg-bg-secondary/40 border-border-light/40 text-xs"
+                   placeholder="@handle"
+                 />
               </div>
            </div>
         </SettingsSection>
       </div>
 
-      {/* Preview Fullscreen Modal */}
       <AnimatePresence>
-         {showPreview && (
-           <motion.div 
-             initial={{ opacity: 0 }}
-             animate={{ opacity: 1 }}
-             exit={{ opacity: 0 }}
-             className="fixed inset-0 z-60 bg-white flex flex-col"
-           >
-              <header className="h-20 border-b border-border-light flex items-center justify-between px-6 lg:px-10 shrink-0">
-                 <button 
-                   onClick={() => setShowPreview(false)}
-                   className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-text-primary transition-all border-none bg-transparent cursor-pointer"
-                 >
-                    <ArrowLeft size={16} /> Back to Editor
-                 </button>
-
-                 <div className="hidden lg:flex bg-bg-secondary p-1 rounded-2xl border border-border-light shadow-sm">
+        {showPreview && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-100 bg-black/60 backdrop-blur-xl flex items-center justify-center p-4 lg:p-8"
+          >
+            <div className="w-full h-full max-w-7xl bg-bg-secondary rounded-[40px] shadow-2xl overflow-hidden flex flex-col relative">
+              <div className="p-6 border-b border-border-light flex items-center justify-between bg-white">
+                <div className="flex items-center gap-8">
+                  <div className="flex flex-col">
+                    <h2 className="text-lg font-black tracking-tight text-text-primary">Live Preview</h2>
+                    <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-bold">Currently viewing: {viewMode}</p>
+                  </div>
+                  
+                  <div className="bg-bg-secondary p-1 rounded-2xl flex items-center gap-1 border border-border-light">
                     <button 
                       onClick={() => setViewMode('desktop')}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border-none cursor-pointer ${viewMode === 'desktop' ? 'bg-white text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
+                      className={`h-9 px-6 rounded-xl flex items-center gap-2 text-xs font-bold transition-all ${viewMode === 'desktop' ? 'bg-white text-brand shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
                     >
-                       <Monitor size={14} /> Desktop
+                      <Monitor size={14} />
+                      Desktop
                     </button>
                     <button 
                       onClick={() => setViewMode('mobile')}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border-none cursor-pointer ${viewMode === 'mobile' ? 'bg-white text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
+                      className={`h-9 px-6 rounded-xl flex items-center gap-2 text-xs font-bold transition-all ${viewMode === 'mobile' ? 'bg-white text-brand shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
                     >
-                       <Smartphone size={14} /> Mobile
+                      <Smartphone size={14} />
+                      Mobile
                     </button>
-                 </div>
-
-                 {/* On mobile devices, only show mobile badge as per user request */}
-                 <div className="lg:hidden">
-                    <div className="flex items-center gap-2 text-[8px] font-bold text-text-tertiary uppercase tracking-widest bg-bg-secondary px-3 py-1.5 rounded-full border border-border-light/50">
-                       <Smartphone size={10} /> Mobile Preview
-                    </div>
-                 </div>
-
-                 <div className="flex items-center gap-3">
-                    <span className="hidden sm:flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg border border-emerald-100">
-                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Mode
-                    </span>
-                    <Button 
-                      size="sm" 
-                      onClick={() => setShowPreview(false)}
-                      className="h-10 px-6 rounded-xl font-bold transition-all text-[10px] uppercase tracking-widest"
-                      style={{ backgroundColor: business.primaryColor }}
-                    >
-                      Apply
-                    </Button>
-                 </div>
-              </header>
-
-              <div className="flex-1 bg-bg-tertiary flex items-center justify-center overflow-hidden relative p-4 lg:p-12">
-                 <div className={`bg-white shadow-2xl transition-all duration-700 overflow-hidden relative ${viewMode === 'desktop' ? 'w-full h-full rounded-[32px]' : 'w-[320px] max-w-full h-[640px] max-h-full rounded-[48px] border-12 border-text-primary shadow-2xl relative flex flex-col'}`}>
-                 <div className="w-full h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-white">
-                    <div className="min-h-full w-full">
-                       <PublicWebsite forcedView={viewMode} />
-                    </div>
-                 </div>
-                    {viewMode === 'mobile' && (
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-text-tertiary/20 rounded-full" />
-                    )}
-                 </div>
-                 
-                 {/* Background Decorative Grid */}
-                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => setShowPreview(false)}
+                  className="w-11 h-11 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-tertiary hover:bg-error/10 hover:text-error transition-all"
+                >
+                  <X size={20} />
+                </button>
               </div>
-           </motion.div>
-         )}
+
+              <div className="flex-1 bg-bg-tertiary/50 p-4 lg:p-10 overflow-auto flex items-center justify-center">
+                <div className={`transition-all duration-700 bg-white shadow-2xl rounded-[32px] overflow-hidden ${viewMode === 'mobile' ? 'w-[375px] h-[700px] ring-12 ring-black/5' : 'w-full h-full'}`}>
+                   <PublicWebsite forcedView={viewMode} />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

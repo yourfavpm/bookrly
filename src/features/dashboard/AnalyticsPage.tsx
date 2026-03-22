@@ -44,6 +44,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, trend, tren
 export const AnalyticsPage: React.FC = () => {
   const { business } = useAppStore();
 
+  if (!business) return null;
+
   // Simple stats calculation
   const totalBookings = business.bookings.length;
   const totalRevenue = business.bookings.reduce((sum, b) => sum + b.totalAmount, 0);

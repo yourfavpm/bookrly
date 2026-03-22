@@ -36,21 +36,24 @@ const StatCard: React.FC<{ label: string; value: string; trend: string; icon: Re
 export const DashboardOverview: React.FC = () => {
   const { business } = useAppStore();
   const navigate = useNavigate();
-  
-  const firstName = business.name.split(' ')[0] || 'there';
-  const today = new Date();
-  const hour = today.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   const upcomingBookings = useMemo(() => {
+    if (!business) return [];
     return [...business.bookings]
-      .filter(b => b.status === 'upcoming')
+      .filter(b => (b.status === 'confirmed' || b.status === 'pending') && new Date(b.date).getTime() >= new Date().setHours(0,0,0,0))
       .map(b => ({
         ...b,
         serviceName: business.services.find(s => s.id === b.serviceId)?.name || 'Consultation'
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [business.bookings, business.services]);
+  }, [business]);
+
+  if (!business) return null;
+  
+  const firstName = business.name.split(' ')[0] || 'there';
+  const today = new Date();
+  const hour = today.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   const nextBooking = upcomingBookings[0];
   
@@ -78,15 +81,14 @@ export const DashboardOverview: React.FC = () => {
              variant="secondary" 
              size="sm"
              className="flex-1 lg:flex-none h-10 px-4 lg:px-6 rounded-xl font-bold bg-white shadow-sm border-border-light text-[10px] lg:text-xs uppercase tracking-widest"
-             onClick={() => window.open(`/p/${business.id}`, '_blank')}
+             onClick={() => window.open(`/p/${business.subdomain}`, '_blank')}
            >
              <ExternalLink size={14} className="mr-2" />
              Preview
            </Button>
            <Button 
              size="sm"
-             className="flex-1 lg:flex-none h-10 px-4 lg:px-6 rounded-xl font-bold shadow-lg shadow-brand/20 transition-all text-[10px] lg:text-xs uppercase tracking-widest"
-             style={{ backgroundColor: business.primaryColor }}
+             className="flex-1 lg:flex-none h-10 px-4 lg:px-6 rounded-xl font-bold shadow-lg shadow-brand/20 transition-all text-[10px] lg:text-xs uppercase tracking-widest bg-brand text-white"
              onClick={() => navigate('/dashboard/bookings')}
            >
              <Calendar size={14} className="mr-2" />
@@ -102,7 +104,7 @@ export const DashboardOverview: React.FC = () => {
           value={`$${stats.revenue.toLocaleString()}`}
           trend="+18%" 
           icon={<DollarSign />}
-          color={business.primaryColor}
+          color="var(--color-brand)"
         />
         <StatCard 
           label="Bookings" 
@@ -133,7 +135,6 @@ export const DashboardOverview: React.FC = () => {
               <button 
                 onClick={() => navigate('/dashboard/bookings')}
                 className="text-[10px] font-bold text-brand hover:underline underline-offset-4 tracking-widest uppercase transition-all"
-                style={{ color: business.primaryColor }}
               >
                 View all
               </button>
@@ -158,8 +159,7 @@ export const DashboardOverview: React.FC = () => {
                           <Button 
                              size="sm"
                              onClick={() => navigate('/dashboard/bookings')}
-                             className="h-10 px-5 rounded-xl font-bold shadow-md transition-all text-[10px] uppercase tracking-widest"
-                             style={{ backgroundColor: business.primaryColor }}
+                             className="h-10 px-5 rounded-xl font-bold shadow-md transition-all text-[10px] uppercase tracking-widest bg-brand text-white"
                           >
                              Manage
                           </Button>
@@ -171,12 +171,12 @@ export const DashboardOverview: React.FC = () => {
                     </div>
                     <div className="bg-bg-secondary/40 p-6 lg:p-8 flex flex-row sm:flex-col items-center justify-between lg:justify-center border-t sm:border-t-0 sm:border-l border-border-light relative group-hover:bg-brand-light/10 transition-colors sm:w-40 lg:w-48">
                        <div className="flex items-center gap-4 sm:flex-col sm:gap-2">
-                          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand font-black text-xl lg:text-2xl relative z-10" style={{ color: business.primaryColor }}>
+                          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand font-black text-xl lg:text-2xl relative z-10">
                              {nextBooking.customerName.charAt(0)}
                           </div>
                           <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest sm:mt-1">Profile</p>
                        </div>
-                       <ChevronRight className="sm:absolute sm:right-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all text-brand" size={16} style={{ color: business.primaryColor }} />
+                       <ChevronRight className="sm:absolute sm:right-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all text-brand" size={16} />
                     </div>
                 </Card>
 
@@ -230,14 +230,14 @@ export const DashboardOverview: React.FC = () => {
                  onClick={() => navigate('/dashboard/website')}
                  className="p-5 lg:p-6 space-y-4 group cursor-pointer hover:shadow-md transition-all duration-300 rounded-[28px] border border-border-light bg-white"
               >
-                 <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-bg-secondary flex items-center justify-center text-text-tertiary group-hover:bg-brand group-hover:text-white transition-all" style={{ backgroundColor: business.primaryColor + '10', color: business.primaryColor }}>
+                 <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-brand-light flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-all">
                     <Edit3 size={18} />
                  </div>
                  <div className="space-y-1">
                     <h4 className="text-sm font-bold text-text-primary tracking-tight">Design Website</h4>
                     <p className="text-[10px] font-medium text-text-secondary leading-relaxed">Personalize your brand experience.</p>
                  </div>
-                 <ChevronRight size={14} className="text-brand opacity-0 lg:group-hover:opacity-100 transition-all ml-auto" style={{ color: business.primaryColor }} />
+                 <ChevronRight size={14} className="text-brand opacity-0 lg:group-hover:opacity-100 transition-all ml-auto" />
               </Card>
 
               <Card 

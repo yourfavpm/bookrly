@@ -7,20 +7,22 @@ import { ServiceEditor } from './ServiceEditor';
 import { AnimatePresence } from 'framer-motion';
 
 export const ServicesList: React.FC = () => {
-  const { business, updateBusiness } = useAppStore();
+  const { business, deleteService, updateService } = useAppStore();
   const [editingId, setEditingId] = useState<string | null | undefined>(undefined);
 
-  const handleDelete = (id: string) => {
+  if (!business) return null;
+
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this service?')) {
-      updateBusiness({ services: business.services.filter(s => s.id !== id) });
+      await deleteService(id);
     }
   };
 
-  const handleToggleActive = (id: string) => {
-    const updated = business.services.map(s => 
-      s.id === id ? { ...s, active: !s.active } : s
-    );
-    updateBusiness({ services: updated });
+  const handleToggleActive = async (id: string) => {
+    const service = business.services.find(s => s.id === id);
+    if (service) {
+      await updateService(id, { ...service, active: !service.active });
+    }
   };
 
   return (
@@ -32,8 +34,7 @@ export const ServicesList: React.FC = () => {
          </div>
          <Button 
            size="sm" 
-           className="w-full sm:w-auto rounded-xl font-bold px-6 h-12 shadow-lg shadow-brand/20 transition-all text-xs uppercase tracking-widest"
-           style={{ backgroundColor: business.primaryColor }}
+           className="w-full sm:w-auto rounded-xl font-bold px-6 h-12 shadow-lg shadow-brand/20 transition-all text-xs uppercase tracking-widest bg-brand text-white"
            onClick={() => setEditingId(null)}
          >
            <Plus size={16} className="mr-2" />
@@ -51,7 +52,6 @@ export const ServicesList: React.FC = () => {
                <div className="flex items-center gap-5 lg:gap-8 mb-6 sm:mb-0">
                   <div 
                     className={`w-12 h-12 lg:w-16 lg:h-16 rounded-2xl flex items-center justify-center font-black text-xl transition-all duration-500 ${service.active ? 'bg-brand/10 text-brand scale-100 group-hover:scale-110' : 'bg-bg-secondary text-text-tertiary'}`}
-                    style={{ color: service.active ? business.primaryColor : undefined, backgroundColor: service.active ? `${business.primaryColor}15` : undefined }}
                   >
                     {service.name.charAt(0)}
                   </div>
@@ -70,7 +70,7 @@ export const ServicesList: React.FC = () => {
                        <span className="text-[9px] lg:text-[10px] font-bold text-text-tertiary flex items-center gap-1.5 uppercase tracking-widest bg-bg-secondary/50 px-2.5 py-1 rounded-lg">
                          <Clock size={10} /> {service.duration} MIN
                        </span>
-                       <span className="text-[9px] lg:text-[10px] font-black text-text-primary flex items-center gap-1.5 uppercase tracking-widest" style={{ color: business.primaryColor }}>
+                       <span className="text-[9px] lg:text-[10px] font-black text-brand flex items-center gap-1.5 uppercase tracking-widest">
                          <DollarSign size={10} /> ${service.price}
                        </span>
                        {service.bookingFeeEnabled && (
@@ -86,8 +86,7 @@ export const ServicesList: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <button 
                        onClick={() => handleToggleActive(service.id)}
-                       className={`h-9 px-4 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all ${service.active ? 'bg-bg-secondary text-text-tertiary hover:bg-bg-tertiary' : 'bg-success text-white'}`}
-                       style={{ backgroundColor: !service.active ? business.primaryColor : undefined }}
+                       className={`h-9 px-4 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all ${service.active ? 'bg-bg-secondary text-text-tertiary hover:bg-bg-tertiary' : 'bg-brand text-white'}`}
                     >
                        {service.active ? 'Disable' : 'Enable'}
                     </button>
@@ -117,8 +116,7 @@ export const ServicesList: React.FC = () => {
              <p className="text-[10px] text-text-tertiary mt-2 font-medium">Create your first offering to start taking bookings.</p>
              <Button 
                size="sm"
-               className="mt-8 rounded-xl font-bold h-11 px-8 text-[10px] uppercase tracking-widest"
-               style={{ backgroundColor: business.primaryColor }}
+               className="mt-8 rounded-xl font-bold h-11 px-8 text-[10px] uppercase tracking-widest bg-brand text-white"
              >
                Add Service
              </Button>

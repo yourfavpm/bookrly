@@ -14,7 +14,7 @@ export const Button: React.FC<ButtonProps> = ({
   className = '', 
   ...props 
 }) => {
-  const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none hover:-translate-y-0.5";
+  const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none hover:-translate-y-0.5 rounded-md";
   
   const variants = {
     primary: "bg-brand text-white hover:bg-brand-hover",
@@ -23,9 +23,9 @@ export const Button: React.FC<ButtonProps> = ({
   };
   
   const sizes = {
-    sm: "px-3 py-1.5 text-xs rounded-sm",
-    md: "px-5 py-2.5 text-sm rounded-md",
-    lg: "px-6 py-3 text-base rounded-lg"
+    sm: "px-3 py-1.5 text-xs",
+    md: "px-5 py-2.5 text-sm",
+    lg: "px-6 py-3 text-base"
   };
 
   return (

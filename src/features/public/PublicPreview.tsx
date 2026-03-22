@@ -5,6 +5,8 @@ import { Star, Clock, MapPin, Phone, Instagram, Facebook, Globe, ShieldCheck, Ch
 export const PublicPreview: React.FC = () => {
   const { business } = useAppStore();
 
+  if (!business) return null;
+
   return (
     <div className="min-h-full bg-white flex flex-col">
       {/* Navigation Preview */}
@@ -40,20 +42,20 @@ export const PublicPreview: React.FC = () => {
         
         <div className="relative z-10 max-w-3xl px-6 space-y-8 py-20">
            <h1 className={`text-4xl md:text-6xl font-bold tracking-tight leading-[1.05] animate-in fade-in slide-in-from-bottom-6 duration-700 ${business.coverImage ? 'text-white drop-shadow-xl' : 'text-text-primary'}`}>
-             {business.headline || "Your premium headline goes here"}
+             {business.heroTitle || "Your premium headline goes here"}
            </h1>
            <p className={`text-lg md:text-xl max-w-xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 ${business.coverImage ? 'text-white/90 drop-shadow-md' : 'text-text-secondary'}`}>
-             {business.subtext || "Enter a supporting subheadline that builds trust and explains what you do best."}
+             {business.heroSubtitle || "Enter a supporting subheadline that builds trust and explains what you do best."}
            </p>
            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 animate-in fade-in slide-in-from-bottom-10 duration-1000">
               <button 
                 className="px-10 py-4 rounded-2xl text-white font-bold text-lg shadow-2xl transition-all hover:scale-[1.03] active:scale-95" 
                 style={{ backgroundColor: business.primaryColor }}
               >
-                {business.heroButtons.primary || 'Book Appointment'}
+                {business.ctaText || 'Book Appointment'}
               </button>
               <button className={`px-10 py-4 rounded-2xl font-bold text-lg border-2 backdrop-blur-md transition-all hover:bg-white/10 active:scale-95 ${business.coverImage ? 'border-white/30 text-white' : 'border-border-default text-text-primary'}`}>
-                {business.heroButtons.secondary || 'Our Services'}
+                Our Services
               </button>
            </div>
         </div>
@@ -155,7 +157,7 @@ export const PublicPreview: React.FC = () => {
       )}
 
       {/* About Section */}
-      {business.aboutText && (
+      {business.aboutDescription && (
         <section className="py-32 px-6 max-w-6xl mx-auto w-full">
            <div className={`grid grid-cols-1 ${business.aboutImage ? 'lg:grid-cols-2' : ''} gap-20 items-center`}>
               {business.aboutImage && (
@@ -171,7 +173,7 @@ export const PublicPreview: React.FC = () => {
                     <div className="w-12 h-1 bg-brand rounded-full" style={{ backgroundColor: business.primaryColor }} />
                  </div>
                  <p className="text-lg text-text-secondary leading-relaxed font-normal whitespace-pre-wrap">
-                   {business.aboutText}
+                   {business.aboutDescription}
                   </p>
                  <div className="pt-4 flex items-center gap-6">
                     <div className="flex gap-3">

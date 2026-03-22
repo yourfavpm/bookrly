@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronRight, 
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -39,7 +40,7 @@ const StepWrapper: React.FC<{ children: React.ReactNode, title: string, subtitle
   </motion.div>
 );
 
-const PreviewCard: React.FC<{ business: { name: string; category: string; logo: string | null; primaryColor: string; coverImage: string | null; headline: string; subtext: string } }> = ({ business }) => (
+const PreviewCard: React.FC<{ business: { name: string; category: string; logo: string | null; primaryColor: string; coverImage: string | null; headline?: string; heroTitle?: string; subtext?: string; heroSubtitle?: string } }> = ({ business }) => (
   <div className="hidden lg:block sticky top-24">
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-border-light min-h-[500px] flex flex-col">
       <div className="h-4 w-full bg-bg-secondary flex gap-1.5 px-3 items-center border-b border-border-light">
@@ -104,9 +105,77 @@ const PreviewCard: React.FC<{ business: { name: string; category: string; logo: 
 );
 
 export const OnboardingFlow: React.FC = () => {
-  const { onboardingStep, setOnboardingStep, business, updateBusiness } = useAppStore();
+  const { onboardingStep, setOnboardingStep, business, updateBusiness, user, fetchBusiness } = useAppStore();
   const navigate = useNavigate();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
+  const [initializing, setInitializing] = useState(false);
+
+  // Initialize business if it doesn't exist
+  useEffect(() => {
+    if (!user) return;
+    if (business) return;
+    if (initializing) return;
+
+    const init = async () => {
+      setInitializing(true);
+      setInitError(null);
+      
+      try {
+        // First check if business already exists
+        const { data: existing, error: fetchError } = await supabase
+          .from('businesses')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+
+        if (fetchError) throw fetchError;
+
+        if (existing) {
+          // Business exists, just fetch it fully
+          await fetchBusiness();
+          return;
+        }
+
+        // Create new business
+        const { data, error } = await supabase
+          .from('businesses')
+          .insert([{ 
+            owner_id: user.id, 
+            name: '',
+            subdomain: `biz-${user.id.slice(0, 8)}`,
+            primary_color: '#4F46E5',
+            trust_section: 'none'
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+
+        if (data) {
+          // Initialize availability
+          const days = [0, 1, 2, 3, 4, 5, 6];
+          const availability = days.map(d => ({
+            business_id: data.id,
+            dayOfWeek: d,
+            startTime: '09:00',
+            endTime: '17:00',
+            isOpen: d !== 0 && d !== 6
+          }));
+
+          await supabase.from('availability').insert(availability);
+          await fetchBusiness();
+        }
+      } catch (err: unknown) {
+        console.error('Onboarding init error:', err);
+        setInitError(err instanceof Error ? err.message : 'Failed to initialize. Please try again.');
+      } finally {
+        setInitializing(false);
+      }
+    };
+    init();
+  }, [user, business, fetchBusiness, initializing]);
 
   const totalSteps = 13;
 
@@ -126,7 +195,7 @@ export const OnboardingFlow: React.FC = () => {
 
   const categories = ['Beauty', 'Fitness', 'Wellness', 'Education', 'Events', 'Professional', 'Other'];
 
-  if (isSuccess) {
+  if (isSuccess && business) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-700">
         <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center text-white mb-8 shadow-xl shadow-success/20">
@@ -142,7 +211,7 @@ export const OnboardingFlow: React.FC = () => {
               </div>
               <div className="absolute inset-0 p-4 flex flex-col justify-end">
                 <p className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">Live Website</p>
-                <p className="text-sm font-semibold truncate">{business.name.toLowerCase().replace(/\s+/g, '-')}.bookflow.ca</p>
+                <p className="text-sm font-semibold truncate">{business.name?.toLowerCase().replace(/\s+/g, '-') || 'site'}.bookflow.ca</p>
               </div>
            </div>
            <div className="space-y-4">
@@ -154,6 +223,40 @@ export const OnboardingFlow: React.FC = () => {
               </Button>
            </div>
         </Card>
+      </div>
+    );
+  }
+
+  // Not logged in — redirect
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-bg-secondary gap-4">
+        <p className="text-sm text-text-secondary font-medium">Please sign in to continue</p>
+        <Button className="h-10 px-6 rounded-xl font-bold" onClick={() => navigate('/login')}>Go to Login</Button>
+      </div>
+    );
+  }
+
+  // Still loading business
+  if (!business) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-bg-secondary gap-6">
+        {initError ? (
+          <>
+            <div className="w-12 h-12 bg-error/10 rounded-2xl flex items-center justify-center">
+              <span className="text-xl text-error">!</span>
+            </div>
+            <p className="text-sm text-error font-medium text-center max-w-xs">{initError}</p>
+            <Button className="h-10 px-6 rounded-xl font-bold" onClick={() => { setInitError(null); setInitializing(false); }}>
+              Try Again
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs text-text-tertiary font-medium">Setting up your workspace...</p>
+          </>
+        )}
       </div>
     );
   }
@@ -232,9 +335,33 @@ export const OnboardingFlow: React.FC = () => {
                   <input 
                     type="file" 
                     className="absolute inset-0 opacity-0 cursor-pointer" 
-                    onChange={(e) => {
+                    disabled={uploading}
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (file) updateBusiness({ logo: URL.createObjectURL(file) });
+                      if (file && business) {
+                        setUploading(true);
+                        try {
+                          const fileExt = file.name.split('.').pop();
+                          const fileName = `logo-${Date.now()}.${fileExt}`;
+                          const filePath = `${business.id}/${fileName}`;
+
+                          const { error: uploadError } = await supabase.storage
+                            .from('business-assets')
+                            .upload(filePath, file);
+
+                          if (uploadError) throw uploadError;
+
+                          const { data: { publicUrl } } = supabase.storage
+                            .from('business-assets')
+                            .getPublicUrl(filePath);
+
+                          await updateBusiness({ logo: publicUrl });
+                        } catch (err: any) {
+                          alert(err.message);
+                        } finally {
+                          setUploading(false);
+                        }
+                      }
                     }}
                   />
                 </div>
@@ -244,7 +371,7 @@ export const OnboardingFlow: React.FC = () => {
                 </div>
                 <button onClick={handleBack} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
               </div>
-              <PreviewCard business={business} />
+              <PreviewCard business={{ ...business, headline: business.heroTitle || '', subtext: business.heroSubtitle || '', logo: business.logo, primaryColor: business.primaryColor, coverImage: business.coverImage, category: business.category, name: business.name } as any} />
             </StepWrapper>
           )}
 
@@ -295,9 +422,33 @@ export const OnboardingFlow: React.FC = () => {
                   <input 
                     type="file" 
                     className="absolute inset-0 opacity-0 cursor-pointer" 
-                    onChange={(e) => {
+                    disabled={uploading}
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (file) updateBusiness({ coverImage: URL.createObjectURL(file) });
+                      if (file && business) {
+                        setUploading(true);
+                        try {
+                          const fileExt = file.name.split('.').pop();
+                          const fileName = `cover-${Date.now()}.${fileExt}`;
+                          const filePath = `${business.id}/${fileName}`;
+
+                          const { error: uploadError } = await supabase.storage
+                            .from('business-assets')
+                            .upload(filePath, file);
+
+                          if (uploadError) throw uploadError;
+
+                          const { data: { publicUrl } } = supabase.storage
+                            .from('business-assets')
+                            .getPublicUrl(filePath);
+
+                          await updateBusiness({ coverImage: publicUrl });
+                        } catch (err: any) {
+                          alert(err.message);
+                        } finally {
+                          setUploading(false);
+                        }
+                      }
                     }}
                   />
                 </div>
@@ -311,32 +462,32 @@ export const OnboardingFlow: React.FC = () => {
             </StepWrapper>
           )}
 
-          {onboardingStep === 6 && (
+          {onboardingStep === 6 && business && (
             <StepWrapper key="step6" title="Welcome your customers" subtitle="Write a clear headline and subtext for your hero section." showPreview>
               <div className="space-y-6 flex-1">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Headline</label>
                   <Input 
                     placeholder="e.g. Look your best with curated beauty" 
-                    value={business.headline} 
+                    value={business.heroTitle || ''} 
                     className="h-12"
-                    onChange={(e) => updateBusiness({ headline: e.target.value })}
+                    onChange={(e) => updateBusiness({ heroTitle: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Subtext</label>
                   <textarea 
                     placeholder="Briefly explain what you do..." 
-                    value={business.subtext} 
+                    value={business.heroSubtitle || ''} 
                     rows={3}
                     className="w-full rounded-xl border border-border-default p-4 text-sm focus:outline-none focus:border-brand transition-colors"
-                    onChange={(e) => updateBusiness({ subtext: e.target.value })}
+                    onChange={(e) => updateBusiness({ heroSubtitle: e.target.value })}
                   />
                 </div>
-                <Button className="w-full h-12 rounded-xl font-bold mt-4" onClick={handleNext} disabled={!business.headline}>Continue</Button>
+                <Button className="w-full h-12 rounded-xl font-bold mt-4" onClick={handleNext} disabled={!business.heroTitle}>Continue</Button>
                 <button onClick={handleBack} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-text-primary tracking-widest uppercase"><ChevronLeft size={14} /> Back</button>
               </div>
-              <PreviewCard business={business} />
+              <PreviewCard business={{ ...business, headline: business.heroTitle, subtext: business.heroSubtitle } as any} />
             </StepWrapper>
           )}
 
@@ -458,27 +609,30 @@ export const OnboardingFlow: React.FC = () => {
 
           {onboardingStep === 12 && (
             <StepWrapper key="step12" title="When are you open?" subtitle="Define your default working hours for the week.">
-               <div className="space-y-3">
-                  {Object.entries(business.workingHours).map(([day, hours]) => (
-                    <div key={day} className={`flex items-center justify-between p-4 rounded-xl border ${hours.active ? 'border-border-light bg-white' : 'border-dashed border-border-default opacity-50 bg-bg-secondary'}`}>
+                <div className="space-y-3">
+                  {business.workingHours.map((hours) => (
+                    <div key={hours.dayOfWeek} className={`flex items-center justify-between p-4 rounded-xl border ${hours.isOpen ? 'border-border-light bg-white' : 'border-dashed border-border-default opacity-50 bg-bg-secondary'}`}>
                        <div className="flex items-center gap-4">
                           <input 
                             type="checkbox" 
-                            checked={hours.active} 
+                            checked={hours.isOpen} 
                             onChange={() => {
-                              const updated = { ...business.workingHours };
-                              updated[day].active = !updated[day].active;
+                              const updated = business.workingHours.map(h => 
+                                h.dayOfWeek === hours.dayOfWeek ? { ...h, isOpen: !h.isOpen } : h
+                              );
                               updateBusiness({ workingHours: updated });
                             }}
                             className="w-4 h-4 rounded text-brand focus:ring-brand"
                           />
-                          <span className="text-sm font-semibold capitalize w-24">{day}</span>
+                          <span className="text-sm font-semibold capitalize w-24">
+                            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][hours.dayOfWeek]}
+                          </span>
                        </div>
-                       {hours.active ? (
+                       {hours.isOpen ? (
                          <div className="flex items-center gap-3">
-                            <input className="w-20 px-2 py-1.5 border border-border-default rounded-lg text-xs font-medium" type="time" value={hours.start} readOnly />
+                            <input className="w-20 px-2 py-1.5 border border-border-default rounded-lg text-xs font-medium" type="time" value={hours.startTime} readOnly />
                             <span className="text-text-tertiary">–</span>
-                            <input className="w-20 px-2 py-1.5 border border-border-default rounded-lg text-xs font-medium" type="time" value={hours.end} readOnly />
+                            <input className="w-20 px-2 py-1.5 border border-border-default rounded-lg text-xs font-medium" type="time" value={hours.endTime} readOnly />
                          </div>
                        ) : (
                          <span className="text-[10px] font-bold text-text-tertiary tracking-widest uppercase">Closed</span>
@@ -533,7 +687,7 @@ export const OnboardingFlow: React.FC = () => {
                     <Button 
                       className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-brand/20 group relative overflow-hidden" 
                       onClick={() => {
-                        setPublished(true);
+                        updateBusiness({ isPublished: true });
                         handleNext();
                       }}
                     >

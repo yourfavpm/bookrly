@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { 
   Star, 
@@ -21,17 +22,42 @@ interface PublicWebsiteProps {
 }
 
 export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
-  const { business } = useAppStore();
+  const { subdomain } = useParams<{ subdomain: string }>();
+  const { business, fetchPublicBusiness, loading, error } = useAppStore();
   const [isBooking, setIsBooking] = useState(false);
   
   // Determine if we should render as mobile
   const isMobile = forcedView === 'mobile';
+
+  useEffect(() => {
+    if (subdomain) {
+      fetchPublicBusiness(subdomain);
+    }
+  }, [subdomain, fetchPublicBusiness]);
 
   // Scroll to section
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white font-sans">
+        <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !business) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white font-sans p-6 text-center">
+        <h1 className="text-2xl font-black text-text-primary mb-2">Business not found</h1>
+        <p className="text-text-tertiary mb-8">The website you are looking for doesn't exist or has been moved.</p>
+        <a href="/" className="text-brand font-bold uppercase tracking-widest text-xs hover:underline">Back to Bookflow</a>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-white flex flex-col relative font-sans">
@@ -81,10 +107,10 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
              className="space-y-6"
            >
               <h1 className={`${isMobile ? 'text-3xl' : 'text-4xl md:text-6xl'} font-black tracking-tight leading-[1.1] ${business.coverImage ? 'text-white' : 'text-text-primary'}`}>
-                {business.headline || "Your premium headline goes here"}
+                {business.heroTitle || "Your premium headline goes here"}
               </h1>
               <p className={`${isMobile ? 'text-sm' : 'text-base md:text-lg'} max-w-xl mx-auto leading-relaxed font-medium opacity-90 ${business.coverImage ? 'text-white' : 'text-text-secondary'}`}>
-                {business.subtext || "Enter a supporting subheadline that builds trust and explains what you do best."}
+                {business.heroSubtitle || "Enter a supporting subheadline that builds trust and explains what you do best."}
               </p>
            </motion.div>
 
@@ -151,7 +177,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
       </section>
 
       {/* Trust Section - Reviews */}
-      {(business.trustSection === 'reviews' || business.trustSection === 'both') && business.reviews.length > 0 && (
+      {(business.trustSection === 'reviews' || business.trustSection === 'both') && (business.reviews || []).length > 0 && (
         <section id="reviews" className="py-24 bg-bg-secondary/40 w-full px-6 text-center">
           <div className="max-w-6xl mx-auto space-y-16">
             <div className="space-y-3">
@@ -163,15 +189,15 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
               {business.reviews.map(r => (
                 <div key={r.id} className="p-8 rounded-3xl bg-white border border-border-light shadow-sm space-y-6 flex flex-col h-full hover:shadow-lg transition-all duration-500">
                   <div className="flex gap-1.5 text-amber-400">
-                    {[1,2,3,4,5].map(s => <Star key={s} size={16} className={s <= r.rating ? 'fill-current' : 'text-border-default'} />)}
+                    {[1,2,3,4,5].map(s => <Star key={s} size={16} className={s <= (r.rating || 5) ? 'fill-current' : 'text-border-default'} />)}
                   </div>
-                  <p className="text-lg text-text-secondary leading-relaxed font-medium italic opacity-90 overflow-hidden line-clamp-4">"{r.text}"</p>
+                  <p className="text-lg text-text-secondary leading-relaxed font-medium italic opacity-90 overflow-hidden line-clamp-4">"{r.comment}"</p>
                   <div className="flex items-center gap-4 pt-6 mt-auto border-t border-dashed border-border-light">
                      <div className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm" style={{ backgroundColor: `${business.primaryColor}10`, color: business.primaryColor }}>
-                        {r.name.charAt(0)}
+                        {(r.customer_name || 'C').charAt(0)}
                      </div>
                      <div className="text-left">
-                        <span className="block font-bold text-sm text-text-primary">{r.name}</span>
+                        <span className="block font-bold text-sm text-text-primary">{r.customer_name || 'Anonymous Client'}</span>
                         <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Client</span>
                      </div>
                   </div>
@@ -183,7 +209,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
       )}
 
       {/* Proof of Work Gallery */}
-      {(business.trustSection === 'proof' || business.trustSection === 'both') && business.proofOfWork.length > 0 && (
+      {(business.trustSection === 'proof' || business.trustSection === 'both') && (business.proofOfWork || []).length > 0 && (
         <section id="gallery" className="py-24 px-6 max-w-7xl mx-auto w-full space-y-16 text-center">
           <div className="space-y-3">
              <span className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: business.primaryColor }}>Our Work</span>
@@ -200,16 +226,18 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
                  viewport={{ once: true }}
                  className="group relative aspect-square rounded-[32px] overflow-hidden shadow-md"
                >
-                  {item.image ? (
-                    <img src={item.image} alt={item.caption} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.caption} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
                   ) : (
                     <div className="w-full h-full bg-bg-secondary flex items-center justify-center text-text-tertiary">
                        <ImageIcon size={32} />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
-                     <span className="text-white text-xs font-bold tracking-wider uppercase">{item.caption}</span>
-                  </div>
+                  {item.caption && (
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                       <span className="text-white text-xs font-bold tracking-wider uppercase">{item.caption}</span>
+                    </div>
+                  )}
                </motion.div>
              ))}
           </div>
@@ -217,7 +245,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
       )}
 
       {/* About Section */}
-      {business.aboutText && (
+      {business.aboutDescription && (
         <section id="about" className="py-24 px-6 max-w-6xl mx-auto w-full">
            <div className={`grid grid-cols-1 ${business.aboutImage ? 'lg:grid-cols-2' : ''} gap-16 md:gap-24 items-center`}>
               {business.aboutImage && (
@@ -229,11 +257,13 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
               <div className="space-y-10 text-left">
                  <div className="space-y-4">
                     <span className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: business.primaryColor }}>Our Story</span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary leading-tight">Elevating your lifestyle daily</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary leading-tight">
+                       {business.aboutTitle || "Elevating your lifestyle daily"}
+                    </h2>
                     <div className="w-12 h-1 rounded-full" style={{ backgroundColor: business.primaryColor }} />
                  </div>
                  <p className="text-lg text-text-secondary leading-relaxed font-medium opacity-80 whitespace-pre-wrap">
-                   {business.aboutText}
+                   {business.aboutDescription}
                  </p>
                  <div className="pt-4 flex flex-wrap items-center gap-8">
                     <div className="flex gap-6">
@@ -246,7 +276,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
                       className="text-lg font-bold flex items-center gap-2 group bg-transparent border-none cursor-pointer transition-all hover:translate-x-1" 
                       style={{ color: business.primaryColor }}
                     >
-                       Book Visit <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                       {business.ctaText || "Book Visit"} <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                  </div>
               </div>
@@ -309,11 +339,12 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView }) => {
              >
                 <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
                    <BookingFlow onCancel={() => setIsBooking(false)} />
-                </div>
-             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
+                 </div>
+              </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
+     </div>
+   );
+ };
+ 

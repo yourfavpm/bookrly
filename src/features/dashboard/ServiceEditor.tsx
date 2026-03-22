@@ -19,11 +19,11 @@ interface ServiceEditorProps {
 }
 
 export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose }) => {
-  const { business, updateBusiness } = useAppStore();
-  
-  const existingService = business.services.find(s => s.id === serviceId);
-  
-  const [formData, setFormData] = useState({
+  const { business, addService, updateService } = useAppStore();
+
+  const existingService = business?.services.find(s => s.id === serviceId);
+
+  const [formData, setFormData] = useState(() => ({
     id: serviceId || Date.now().toString(),
     name: existingService?.name || '',
     description: existingService?.description || '',
@@ -33,23 +33,23 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
     bookingFeeAmount: existingService?.bookingFeeAmount || 0,
     active: existingService?.active ?? true,
     addOns: existingService?.addOns || []
-  });
+  }));
 
-  const handleSave = () => {
-    let updatedServices;
+  if (!business) return null;
+
+  const handleSave = async () => {
     if (serviceId) {
-      updatedServices = business.services.map(s => s.id === serviceId ? formData : s);
+      await updateService(serviceId, formData);
     } else {
-      updatedServices = [...business.services, formData];
+      await addService(formData);
     }
-    updateBusiness({ services: updatedServices });
     onClose();
   };
 
   const handleAddAddOn = () => {
     setFormData({
       ...formData,
-      addOns: [...formData.addOns, { name: '', price: 0, description: '' }]
+      addOns: [...formData.addOns, { id: Date.now().toString(), name: '', price: 0, duration: 0, active: true, description: '' }]
     });
   };
 
@@ -61,6 +61,8 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
   const handleRemoveAddOn = (index: number) => {
     setFormData({ ...formData, addOns: formData.addOns.filter((_, i) => i !== index) });
   };
+
+  if (!business) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -264,11 +266,11 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
           </section>
         </div>
 
-        <footer className="p-6 border-t border-border-light bg-bg-secondary/30 flex gap-4">
+        <footer className="p-6 border-t border-border-light bg-bg-secondary/30 flex gap-4 pb-24 lg:pb-6">
           <Button variant="secondary" className="flex-1 rounded-xl font-bold" onClick={onClose}>
             Cancel
           </Button>
-          <Button className="flex-1 rounded-xl font-bold" onClick={handleSave}>
+          <Button className="flex-1 rounded-xl font-bold bg-brand text-white" onClick={handleSave}>
             {serviceId ? 'Save Changes' : 'Create Service'}
           </Button>
         </footer>

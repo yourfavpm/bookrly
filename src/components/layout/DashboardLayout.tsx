@@ -30,6 +30,8 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
   const business = useAppStore((state) => state.business);
   const location = useLocation();
 
+  if (!business) return null;
+
   const navItems = [
     { icon: <LayoutDashboard />, label: 'Overview', to: '/dashboard/overview' },
     { icon: <Globe />, label: 'Website', to: '/dashboard/website' },
