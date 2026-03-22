@@ -10,7 +10,6 @@ import {
   Sparkles,
   Link2,
   ChevronRight,
-  ChevronLeft,
   Image as ImageIcon,
   Upload,
   Camera,
@@ -35,7 +34,19 @@ const STEPS = [
 ];
 
 export const WebsiteCustomizer: React.FC = () => {
-  const { business, updateBusiness, addReview, addProofItem, deleteReview, deleteProofItem, updateReview, updateProofItem } = useAppStore();
+  const { 
+    business, 
+    updateBusiness, 
+    addReview, 
+    addProofItem, 
+    deleteReview, 
+    deleteProofItem, 
+    updateReview, 
+    updateProofItem,
+    addService,
+    updateService,
+    deleteService
+  } = useAppStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [uploading, setUploading] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -202,7 +213,7 @@ export const WebsiteCustomizer: React.FC = () => {
                </Button>
             </div>
             <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {business.proofOfWork?.map((item: any) => (
+              {(business.proofOfWork || []).map((item: any) => (
                 <div key={item.id} className="p-4 rounded-xl border border-border-polaris bg-white flex items-center gap-4 relative group">
                   <div className="w-16 h-16 rounded-lg bg-bg-canvas/50 flex items-center justify-center shrink-0 relative overflow-hidden">
                     {item.image_url ? <img src={item.image_url} className="w-full h-full object-cover" alt="Proof" /> : <ImageIcon size={16} className="text-text-tertiary" />}
@@ -222,6 +233,55 @@ export const WebsiteCustomizer: React.FC = () => {
                   <button onClick={() => deleteProofItem(item.id)} className="p-2 text-text-tertiary hover:text-error transition-colors">
                     <Trash2 size={14} />
                   </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'services':
+        return (
+          <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+            <div className="flex items-center justify-between">
+               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Your Offerings</span>
+               <Button variant="secondary" size="sm" onClick={() => addService({ name: 'New Service', price: 0, duration: 30, description: '', active: true, bookingFeeEnabled: false, bookingFeeAmount: 0 })} className="h-8 px-4 rounded-lg font-bold text-[9px] uppercase tracking-widest">
+                  <Plus size={14} className="mr-1.5" />
+                  Add Service
+               </Button>
+            </div>
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {(business.services || []).map((service: any) => (
+                <div key={service.id} className="p-4 rounded-xl border border-border-polaris bg-white space-y-3 relative group">
+                  <div className="flex items-center justify-between gap-4">
+                    <Input 
+                      value={service.name} 
+                      onChange={e => updateService(service.id, { ...service, name: e.target.value })}
+                      className="h-8 w-2/3 text-xs font-bold border-none p-0 focus:ring-0"
+                    />
+                     <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-text-tertiary">$</span>
+                        <Input 
+                          value={service.price} 
+                          type="number"
+                          onChange={e => updateService(service.id, { ...service, price: Number(e.target.value) })}
+                          className="h-8 w-16 text-xs font-bold border-none p-0 focus:ring-0"
+                        />
+                     </div>
+                    <button onClick={() => deleteService(service.id)} className="text-text-tertiary hover:text-error transition-colors p-1 shrink-0">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <textarea 
+                    value={service.description} 
+                    onChange={e => updateService(service.id, { ...service, description: e.target.value })}
+                    className="w-full text-xs text-text-secondary bg-transparent border-none p-0 focus:ring-0 min-h-10 resize-none leading-relaxed"
+                    placeholder="Describe this service..."
+                  />
+                  <div className="flex items-center gap-4 pt-2 border-t border-border-polaris/30">
+                     <div className="flex items-center gap-1.5">
+                        <Camera size={10} className="text-text-tertiary" />
+                        <span className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">{service.duration} mins</span>
+                     </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -301,18 +361,19 @@ export const WebsiteCustomizer: React.FC = () => {
               <Sparkles size={40} />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold tracking-tight">Your site is ready for action</h2>
-              <p className="text-sm text-text-tertiary">Review all steps and click Publish to go live with your booking page.</p>
+              <h2 className="text-2xl font-semibold tracking-tight">Your site is ready for the world</h2>
+              <p className="text-sm text-text-tertiary">Congratulations! Review your details and hit publish to start accepting bookings.</p>
             </div>
             <div className="p-5 rounded-2xl border border-border-polaris bg-bg-canvas/20 max-w-sm mx-auto space-y-4">
                <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-text-tertiary uppercase tracking-widest">Public Domain</span>
                   <span className="font-bold text-brand">{rootDomain}</span>
                </div>
-               <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-border-polaris shadow-sm">
+               <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-border-polaris shadow-sm cursor-pointer hover:bg-bg-canvas/40 transition-colors" onClick={() => window.open(`/p/${business.subdomain}`, '_blank')}>
                   <Link2 size={14} className="text-text-tertiary shrink-0" />
                   <span className="text-[11px] font-medium text-text-primary truncate">{business.subdomain}.{rootDomain}</span>
                </div>
+               <p className="text-[9px] text-text-tertiary uppercase tracking-widest">Click link above to view in new tab</p>
             </div>
           </div>
         );
@@ -353,11 +414,14 @@ export const WebsiteCustomizer: React.FC = () => {
           </button>
           
           <Button 
-            onClick={() => updateBusiness({ isPublished: !business.isPublished })}
+            onClick={() => {
+              if (business.isPublished && !confirm('Are you sure you want to unpublish your site? It will no longer be visible to customers.')) return;
+              updateBusiness({ isPublished: !business.isPublished });
+            }}
             variant={business.isPublished ? "secondary" : "primary"}
             className="h-10 px-8 rounded-xl font-bold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-brand/10 transition-all active:scale-95"
           >
-            {business.isPublished ? "Site is Live" : "Go Live"}
+            {business.isPublished ? "Unpublish Site" : "Publish Site"}
           </Button>
         </div>
       </header>
@@ -400,27 +464,37 @@ export const WebsiteCustomizer: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Editor Form */}
         <section className="flex-1 lg:max-w-[500px] lg:border-r border-border-polaris overflow-y-auto custom-scrollbar p-6 lg:p-10 bg-[#fbfbfb]">
-          <div className="max-w-md mx-auto space-y-10 min-h-full flex flex-col">
+          <div className="max-w-md mx-auto space-y-8 min-h-full flex flex-col pt-4">
+            {/* Top Navigation Buttons (Underlined style) */}
+            <div className="flex items-center justify-between border-b border-border-polaris pb-6 mb-2">
+              <button 
+                onClick={prevStep}
+                disabled={currentStep === 0}
+                className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary hover:text-text-primary disabled:opacity-0 transition-all underline underline-offset-4 decoration-2 decoration-transparent hover:decoration-text-tertiary"
+              >
+                Back
+              </button>
+              
+              <button 
+                onClick={nextStep}
+                disabled={currentStep === STEPS.length - 1}
+                className="text-[10px] font-bold uppercase tracking-widest text-brand hover:opacity-80 transition-all underline underline-offset-4 decoration-2 decoration-brand/30 hover:decoration-brand disabled:opacity-0"
+              >
+                Continue
+              </button>
+            </div>
+
             <div className="space-y-1.5">
                <h2 className="text-2xl font-semibold tracking-tight text-text-primary">{STEPS[currentStep].title}</h2>
                <p className="text-sm text-text-tertiary font-normal">{STEPS[currentStep].description}</p>
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 py-4">
               {renderStepContent()}
             </div>
 
-            {/* Sticky/Fixed Navigation Bar in Column */}
-            <div className="pt-10 flex items-center justify-between mt-auto">
-              <button 
-                onClick={prevStep}
-                disabled={currentStep === 0}
-                className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-text-primary disabled:opacity-0 transition-all px-2"
-              >
-                <ChevronLeft size={16} />
-                Back
-              </button>
-              
+            {/* Bottom Primary Button (Keep for Save & Continue prominence) */}
+            <div className="pt-10 flex items-center justify-end mt-auto">
               <Button 
                 onClick={nextStep}
                 disabled={currentStep === STEPS.length - 1}

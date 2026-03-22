@@ -153,10 +153,16 @@ export const useAppStore = create<AppState>()(
 
   fetchBusiness: async (force = false) => {
     const { user, business } = get();
-    if (!user) return;
+    if (!user) {
+      set({ loading: false });
+      return;
+    }
     
     // Simple caching: skip fetch if we already have business data unless forced
-    if (business && !force) return;
+    if (business && !force) {
+      set({ loading: false });
+      return;
+    }
 
     set({ loading: true, error: null });
     try {

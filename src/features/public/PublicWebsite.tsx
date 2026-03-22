@@ -22,7 +22,8 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
     return React.createElement(component, {
       business: business as any,
       onBook: () => setIsBooking(true),
-      isMobile
+      isMobile,
+      isPreview
     });
   }, [business, isMobile]);
 

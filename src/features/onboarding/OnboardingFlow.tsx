@@ -87,6 +87,7 @@ export const OnboardingFlow: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [initializing, setInitializing] = useState(false);
+  const [initAttempted, setInitAttempted] = useState(false);
 
   // Local state for complex steps
   const [tempService, setTempService] = useState({ name: '', price: 0, duration: 60 });
@@ -95,10 +96,11 @@ export const OnboardingFlow: React.FC = () => {
   const [feeAmount, setFeeAmount] = useState(0);
 
   useEffect(() => {
-    if (!user || business || initializing) return;
+    if (!user || business || initializing || initAttempted) return;
 
     const init = async () => {
       setInitializing(true);
+      setInitAttempted(true);
       try {
         const { data: existing, error: fetchError } = await supabase
           .from('businesses')
@@ -106,14 +108,11 @@ export const OnboardingFlow: React.FC = () => {
           .eq('owner_id', user.id)
           .maybeSingle();
 
-        if (fetchError) throw fetchError;
+        if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
         if (existing) {
           await fetchBusiness();
           return;
         }
-
-        const now = new Date();
-        const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
         const { data, error } = await supabase
           .from('businesses')
@@ -123,10 +122,7 @@ export const OnboardingFlow: React.FC = () => {
             subdomain: `biz-${user.id.slice(0, 8)}`,
             primary_color: '#111111',
             trust_section: 'none',
-            template_key: 'clean_classic',
-            trial_start_date: now.toISOString(),
-            trial_end_date: trialEnd.toISOString(),
-            subscription_status: 'trialing'
+            template_key: 'clean_classic'
           }])
           .select()
           .single();
@@ -144,14 +140,14 @@ export const OnboardingFlow: React.FC = () => {
           await supabase.from('availability').insert(availability);
           await fetchBusiness();
         }
-      } catch (err: any) {
-        console.error('Onboarding init error:', err);
+      } catch (err: unknown) {
+        console.error('Onboarding init error:', err instanceof Error ? err.message : err);
       } finally {
         setInitializing(false);
       }
     };
     init();
-  }, [user, business, fetchBusiness, initializing]);
+  }, [user, business, fetchBusiness, initializing, initAttempted]);
 
   const totalSteps = 13;
 
@@ -554,12 +550,12 @@ export const OnboardingFlow: React.FC = () => {
               <div className="space-y-3">
                  {[
                    { id: 'reviews', label: 'Reviews', icon: <Star size={16} className="text-amber-400" /> },
-                   { id: 'gallery', label: 'Photos', icon: <ImageIcon size={16} className="text-blue-400" /> },
+                   { id: 'proof', label: 'Photos', icon: <ImageIcon size={16} className="text-blue-400" /> },
                    { id: 'both', label: 'Both Sections', icon: <ShieldCheck size={16} className="text-success" /> }
                  ].map((opt) => (
                    <button
                     key={opt.id}
-                    onClick={() => { updateBusiness({ trustSection: opt.id as any }); handleNext(); }}
+                    onClick={() => { updateBusiness({ trustSection: opt.id as 'reviews' | 'proof' | 'both' | 'none' }); handleNext(); }}
                     className={`w-full p-5 rounded-3xl border transition-all flex items-center gap-4 ${business.trustSection === opt.id ? 'border-brand/40 bg-brand/5' : 'border-border-light/50 bg-white hover:bg-bg-secondary/10'}`}
                    >
                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${business.trustSection === opt.id ? 'bg-white shadow-sm' : 'bg-bg-secondary/50'}`}>

@@ -7,8 +7,14 @@ interface ProofProps extends SectionProps {
   variant?: 'grid' | 'masonry' | 'filmstrip';
 }
 
-export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, variant = 'grid' }) => {
-  if ((business.trustSection !== 'proof' && business.trustSection !== 'both') || (business.proofOfWork || []).length === 0) {
+export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPreview, variant = 'grid' }) => {
+  const items = business.proofOfWork || [];
+
+  if ((business.trustSection !== 'proof' && business.trustSection !== 'both')) {
+    return null;
+  }
+
+  if (items.length === 0 && !isPreview) {
     return null;
   }
 
@@ -50,7 +56,7 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, variant
         <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: business.primaryColor }} />
       </div>
       <div className={`grid grid-cols-2 ${isMobile ? '' : 'lg:grid-cols-4'} gap-4 md:gap-6`}>
-        {business.proofOfWork.map((item, index) => (
+        {items.length > 0 ? items.map((item, index) => (
           <motion.div key={item.id} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.1 }} viewport={{ once: true }} className="group relative aspect-square rounded-[32px] overflow-hidden shadow-md">
             {item.image_url ? (
               <img src={item.image_url} alt={item.caption} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
@@ -63,7 +69,15 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, variant
               </div>
             )}
           </motion.div>
-        ))}
+        )) : (
+          <div className="col-span-full py-12 px-6 rounded-[32px] border-2 border-dashed border-border-light bg-bg-secondary/20 flex flex-col items-center justify-center text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-text-tertiary"><ImageIcon size={24} /></div>
+            <div>
+              <p className="text-sm font-bold text-text-primary">Gallery is empty</p>
+              <p className="text-xs text-text-tertiary">Portfolio images you add will appear here.</p>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

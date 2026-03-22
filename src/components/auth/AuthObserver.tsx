@@ -8,31 +8,46 @@ export const AuthObserver: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchBusiness = useAppStore((state) => state.fetchBusiness);
 
   useEffect(() => {
-    setLoading(true);
-    
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchBusiness().finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
+    let mounted = true;
 
-    // Listen for auth changes
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
+        
+        if (mounted) {
+          setUser(user);
+          if (user) {
+            await fetchBusiness();
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Session check error:', err);
+        if (mounted) setLoading(false);
+      }
+    };
+
+    initAuth();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         const user = session?.user ?? null;
-        setUser(user);
-        if (user) {
-          await fetchBusiness();
+        
+        if (mounted) {
+          setUser(user);
+          if (user) {
+            await fetchBusiness();
+          }
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [setUser, setLoading, fetchBusiness]);
 
   return <>{children}</>;

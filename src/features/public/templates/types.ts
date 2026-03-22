@@ -28,6 +28,7 @@ export interface SectionProps {
   };
   onBook: () => void;
   isMobile?: boolean;
+  isPreview?: boolean;
 }
 
 // Shared props for template layout components

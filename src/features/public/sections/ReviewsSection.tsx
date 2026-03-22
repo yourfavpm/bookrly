@@ -6,8 +6,14 @@ interface ReviewsProps extends SectionProps {
   variant?: 'grid' | 'vertical' | 'featured';
 }
 
-export const ReviewsSection: React.FC<ReviewsProps> = ({ business, isMobile, variant = 'grid' }) => {
-  if ((business.trustSection !== 'reviews' && business.trustSection !== 'both') || (business.reviews || []).length === 0) {
+export const ReviewsSection: React.FC<ReviewsProps> = ({ business, isMobile, isPreview, variant = 'grid' }) => {
+  const reviews = business.reviews || [];
+
+  if ((business.trustSection !== 'reviews' && business.trustSection !== 'both')) {
+    return null;
+  }
+
+  if (reviews.length === 0 && !isPreview) {
     return null;
   }
 
@@ -83,7 +89,7 @@ export const ReviewsSection: React.FC<ReviewsProps> = ({ business, isMobile, var
           <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: business.primaryColor }} />
         </div>
         <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-3'} gap-8`}>
-          {business.reviews.map(r => (
+          {reviews.length > 0 ? reviews.map(r => (
             <div key={r.id} className="p-8 rounded-3xl bg-white border border-border-light shadow-sm space-y-6 flex flex-col h-full hover:shadow-lg transition-all duration-500">
               {renderStars(r.rating)}
               <p className="text-lg text-text-secondary leading-relaxed italic opacity-90 overflow-hidden line-clamp-4">"{r.comment}"</p>
@@ -97,7 +103,15 @@ export const ReviewsSection: React.FC<ReviewsProps> = ({ business, isMobile, var
                 </div>
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="col-span-full py-12 px-6 rounded-3xl border-2 border-dashed border-border-light bg-bg-secondary/20 flex flex-col items-center justify-center text-center space-y-4">
+               <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-amber-400"><Star size={24} /></div>
+               <div>
+                  <p className="text-sm font-bold text-text-primary">No testimonials yet</p>
+                  <p className="text-xs text-text-tertiary">Add client reviews in the sidebar to see them here.</p>
+               </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

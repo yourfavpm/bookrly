@@ -6,7 +6,12 @@ interface ServicesProps extends SectionProps {
   variant?: 'grid' | 'list' | 'compact' | 'horizontal';
 }
 
-export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isMobile, variant = 'grid' }) => {
+export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isMobile, isPreview, variant = 'grid' }) => {
+  const services = business.services || [];
+  
+  if (services.length === 0 && !isPreview) {
+    return null;
+  }
   if (variant === 'list') {
     return (
       <section id="services" className="py-24 px-6 max-w-4xl mx-auto w-full space-y-12">
@@ -100,7 +105,7 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
         <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: business.primaryColor }} />
       </div>
       <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-3'} gap-8`}>
-        {business.services.map(s => (
+        {services.length > 0 ? services.map(s => (
           <div key={s.id} className="p-8 rounded-3xl border border-border-light bg-white hover:shadow-xl transition-all duration-500 group flex flex-col items-start text-left relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 rounded-bl-[64px] translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-700" style={{ backgroundColor: `${business.primaryColor}08` }} />
             <div className="flex justify-between items-start w-full mb-8 relative z-10">
@@ -120,7 +125,15 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
               </button>
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="col-span-full py-12 px-6 rounded-[32px] border-2 border-dashed border-border-light bg-bg-secondary/20 flex flex-col items-center justify-center text-center space-y-4">
+             <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-text-tertiary"><Clock size={24} /></div>
+             <div>
+                <p className="text-sm font-bold text-text-primary">No services added</p>
+                <p className="text-xs text-text-tertiary">Create your first service in the sidebar to show your offerings.</p>
+             </div>
+          </div>
+        )}
       </div>
     </section>
   );
