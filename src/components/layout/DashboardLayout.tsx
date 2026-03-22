@@ -34,6 +34,7 @@ export const DashboardLayout: React.FC = () => {
   const business = useAppStore((state) => state.business);
   const loading = useAppStore((state) => state.loading);
   const createSubscription = useAppStore((state) => state.createSubscription);
+  const updateBusiness = useAppStore((state) => state.updateBusiness);
   const location = useLocation();
 
   const isTrialing = business?.subscriptionStatus === 'trialing';
@@ -92,7 +93,21 @@ export const DashboardLayout: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 lg:gap-6">
+        <div className="flex items-center gap-4 lg:gap-6">
+          <div className="flex items-center gap-2 mr-1 lg:mr-2 border-r border-white/10 pr-4 lg:pr-6">
+            <span className="text-[10px] font-medium text-white/60 uppercase tracking-widest hidden sm:block">Site</span>
+            <button 
+              onClick={() => updateBusiness({ isPublished: !business.isPublished })}
+              className={`w-9 h-5 rounded-full transition-all duration-300 relative flex items-center px-0.5 cursor-pointer ${business.isPublished ? 'bg-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-white/10'}`}
+              title={business.isPublished ? "Unpublish Site" : "Publish Site"}
+            >
+              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${business.isPublished ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
+            <span className={`text-[10px] font-bold uppercase tracking-widest min-w-8 ${business.isPublished ? 'text-emerald-400' : 'text-white/40'}`}>
+              {business.isPublished ? 'Live' : 'Draft'}
+            </span>
+          </div>
+
           <Link to="/preview" target="_blank" className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white hover:bg-white/20 transition-all">
             <ExternalLink size={12} />
             Preview
