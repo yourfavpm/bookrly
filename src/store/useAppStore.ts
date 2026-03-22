@@ -181,116 +181,185 @@ export const useAppStore = create<AppState>()(
 
       if (bError && bError.code !== 'PGRST116') throw bError;
       
-      if (business) {
-        // 2. Fetch Services & Addons
-        const { data: services, error: sError } = await supabase
-          .from('services')
-          .select('*, addons(*)')
-          .eq('business_id', business.id);
+      // If no business exists, create one for this new user
+      if (!business) {
+        const { data: newBusiness, error: createError } = await supabase
+          .from('businesses')
+          .insert([{
+            owner_id: user.id,
+            name: '',
+            email: '',
+            category: '',
+            primary_color: '#111111',
+            template_key: 'editorial_luxe'
+          }])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        if (!newBusiness) throw new Error('Failed to create business');
         
-        if (sError) throw sError;
-
-        // 3. Fetch Availability
-        const { data: availability, error: aError } = await supabase
-          .from('availability')
-          .select('*')
-          .eq('business_id', business.id);
-        
-        if (aError) throw aError;
-
-        // 4. Fetch Bookings
-        const { data: bookings, error: boError } = await supabase
-          .from('bookings')
-          .select('*, booking_addons(*)')
-          .eq('business_id', business.id);
-        
-        if (boError) throw boError;
-
-        // 5. Fetch Reviews
-        const { data: reviews, error: rError } = await supabase
-          .from('reviews')
-          .select('*')
-          .eq('business_id', business.id);
-        
-        if (rError) throw rError;
-
-        // 6. Fetch Proof Items
-        const { data: proof_items, error: pError } = await supabase
-          .from('proof_items')
-          .select('*')
-          .eq('business_id', business.id);
-        
-        if (pError) throw pError;
-
-        const mappedServices = (services || []).map((s: any) => ({
-          ...s,
-          bookingFeeEnabled: s.booking_fee_enabled,
-          bookingFeeAmount: s.booking_fee_amount,
-          addOns: s.addons || []
-        }));
-
-        const mappedBookings = (bookings || []).map((b: any) => ({
-          ...b,
-          customerName: b.customer_name,
-          customerEmail: b.customer_email,
-          customerPhone: b.customer_phone,
-          date: b.date,
-          time: b.start_time,
-          totalAmount: b.total_amount,
-          paidAmount: b.paid_amount || 0,
-          paymentStatus: b.payment_status || 'pending'
-        }));
-
-        // Auto-generate subdomain if missing
-        let businessSubdomain = business.subdomain;
-        if (!businessSubdomain && business.name) {
-          businessSubdomain = generateSubdomain(business.name, business.id);
-          // Save it to the database (non-blocking)
-          void supabase
-            .from('businesses')
-            .update({ subdomain: businessSubdomain })
-            .eq('id', business.id);
-        }
-
-        set({ 
+        // Set empty business with ID
+        set({
           business: {
-            ...business,
-            subdomain: businessSubdomain,
-            primaryColor: business.primary_color || '#111111',
-            coverImage: business.cover_image || null,
-            logo: business.logo || null,
-            socials: business.socials || { instagram: '', facebook: '', twitter: '' },
-            isPublished: business.is_published,
-            slug: business.slug || (business.name ? generateSlug(business.name) : ''),
-            customDomain: business.custom_domain || null,
-            heroTitle: business.hero_title || '',
-            heroSubtitle: business.hero_subtitle || '',
-            ctaText: business.cta_text || '',
-            aboutTitle: business.about_title || '',
-            aboutDescription: business.about_description || '',
-            aboutImage: business.about_image || null,
-            trustSection: business.trust_section || 'none',
-            stripeAccountId: business.stripe_account_id,
-            stripeConnected: business.stripe_enabled || false,
-            stripeOnboardingStatus: business.stripe_onboarding_status || 'not_started',
-            stripeChargesEnabled: business.stripe_charges_enabled || false,
-            stripePayouts_enabled: business.stripe_payouts_enabled || false,
-            stripeDetailsSubmitted: business.stripe_details_submitted || false,
-            templateKey: business.template_key || 'editorial_luxe',
-            stripeCustomerId: business.stripe_customer_id || null,
-            stripeSubscriptionId: business.stripe_subscription_id || null,
-            subscriptionStatus: business.subscription_status || 'trialing',
-            trialStartDate: business.trial_start_date || null,
-            trialEndDate: business.trial_end_date || null,
-            planType: business.plan_type || 'pro',
-            services: mappedServices,
-            workingHours: (availability || []).map((h: any) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
-            bookings: mappedBookings,
-            reviews: reviews || [],
-            proofOfWork: proof_items || []
-          } 
+            ...newBusiness,
+            subdomain: '',
+            slug: '',
+            primaryColor: '#111111',
+            coverImage: null,
+            logo: null,
+            socials: { instagram: '', facebook: '', twitter: '' },
+            isPublished: false,
+            customDomain: null,
+            heroTitle: '',
+            heroSubtitle: '',
+            ctaText: 'Book Now',
+            aboutTitle: '',
+            aboutDescription: '',
+            aboutImage: null,
+            trustSection: 'none',
+            stripeAccountId: null,
+            stripeConnected: false,
+            stripeOnboardingStatus: 'not_started',
+            stripeChargesEnabled: false,
+            stripePayouts_enabled: false,
+            stripeDetailsSubmitted: false,
+            templateKey: 'editorial_luxe',
+            stripeCustomerId: null,
+            stripeSubscriptionId: null,
+            subscriptionStatus: 'trialing',
+            trialStartDate: null,
+            trialEndDate: null,
+            planType: 'pro',
+            services: [],
+            workingHours: [],
+            bookings: [],
+            reviews: [],
+            proofOfWork: []
+          },
+          loading: false
         });
+        return;
       }
+
+      // 2. Fetch Services & Addons
+      const { data: services, error: sError } = await supabase
+        .from('services')
+        .select('*, addons(*)')
+        .eq('business_id', business.id);
+      
+      if (sError) throw sError;
+
+      // 3. Fetch Availability
+      const { data: availability, error: aError } = await supabase
+        .from('availability')
+        .select('*')
+        .eq('business_id', business.id);
+      
+      if (aError) throw aError;
+
+      // 4. Fetch Bookings
+      const { data: bookings, error: boError } = await supabase
+        .from('bookings')
+        .select('*, booking_addons(*)')
+        .eq('business_id', business.id);
+      
+      if (boError) throw boError;
+
+      // 5. Fetch Reviews
+      const { data: reviews, error: rError } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('business_id', business.id);
+      
+      if (rError) throw rError;
+
+      // 6. Fetch Proof Items
+      const { data: proof_items, error: pError } = await supabase
+        .from('proof_items')
+        .select('*')
+        .eq('business_id', business.id);
+      
+      if (pError) throw pError;
+
+      const mappedServices = (services || []).map((s: any) => ({
+        ...s,
+        bookingFeeEnabled: s.booking_fee_enabled,
+        bookingFeeAmount: s.booking_fee_amount,
+        addOns: s.addons || []
+      }));
+
+      const mappedBookings = (bookings || []).map((b: any) => ({
+        ...b,
+        customerName: b.customer_name,
+        customerEmail: b.customer_email,
+        customerPhone: b.customer_phone,
+        date: b.date,
+        time: b.start_time,
+        totalAmount: b.total_amount,
+        paidAmount: b.paid_amount || 0,
+        paymentStatus: b.payment_status || 'pending'
+      }));
+
+      // Auto-generate subdomain if missing
+      let businessSubdomain = business.subdomain;
+      if (!businessSubdomain && business.name) {
+        businessSubdomain = generateSubdomain(business.name, business.id);
+        // Save it to the database (non-blocking)
+        void supabase
+          .from('businesses')
+          .update({ subdomain: businessSubdomain })
+          .eq('id', business.id);
+      }
+
+      // Auto-generate slug if missing
+      let businessSlug = business.slug || (business.name ? generateSlug(business.name) : '');
+      if (!business.slug && business.name) {
+        // Save it to the database (non-blocking)
+        void supabase
+          .from('businesses')
+          .update({ slug: businessSlug })
+          .eq('id', business.id);
+      }
+
+      set({ 
+        business: {
+          ...business,
+          subdomain: businessSubdomain,
+          primaryColor: business.primary_color || '#111111',
+          coverImage: business.cover_image || null,
+          logo: business.logo || null,
+          socials: business.socials || { instagram: '', facebook: '', twitter: '' },
+          isPublished: business.is_published,
+          slug: businessSlug,
+          customDomain: business.custom_domain || null,
+          heroTitle: business.hero_title || '',
+          heroSubtitle: business.hero_subtitle || '',
+          ctaText: business.cta_text || '',
+          aboutTitle: business.about_title || '',
+          aboutDescription: business.about_description || '',
+          aboutImage: business.about_image || null,
+          trustSection: business.trust_section || 'none',
+          stripeAccountId: business.stripe_account_id,
+          stripeConnected: business.stripe_enabled || false,
+          stripeOnboardingStatus: business.stripe_onboarding_status || 'not_started',
+          stripeChargesEnabled: business.stripe_charges_enabled || false,
+          stripePayouts_enabled: business.stripe_payouts_enabled || false,
+          stripeDetailsSubmitted: business.stripe_details_submitted || false,
+          templateKey: business.template_key || 'editorial_luxe',
+          stripeCustomerId: business.stripe_customer_id || null,
+          stripeSubscriptionId: business.stripe_subscription_id || null,
+          subscriptionStatus: business.subscription_status || 'trialing',
+          trialStartDate: business.trial_start_date || null,
+          trialEndDate: business.trial_end_date || null,
+          planType: business.plan_type || 'pro',
+          services: mappedServices,
+          workingHours: (availability || []).map((h: any) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
+          bookings: mappedBookings,
+          reviews: reviews || [],
+          proofOfWork: proof_items || []
+        } 
+      });
     } catch (err: any) {
       set({ error: err.message });
     } finally {
@@ -544,10 +613,21 @@ export const useAppStore = create<AppState>()(
           .eq('id', business.id);
       }
 
+      // Auto-generate slug if missing
+      let businessSlug = business.slug || (business.name ? generateSlug(business.name) : '');
+      if (!business.slug && business.name) {
+        // Save it to the database (non-blocking)
+        void supabase
+          .from('businesses')
+          .update({ slug: businessSlug })
+          .eq('id', business.id);
+      }
+
       set({ 
         business: {
           ...business,
           subdomain: businessSubdomain,
+          slug: businessSlug,
           isPublished: business.is_published,
           heroTitle: business.hero_title,
           heroSubtitle: business.hero_subtitle,
