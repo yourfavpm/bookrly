@@ -8,22 +8,27 @@ import { ArrowLeft } from 'lucide-react';
 export const ForgotPassword: React.FC = () => {
   return (
     <AuthLayout>
-      <div className="space-y-2 mb-10">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Reset password</h1>
-        <p className="text-sm text-text-secondary font-normal">We'll send you a link to get back in</p>
+      <div className="space-y-2 mb-8 text-left">
+        <h1 className="text-3xl font-light tracking-tight text-text-primary">Reset password</h1>
+        <p className="text-[13px] text-text-secondary font-light">We'll send you a link to get back in</p>
       </div>
 
       <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
-        <Input label="Email address" placeholder="name@company.com" type="email" />
+        <Input 
+          label="Email address" 
+          placeholder="name@company.com" 
+          type="email" 
+          className="rounded-2xl h-12 border-black/5 bg-bg-secondary/30 focus:bg-white transition-all text-sm font-light"
+        />
 
-        <Button className="w-full h-11 rounded-xl shadow-lg shadow-brand/10 font-bold" size="sm">
+        <Button className="w-full h-12 rounded-2xl shadow-none font-medium text-[13px]">
           Send link
         </Button>
       </form>
 
-      <div className="mt-10 pt-6 border-t border-border-light text-center">
-        <Link to="/login" className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors">
-          <ArrowLeft size={16} />
+      <div className="mt-12 text-center">
+        <Link to="/login" className="inline-flex items-center gap-2 text-[13px] text-text-secondary font-light hover:text-brand transition-colors">
+          <ArrowLeft size={14} />
           Back to sign in
         </Link>
       </div>

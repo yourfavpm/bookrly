@@ -29,12 +29,12 @@ export const ServicesList: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-500">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
          <div className="space-y-1">
-            <h1 className="text-2xl font-medium tracking-tight text-text-primary">Services</h1>
-            <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-normal">Offerings & Pricing</p>
+            <h1 className="text-2xl font-light tracking-tight text-text-primary">Services</h1>
+            <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-light">Offerings & Pricing</p>
          </div>
          <Button 
            size="sm" 
-           className="w-full sm:w-auto rounded-xl font-medium px-6 h-12 shadow-lg shadow-brand/20 transition-all text-xs uppercase tracking-widest bg-brand text-white"
+           className="w-full sm:w-auto rounded-xl font-medium px-6 h-10 shadow-lg shadow-brand/10 transition-all text-[10px] uppercase tracking-widest bg-brand text-white"
            onClick={() => setEditingId(null)}
          >
            <Plus size={16} className="mr-2" />
@@ -42,10 +42,10 @@ export const ServicesList: React.FC = () => {
          </Button>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         {business.services.length > 0 ? (
           business.services.map((service) => (
-            <Card key={service.id} className={`flex flex-col sm:flex-row sm:items-center justify-between group transition-all relative overflow-hidden border-border-polaris bg-white ${!service.active ? 'opacity-60 grayscale' : ''}`}>
+            <Card key={service.id} className={`flex flex-col sm:flex-row sm:items-center justify-between group transition-all relative overflow-hidden border-black/5 bg-white shadow-sm rounded-2xl ${!service.active ? 'opacity-60 grayscale' : ''}`}>
                {!service.active && (
                  <div className="absolute top-0 left-0 w-1.5 h-full bg-text-tertiary/20" />
                )}

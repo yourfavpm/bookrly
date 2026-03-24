@@ -66,8 +66,8 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium; /* medium (500) for headings */
-    letter-spacing: -0.01em;
+    @apply font-normal; /* Switch from medium to normal for a lighter, calmer feel */
+    letter-spacing: -0.02em;
   }
 
   p, span, label, li {
@@ -85,7 +85,7 @@
   }
 
   .card {
-    @apply bg-white rounded-shopify p-8 shadow-none border border-border-polaris;
+    @apply bg-white rounded-2xl p-8 shadow-sm border border-black/5;
   }
 
   .input {

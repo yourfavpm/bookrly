@@ -118,10 +118,10 @@ export const DashboardOverview: React.FC = () => {
       {/* Top Greeting + Context */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
-            {greeting}, {business.name} 👋
+          <h1 className="text-2xl font-light tracking-tight text-text-primary">
+            {greeting}, <span className="font-medium">{business.name.split(' ')[0]}</span> 👋
           </h1>
-          <p className="text-sm font-normal text-text-tertiary">
+          <p className="text-sm font-light text-text-secondary">
             Let's get your booking system ready for customers.
           </p>
         </div>
@@ -130,7 +130,7 @@ export const DashboardOverview: React.FC = () => {
             variant="secondary" 
             size="sm"
             onClick={() => window.open(`/preview`, '_blank')}
-            className="rounded-lg h-9 px-4 font-bold text-[10px] uppercase tracking-widest border-border-polaris bg-white hover:bg-bg-canvas/40"
+            className="rounded-xl h-9 px-4 font-medium text-[10px] uppercase tracking-widest border-black/5 bg-white hover:bg-bg-canvas/40"
           >
             <Eye size={14} className="mr-2" />
             Preview
@@ -138,7 +138,7 @@ export const DashboardOverview: React.FC = () => {
           <Button 
             size="sm"
             onClick={() => navigate('/dashboard/bookings')}
-            className="rounded-lg h-10 px-6 font-bold text-[10px] uppercase tracking-widest bg-brand text-white shadow-lg shadow-brand/20 transition-all"
+            className="rounded-xl h-10 px-6 font-medium text-[10px] uppercase tracking-widest bg-brand text-white shadow-lg shadow-brand/10 transition-all"
           >
             <Calendar size={14} className="mr-2" />
             Calendar
@@ -154,11 +154,11 @@ export const DashboardOverview: React.FC = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-semibold tracking-tight">Set up your business</h2>
-                  <p className="text-xs text-text-tertiary mt-1">{onboardingSteps.length - completedSteps} steps left to complete your setup</p>
+                  <h2 className="text-base font-medium tracking-tight">Set up your business</h2>
+                  <p className="text-[11px] font-light text-text-tertiary mt-1">{onboardingSteps.length - completedSteps} steps left to complete your setup</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
-                  <span className="text-xs font-bold text-text-primary">{progressPercent}%</span>
+                  <span className="text-xs font-medium text-text-primary">{progressPercent}%</span>
                   <div className="w-32 h-1.5 bg-bg-canvas rounded-full overflow-hidden">
                     <motion.div 
                       className="h-full bg-emerald-500"
@@ -185,10 +185,10 @@ export const DashboardOverview: React.FC = () => {
                         <Circle size={20} className="text-text-tertiary shrink-0 group-hover:text-text-primary transition-colors" />
                       )}
                       <div>
-                        <h3 className={`text-sm font-medium tracking-tight ${step.isCompleted ? 'text-text-primary' : 'text-text-secondary'}`}>
+                        <h3 className={`text-sm font-normal tracking-tight ${step.isCompleted ? 'text-text-primary' : 'text-text-secondary'}`}>
                           {step.title}
                         </h3>
-                        <p className="text-[11px] text-text-tertiary font-normal">{step.description}</p>
+                        <p className="text-[11px] text-text-tertiary font-light">{step.description}</p>
                       </div>
                     </div>
                     {!step.isCompleted && (

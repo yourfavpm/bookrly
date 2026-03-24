@@ -36,7 +36,6 @@ export const Login: React.FC = () => {
       });
 
       if (signInError) throw signInError;
-      // Don't navigate here - let AuthObserver handle it via useEffect above
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setLoading(false);
@@ -54,7 +53,6 @@ export const Login: React.FC = () => {
         },
       });
       if (error) throw error;
-      // OAuth redirect will handle navigation
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setGoogleLoading(false);
@@ -63,25 +61,77 @@ export const Login: React.FC = () => {
 
   return (
     <AuthLayout>
-      <div className="space-y-2 mb-10">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Welcome back</h1>
-        <p className="text-sm text-text-secondary font-normal">Sign in to manage your bookings</p>
+      <div className="space-y-2 mb-8 text-left lg:text-left">
+        <h1 className="text-3xl font-light tracking-tight text-text-primary">Welcome back</h1>
+        <p className="text-[13px] text-text-secondary font-light">Continue building your business</p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-xl text-error text-xs font-medium">
+        <div className="mb-6 p-4 bg-error/5 border border-error/10 rounded-2xl text-error text-[11px] font-medium leading-relaxed">
           {error}
         </div>
       )}
+
+      <form className="space-y-6" onSubmit={handleLogin}>
+        <div className="space-y-4">
+          <Input 
+            label="Email address" 
+            placeholder="name@company.com" 
+            type="email" 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="rounded-2xl h-12 border-black/5 bg-bg-secondary/30 focus:bg-white transition-all text-sm font-light"
+          />
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between px-1">
+              <label className="text-xs font-light text-text-secondary">Password</label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary hover:text-brand transition-colors"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+                <Link to="/forgot-password" className="text-[10px] font-bold text-brand uppercase tracking-wider hover:underline">
+                   Forgot?
+                </Link>
+              </div>
+            </div>
+            <Input 
+              placeholder="Enter your password" 
+              type={showPassword ? 'text' : 'password'} 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="rounded-2xl h-12 border-black/5 bg-bg-secondary/30 focus:bg-white transition-all text-sm font-light"
+            />
+          </div>
+        </div>
+
+        <Button 
+          type="submit"
+          className="w-full h-12 rounded-2xl shadow-none font-medium text-[13px]" 
+          isLoading={loading}
+        >
+          {loading ? 'Signing in...' : 'Sign in'}
+        </Button>
+      </form>
+
+      <div className="relative py-8">
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-black/5" /></div>
+        <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-medium"><span className="bg-white px-4 text-text-tertiary">or</span></div>
+      </div>
 
       <button
         type="button"
         onClick={handleGoogleSignIn}
         disabled={googleLoading}
-        className="w-full h-11 flex items-center justify-center gap-3 bg-white border border-border-default rounded-xl text-sm font-semibold text-text-primary hover:bg-bg-secondary transition-all disabled:opacity-50 mb-6"
+        className="w-full h-12 flex items-center justify-center gap-3 bg-white border border-black/5 rounded-2xl text-[13px] font-medium text-text-primary hover:bg-bg-secondary transition-all disabled:opacity-50"
       >
         {googleLoading ? (
-          <span className="w-4 h-4 border-2 border-text-tertiary border-t-transparent rounded-full animate-spin" />
+          <span className="w-4 h-4 border-2 border-brand/20 border-t-brand rounded-full animate-spin" />
         ) : (
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -93,64 +143,10 @@ export const Login: React.FC = () => {
         Continue with Google
       </button>
 
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border-light" /></div>
-        <div className="relative flex justify-center text-xs"><span className="bg-white px-4 text-text-tertiary font-medium">or</span></div>
-      </div>
-
-      <form className="space-y-6" onSubmit={handleLogin}>
-        <div className="space-y-4">
-          <Input 
-            label="Email address" 
-            placeholder="name@company.com" 
-            type="email" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between px-1">
-              <label className="text-xs font-medium text-text-secondary">Password</label>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-text-tertiary hover:text-brand transition-colors"
-                >
-                  <span className="relative w-7 h-4 bg-black/5 rounded-full p-0.5 transition-colors" style={showPassword ? { backgroundColor: 'var(--color-brand)', opacity: 0.2 } : {}}>
-                    <span className={`block w-3 h-3 rounded-full bg-text-tertiary shadow-sm transition-all ${showPassword ? 'translate-x-3' : 'translate-x-0'}`} style={showPassword ? { backgroundColor: 'var(--color-brand)' } : {}} />
-                  </span>
-                  {showPassword ? 'Hide' : 'Show'}
-                </button>
-                <Link to="/forgot-password" className="text-[10px] font-bold text-brand uppercase tracking-wider hover:underline underline-offset-4">
-                   Forgot?
-                </Link>
-              </div>
-            </div>
-            <Input 
-              placeholder="Enter your password" 
-              type={showPassword ? 'text' : 'password'} 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-
-        <Button 
-          type="submit"
-          className="w-full h-11 rounded-xl shadow-lg shadow-brand/10 font-bold" 
-          size="sm"
-          isLoading={loading}
-        >
-          {loading ? 'Signing in...' : 'Sign in'}
-        </Button>
-      </form>
-
-      <div className="mt-10 pt-6 border-t border-border-light text-center">
-        <p className="text-sm text-text-secondary">
+      <div className="mt-12 text-center">
+        <p className="text-[13px] text-text-secondary font-light">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-brand font-semibold hover:underline underline-offset-4">
+          <Link to="/signup" className="text-brand font-medium hover:underline">
             Create one
           </Link>
         </p>

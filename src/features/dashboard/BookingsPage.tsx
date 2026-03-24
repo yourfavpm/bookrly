@@ -12,7 +12,8 @@ import {
   ChevronRight, 
   CheckCircle2, 
   XCircle, 
-  Download
+  Download,
+  ChevronLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -58,13 +59,13 @@ export const BookingsPage: React.FC = () => {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-20">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
          <div className="space-y-1">
-           <h1 className="text-2xl font-medium tracking-tight text-text-primary">Bookings</h1>
-           <p className="text-[11px] text-text-tertiary font-normal leading-none tracking-tight">Track and manage your customer appointments.</p>
+           <h1 className="text-2xl font-light tracking-tight text-text-primary">Bookings</h1>
+           <p className="text-[11px] text-text-tertiary font-light uppercase tracking-widest leading-none">Track and manage appointments</p>
          </div>
          <div className="flex items-center gap-3">
-            <Button variant="secondary" size="sm" className="rounded-lg font-bold px-4 h-11 border-border-polaris border uppercase text-[10px] tracking-widest bg-white">
+            <Button variant="secondary" size="sm" className="rounded-xl font-medium px-4 h-10 border-black/5 uppercase text-[10px] tracking-widest bg-white">
                <Download size={14} className="mr-2" />
                Export CSV
             </Button>
@@ -72,29 +73,29 @@ export const BookingsPage: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <Card className="border-border-polaris shadow-none bg-white overflow-hidden p-0" padding="none">
+      <Card className="border-black/5 shadow-sm bg-white overflow-hidden p-0 rounded-2xl" padding="none">
         <div className="flex flex-col md:flex-row md:items-center gap-0">
            <div className="relative flex-1">
-              <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary" />
+              <Search size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary" />
               <input 
                 type="text"
                 placeholder="Search customers..."
-                className="w-full h-12 pl-12 pr-4 bg-transparent outline-none text-xs font-normal"
+                className="w-full h-14 pl-14 pr-4 bg-transparent outline-none text-sm font-light"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
            </div>
            
-           <div className="h-12 w-px bg-border-polaris hidden md:block" />
+           <div className="h-10 w-px bg-black/5 hidden md:block" />
  
-           <div className="flex items-center gap-2 px-6">
-              <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest mr-2">Status:</span>
-              <div className="flex bg-bg-canvas p-1 rounded-lg border border-border-polaris/40">
+           <div className="flex items-center gap-2 px-6 py-4 lg:py-0">
+              <span className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest mr-2">Status:</span>
+              <div className="flex bg-bg-canvas p-1 rounded-xl">
                  {(['all', 'upcoming', 'completed', 'cancelled'] as const).map((s) => (
                    <button
                      key={s}
                      onClick={() => setStatusFilter(s)}
-                     className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${statusFilter === s ? 'bg-white shadow-sm text-brand' : 'text-text-tertiary hover:text-text-secondary'}`}
+                     className={`px-4 py-1.5 rounded-lg text-[10px] font-medium uppercase tracking-widest transition-all ${statusFilter === s ? 'bg-white shadow-sm text-brand' : 'text-text-tertiary hover:text-text-secondary'}`}
                    >
                      {s}
                    </button>
@@ -116,18 +117,18 @@ export const BookingsPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 onClick={() => setSelectedBookingId(booking.id)}
               >
-                <Card className="hover:border-brand/40 transition-all cursor-pointer group p-8 border-border-polaris bg-white shadow-none">
+                <Card className="hover:border-brand/40 transition-all cursor-pointer group p-6 lg:p-8 border-black/5 bg-white shadow-sm rounded-2xl">
                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                         <div className="w-12 h-12 rounded-lg bg-bg-canvas flex items-center justify-center text-text-tertiary group-hover:bg-brand group-hover:text-white transition-all">
-                            <User size={20} />
+                      <div className="flex items-center gap-4 lg:gap-6">
+                         <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-bg-canvas flex items-center justify-center text-text-tertiary group-hover:bg-brand group-hover:text-white transition-all">
+                            <User size={18} />
                          </div>
                          <div className="space-y-1">
-                            <h3 className="font-semibold text-sm text-text-primary capitalize tracking-tight">{booking.customerName}</h3>
+                            <h3 className="font-normal text-base text-text-primary capitalize tracking-tight">{booking.customerName}</h3>
                             <div className="flex items-center gap-3">
-                               <p className="text-[11px] text-text-tertiary font-medium uppercase tracking-tight">{service?.name}</p>
-                               <div className="w-1 h-1 rounded-full bg-border-polaris" />
-                               <div className="flex items-center gap-1.5 text-[11px] text-text-tertiary font-normal">
+                               <p className="text-[10px] text-text-tertiary font-light uppercase tracking-widest">{service?.name}</p>
+                               <div className="w-1 h-1 rounded-full bg-black/5" />
+                               <div className="flex items-center gap-1.5 text-[10px] text-text-tertiary font-light">
                                   <Calendar size={12} />
                                   {new Date(booking.date).toLocaleDateString()}
                                </div>
@@ -135,17 +136,17 @@ export const BookingsPage: React.FC = () => {
                          </div>
                       </div>
  
-                      <div className="flex items-center gap-10">
+                      <div className="flex items-center gap-6 lg:gap-10">
                          <div className="text-right space-y-1 hidden sm:block">
-                            <p className="text-xs font-semibold text-text-primary flex items-center justify-end gap-1.5">
+                            <p className="text-xs font-normal text-text-primary flex items-center justify-end gap-1.5">
                                <Clock size={12} className="text-text-tertiary" />
                                {booking.time}
                             </p>
-                            <p className="text-[9px] font-bold text-text-tertiary uppercase tracking-[0.2em]">{service?.duration} Min</p>
+                            <p className="text-[9px] font-light text-text-tertiary uppercase tracking-widest">{service?.duration} Min</p>
                          </div>
  
-                         <div className="flex items-center gap-6">
-                            <div className={`px-3 py-1.5 rounded-md border text-[9px] font-bold uppercase tracking-[0.15em] ${getStatusColor(booking.status)}`}>
+                         <div className="flex items-center gap-4 lg:gap-6">
+                            <div className={`px-3 py-1.5 rounded-xl border text-[9px] font-medium uppercase tracking-widest ${getStatusColor(booking.status)}`}>
                                {booking.status}
                             </div>
                             <ChevronRight size={18} className="text-text-tertiary group-hover:text-brand transition-all group-hover:translate-x-1" />
@@ -198,7 +199,7 @@ export const BookingsPage: React.FC = () => {
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
                onClick={() => setSelectedBookingId(null)}
-               className="absolute inset-0 bg-text-primary/20 backdrop-blur-sm"
+               className="absolute inset-0 bg-text-primary/20 backdrop-blur-sm hidden lg:block"
              />
              
              <motion.div 
@@ -208,26 +209,29 @@ export const BookingsPage: React.FC = () => {
                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col"
              >
-                 <header className="p-8 border-b border-border-polaris flex items-center justify-between bg-white">
+                 <header className="p-5 lg:p-8 border-b border-black/5 flex items-center justify-between bg-white shrink-0">
                     <div className="flex items-center gap-4">
-                       <div className={`p-3 rounded-lg border ${getStatusColor(selectedBooking.status)}`}>
+                       <button onClick={() => setSelectedBookingId(null)} className="lg:hidden p-2 -ml-2 text-text-tertiary">
+                          <ChevronLeft size={24} />
+                       </button>
+                       <div className={`p-3 rounded-xl border hidden lg:block ${getStatusColor(selectedBooking.status)}`}>
                           {selectedBooking.status === 'confirmed' ? <Clock size={24} /> : 
                            selectedBooking.status === 'completed' ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
                        </div>
                        <div>
-                          <h2 className="text-lg font-semibold tracking-tight text-text-primary">Booking Details</h2>
-                          <p className="text-[9px] text-text-tertiary uppercase tracking-[0.2em] font-bold">ID: {selectedBooking.id}</p>
+                          <h2 className="text-lg font-medium tracking-tight text-text-primary">Booking Details</h2>
+                          <p className="text-[9px] text-text-tertiary uppercase tracking-widest font-light">ID: {selectedBooking.id}</p>
                        </div>
                     </div>
                     <button 
                       onClick={() => setSelectedBookingId(null)}
-                      className="p-3 hover:bg-bg-canvas rounded-lg transition-all text-text-tertiary"
+                      className="hidden lg:block p-3 hover:bg-bg-canvas rounded-lg transition-all text-text-tertiary"
                     >
                        <XCircle size={24} />
                     </button>
                  </header>
 
-                <div className="flex-1 overflow-y-auto p-8 space-y-12 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-12 custom-scrollbar pb-32">
                    {/* Customer Info */}
                     <section className="space-y-6">
                        <div className="flex items-center gap-2 text-text-tertiary">

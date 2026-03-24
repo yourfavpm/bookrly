@@ -9,7 +9,8 @@ import {
   Clock, 
   Info,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -61,7 +62,7 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
     });
   };
 
-  const handleUpdateAddOn = (index: number, updates: any) => {
+  const handleUpdateAddOn = (index: number, updates: Partial<{ name: string; price: number; duration: number; active: boolean; description: string }>) => {
     const updatedSub = formData.addOns.map((addon, i) => i === index ? { ...addon, ...updates } : addon);
     setFormData({ ...formData, addOns: updatedSub });
   };
@@ -74,13 +75,13 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Backdrop */}
+      {/* Backdrop - Hidden on Mobile for 'Full Page' feel */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-text-primary/20 backdrop-blur-sm"
+        className="absolute inset-0 bg-text-primary/20 backdrop-blur-sm hidden lg:block"
       />
       
       {/* Panel */}
@@ -91,29 +92,32 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col"
       >
-        <header className="p-6 border-b border-border-light flex items-center justify-between">
+        <header className="p-5 lg:p-6 border-b border-black/5 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${serviceId ? 'bg-brand/10 text-brand' : 'bg-emerald-50 text-emerald-600'}`}>
+            <button onClick={onClose} className="lg:hidden p-2 -ml-2 text-text-tertiary hover:text-text-primary">
+               <ChevronLeft size={24} />
+            </button>
+            <div className={`p-2 rounded-xl hidden lg:block ${serviceId ? 'bg-brand/10 text-brand' : 'bg-emerald-50 text-emerald-600'}`}>
                {serviceId ? <Clock size={18} /> : <Plus size={18} />}
             </div>
             <div>
               <h2 className="text-lg font-medium tracking-tight text-text-primary">
                 {serviceId ? 'Edit Service' : 'Add New Service'}
               </h2>
-              <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-normal">Configure your offering</p>
+              <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-light">Configure your offering</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-bg-secondary rounded-full transition-colors text-text-tertiary">
+          <button onClick={onClose} className="hidden lg:block p-2 hover:bg-bg-secondary rounded-full transition-colors text-text-tertiary">
             <X size={20} />
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-10 custom-scrollbar pb-32">
           {/* Base Info */}
           <section className="space-y-6">
             <div className="flex items-center gap-2 text-text-tertiary mb-2">
               <Info size={14} />
-              <span className="text-[10px] font-normal uppercase tracking-widest">Base Details</span>
+              <span className="text-[10px] font-light uppercase tracking-widest">Base Details</span>
             </div>
             
             <div className="space-y-4">

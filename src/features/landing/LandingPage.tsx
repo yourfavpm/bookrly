@@ -422,42 +422,103 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Bento Feature Grid */}
-        <section className="py-16 max-w-7xl mx-auto px-6">
-          <div className="space-y-4 mb-12">
+        {/* Editorial Features Section */}
+        <section className="py-24 max-w-7xl mx-auto px-6 overflow-hidden">
+          <div className="space-y-4 mb-20">
             <span className="text-[11px] font-bold text-brand uppercase tracking-[0.2em]">What you can do</span>
-            <h2 className="text-4xl lg:text-5xl font-medium tracking-tight leading-tight text-black max-w-lg">
-              Everything you need to <span className="text-brand">get booked</span>
+            <h2 className="text-5xl lg:text-7xl font-medium tracking-tight leading-[0.9] text-black max-w-2xl">
+              Everything you need to <i className="font-serif">get booked</i>
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            {/* Large card */}
-            <div className="md:col-span-4 bg-white rounded-[32px] border border-black/5 p-10 space-y-6 group hover:shadow-xl transition-all relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-1/3 h-full bg-brand/3 blur-[80px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white"><Globe size={22} /></div>
-              <h3 className="text-2xl font-bold tracking-tight">Create your website</h3>
-              <p className="text-black/50 font-medium max-w-sm">Launch a stunning, branded booking page in minutes. No designers, no developers — just you.</p>
-            </div>
-            {/* Small card */}
-            <div className="md:col-span-2 bg-white rounded-[32px] border border-black/5 p-10 space-y-6 group hover:shadow-xl transition-all">
-              <div className="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white"><Calendar size={22} /></div>
-              <h3 className="text-2xl font-bold tracking-tight">Accept bookings</h3>
-              <p className="text-black/50 font-medium">24/7 automated scheduling.</p>
-            </div>
-            {/* Small card */}
-            <div className="md:col-span-2 bg-white rounded-[32px] border border-black/5 p-10 space-y-6 group hover:shadow-xl transition-all">
-              <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white"><CreditCard size={22} /></div>
-              <h3 className="text-2xl font-bold tracking-tight">Get paid online</h3>
-              <p className="text-black/50 font-medium">Secure Stripe payments, instantly.</p>
-            </div>
-            {/* Large card */}
-            <div className="md:col-span-4 bg-white rounded-[32px] border border-black/5 p-10 space-y-6 group hover:shadow-xl transition-all relative overflow-hidden">
-              <div className="absolute bottom-0 left-0 w-1/3 h-full bg-brand/3 blur-[80px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white"><Star size={22} /></div>
-              <h3 className="text-2xl font-bold tracking-tight">Showcase your proof</h3>
-              <p className="text-black/50 font-medium max-w-sm">Display reviews, portfolios, and social proof to build trust before your clients even book.</p>
-            </div>
+          <div className="border-t border-black/5">
+             {[
+               {
+                 icon: <Globe size={20} />,
+                 label: "Website Builder",
+                 title: "Create your conversion-ready website",
+                 description: "Launch a stunning, branded booking page in minutes. No designers, no developers — just your vision brought to life with total brand control.",
+                 visual: (
+                    <div className="w-full h-full bg-black flex items-center justify-center relative group-hover:scale-105 transition-transform duration-1000">
+                       <div className="absolute inset-0 bg-linear-to-br from-brand/20 to-transparent" />
+                       <div className="relative px-8 py-4 bg-white border border-white/20 shadow-2xl text-[10px] font-bold tracking-widest uppercase">Launch Live</div>
+                    </div>
+                 )
+               },
+               {
+                 icon: <Calendar size={20} />,
+                 label: "Scheduling",
+                 title: "Automated bookings, 24/7 efficiency",
+                 description: "Let your clients book while you sleep. Our intelligent calendar handles time zones, availability, and reminders without you lifting a finger.",
+                 visual: (
+                    <div className="w-full h-full bg-[#f8f8f8] p-8 flex flex-col justify-end group-hover:scale-105 transition-transform duration-1000">
+                       <div className="space-y-4">
+                          {[1,2,3].map(i => (
+                             <div key={i} className="h-12 bg-white border border-black/5 flex items-center px-4 justify-between">
+                                <span className="w-2 h-2 rounded-full bg-brand" />
+                                <div className="w-20 h-2 bg-black/5" />
+                                <div className="w-8 h-2 bg-black/5" />
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+                 )
+               },
+               {
+                 icon: <CreditCard size={20} />,
+                 label: "Payments",
+                 title: "Accept payments and deposits instantly",
+                 description: "Secure your revenue upfront. Integrate Stripe in one click to accept full payments or deposits, reducing no-shows to near zero.",
+                 visual: (
+                    <div className="w-full h-full bg-brand flex items-center justify-center group-hover:scale-105 transition-transform duration-1000">
+                       <div className="text-white text-5xl font-bold tracking-tighter">$4,250.00</div>
+                    </div>
+                 )
+               },
+               {
+                 icon: <Star size={20} />,
+                 label: "Social Proof",
+                 title: "Showcase proof and build instant trust",
+                 description: "Display beautiful client galleries and verified reviews. Turn your past work into your strongest sales tool with built-in portfolios.",
+                 visual: (
+                    <div className="w-full h-full bg-black overflow-hidden relative group-hover:scale-105 transition-transform duration-1000">
+                       <img src="/images/templates/salon_luxe.png" className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-700" alt="Proof" />
+                    </div>
+                 )
+               }
+             ].map((feature, i) => (
+               <div key={i} className="py-24 border-b border-black/5 group">
+                 <div className={`grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center`}>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                      viewport={{ once: true }}
+                      className={`space-y-8 ${i % 2 === 1 ? 'md:order-last' : ''}`}
+                    >
+                       <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-black text-white flex items-center justify-center">{feature.icon}</div>
+                          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/40">{feature.label}</span>
+                       </div>
+                       <h3 className="text-4xl lg:text-5xl font-medium tracking-tight leading-[1.1] text-black">{feature.title}</h3>
+                       <p className="text-lg text-black/50 font-medium leading-relaxed max-w-md">{feature.description}</p>
+                       <div className="pt-4">
+                          <button className="text-[11px] font-bold uppercase tracking-widest border-b-2 border-brand pb-1 hover:text-brand transition-colors">Learn more</button>
+                       </div>
+                    </motion.div>
+                    
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                      viewport={{ once: true }}
+                      className="aspect-video md:aspect-4/3 lg:aspect-video bg-bg-secondary border border-black/5 overflow-hidden relative"
+                    >
+                       {feature.visual}
+                    </motion.div>
+                 </div>
+               </div>
+             ))}
           </div>
         </section>
 
