@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Image as ImageIcon } from 'lucide-react';
+import { getOptimizedImageUrl } from '../../../utils/images';
 import type { SectionProps } from '../templates/types';
 
 interface ProofProps extends SectionProps {
@@ -50,7 +51,12 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
               >
                 {/* After Image (Background) */}
                 <div className="absolute inset-0">
-                  <img src={items[1].image_url!} alt={items[1].caption || "After result"} className="w-full h-full object-cover" />
+                  <img 
+                    src={getOptimizedImageUrl(items[1].image_url!, { width: 1200, quality: 80 })} 
+                    alt={items[1].caption || "After result"} 
+                    className="w-full h-full object-cover" 
+                    loading="lazy"
+                  />
                   <div className="absolute top-6 right-6 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-slate-900 shadow-sm z-0">AFTER</div>
                 </div>
                 
@@ -59,7 +65,12 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
                   className="absolute inset-0 z-10"
                   style={{ clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)` }}
                 >
-                  <img src={items[0].image_url!} alt={items[0].caption || "Before result"} className="w-full h-full object-cover" />
+                  <img 
+                    src={getOptimizedImageUrl(items[0].image_url!, { width: 1200, quality: 80 })} 
+                    alt={items[0].caption || "Before result"} 
+                    className="w-full h-full object-cover" 
+                    loading="lazy"
+                  />
                   <div className="absolute top-6 left-6 px-4 py-2 bg-slate-900/90 backdrop-blur-sm rounded-full text-xs font-bold text-white shadow-sm">BEFORE</div>
                 </div>
 
@@ -96,7 +107,12 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
                       className="aspect-square rounded-2xl overflow-hidden shadow-sm relative group cursor-pointer"
                     >
                       {item.image_url ? (
-                        <img src={item.image_url} alt={item.caption} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <img 
+                          src={getOptimizedImageUrl(item.image_url, { width: 600, quality: 75 })} 
+                          alt={item.caption} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                          loading="lazy"
+                        />
                       ) : (
                         <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><ImageIcon size={24} /></div>
                       )}
@@ -137,9 +153,10 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
               <div className="aspect-4/5 bg-white p-2 rounded-sm shadow-lg">
                 <div className="w-full h-full bg-text-primary/5 rounded-sm overflow-hidden">
                   <img 
-                    src={displayItems[0].image_url} 
+                    src={getOptimizedImageUrl(displayItems[0].image_url, { width: 800, quality: 80 })} 
                     alt={displayItems[0].caption || 'Portfolio'} 
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -175,9 +192,10 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
                 >
                   {displayItems[1].image_url && (
                     <img 
-                      src={displayItems[1].image_url} 
+                      src={getOptimizedImageUrl(displayItems[1].image_url, { width: 1000, quality: 80 })} 
                       alt={displayItems[1].caption || 'Portfolio'} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
                     />
                   )}
                 </motion.div>
@@ -193,9 +211,10 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
                   >
                     {displayItems[2].image_url && (
                       <img 
-                        src={displayItems[2].image_url} 
+                        src={getOptimizedImageUrl(displayItems[2].image_url, { width: 800, quality: 80 })} 
                         alt={displayItems[2].caption || 'Portfolio'} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        loading="lazy"
                       />
                     )}
                   </motion.div>
@@ -238,7 +257,12 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
             {business.proofOfWork.map((item, i) => (
               <motion.div key={item.id} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} viewport={{ once: true }} className="w-64 h-80 shrink-0 rounded-3xl overflow-hidden shadow-md group relative">
                 {item.image_url ? (
-                  <img src={item.image_url} alt={item.caption} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <img 
+                    src={getOptimizedImageUrl(item.image_url, { width: 400, quality: 75 })} 
+                    alt={item.caption} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                    loading="lazy"
+                  />
                 ) : (
                   <div className="w-full h-full bg-bg-secondary flex items-center justify-center text-text-tertiary"><ImageIcon size={32} /></div>
                 )}
@@ -267,7 +291,12 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
         {items.length > 0 ? items.map((item, index) => (
           <motion.div key={item.id} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.1 }} viewport={{ once: true }} className="group relative aspect-square rounded-[32px] overflow-hidden shadow-md">
             {item.image_url ? (
-              <img src={item.image_url} alt={item.caption} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
+              <img 
+                src={getOptimizedImageUrl(item.image_url, { width: 600, quality: 80 })} 
+                alt={item.caption} 
+                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" 
+                loading="lazy"
+              />
             ) : (
               <div className="w-full h-full bg-bg-secondary flex items-center justify-center text-text-tertiary"><ImageIcon size={32} /></div>
             )}

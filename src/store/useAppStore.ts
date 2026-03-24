@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import type { User } from '@supabase/supabase-js';
 
 interface AddOn {
   id: string;
@@ -23,7 +24,7 @@ interface Service {
   active: boolean;
 }
 
-interface WorkingHour {
+export interface WorkingHour {
   day_of_week: number;
   start_time: string;
   end_time: string;
@@ -38,15 +39,33 @@ interface Booking {
   id: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
   serviceId: string;
   date: string;
   time: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  paymentStatus: 'paid' | 'pending' | 'partially_paid';
+  paymentStatus: 'paid' | 'pending' | 'partially_paid' | 'failed' | 'refunded';
   totalAmount: number;
   paidAmount: number;
   addOns: string[];
   createdAt: string;
+  notes?: string;
+}
+
+interface Review {
+  id: string;
+  author_name: string;
+  rating: number;
+  content: string;
+  created_at: string;
+}
+
+interface ProofItem {
+  id: string;
+  image_url: string;
+  title?: string;
+  category?: string;
+  created_at: string;
 }
 
 interface BusinessState {
@@ -62,6 +81,7 @@ interface BusinessState {
   heroTitle: string;
   heroSubtitle: string;
   ctaText: string;
+  secondaryCtaText: string;
   trustSection: 'reviews' | 'proof' | 'both' | 'none';
   aboutTitle: string;
   aboutDescription: string;
@@ -72,8 +92,8 @@ interface BusinessState {
     facebook: string;
     twitter: string;
   };
-  reviews: any[];
-  proofOfWork: any[];
+  reviews: Review[];
+  proofOfWork: ProofItem[];
   isPublished: boolean;
   slug: string;
   customDomain: string | null;
@@ -96,35 +116,51 @@ interface BusinessState {
 }
 
 interface AppState {
-  user: any | null; // Supabase User
+  user: User | null;
   business: BusinessState | null;
   loading: boolean;
   error: string | null;
   onboardingStep: number;
   
   // Actions
-  setUser: (user: any | null) => void;
+  setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setBusiness: (business: BusinessState | null) => void;
   updateBusiness: (updates: Partial<BusinessState>) => Promise<void>;
   setOnboardingStep: (step: number) => void;
-  fetchBusiness: () => Promise<void>;
+  fetchBusiness: (retryCount?: number) => Promise<void>;
   signOut: () => Promise<void>;
-  addReview: (review: { customer_name: string; rating: number; comment: string }) => Promise<void>;
+  addReview: (review: { author_name: string; rating: number; content: string }) => Promise<void>;
   deleteReview: (id: string) => Promise<void>;
   addProofItem: (item: { image_url: string; caption?: string }) => Promise<void>;
   deleteProofItem: (id: string) => Promise<void>;
-  addService: (service: any) => Promise<void>;
-  updateService: (id: string, service: any) => Promise<void>;
+  addService: (service: Partial<Service>) => Promise<void>;
+  updateService: (id: string, service: Partial<Service>) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
   fetchPublicBusiness: (subdomain: string) => Promise<void>;
   updateBookingStatus: (id: string, status: string) => Promise<void>;
-  updateReview: (id: string, updates: any) => Promise<void>;
-  updateProofItem: (id: string, updates: any) => Promise<void>;
+  updateReview: (id: string, updates: Partial<Review>) => Promise<void>;
+  updateProofItem: (id: string, updates: Partial<ProofItem>) => Promise<void>;
+  createBooking: (data: {
+    serviceId: string;
+    addOnIds: string[];
+    date: string;
+    time: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    notes?: string;
+    totalPrice: number;
+    depositDue: number;
+  }) => Promise<Booking>;
+  createCheckoutSession: (bookingId: string) => Promise<string | null>;
   setupStripeConnect: () => Promise<string | null>;
   refreshStripeStatus: () => Promise<void>;
   createSubscription: () => Promise<string | null>;
+  updatePassword: (password: string) => Promise<{ error: any }>;
+  uploadLogo: (file: File) => Promise<string | null>;
+  updateWorkingHours: (hours: WorkingHour[]) => Promise<void>;
 }
 
 const generateSlug = (name: string): string => {
@@ -157,15 +193,15 @@ export const useAppStore = create<AppState>()(
   setBusiness: (business) => set({ business }),
   setOnboardingStep: (step) => set({ onboardingStep: step }),
 
-  fetchBusiness: async (force = false) => {
+  fetchBusiness: async (retryCount?: number) => {
     const { user, business } = get();
     if (!user) {
       set({ loading: false });
       return;
     }
     
-    // Simple caching: skip fetch if we already have business data unless forced
-    if (business && !force) {
+    // Skip fetch if we already have business data unless retryCount is provided
+    if (business && retryCount === undefined) {
       set({ loading: false });
       return;
     }
@@ -183,6 +219,9 @@ export const useAppStore = create<AppState>()(
       
       // If no business exists, create one for this new user
       if (!business) {
+        const now = new Date();
+        const trialEndDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
         const { data: newBusiness, error: createError } = await supabase
           .from('businesses')
           .insert([{
@@ -191,7 +230,11 @@ export const useAppStore = create<AppState>()(
             email: '',
             category: '',
             primary_color: '#111111',
-            template_key: 'editorial_luxe'
+            template_key: 'editorial_luxe',
+            subscription_status: 'trialing',
+            trial_start_date: now.toISOString(),
+            trial_end_date: trialEndDate.toISOString(),
+            plan_type: 'pro'
           }])
           .select()
           .single();
@@ -214,6 +257,7 @@ export const useAppStore = create<AppState>()(
             heroTitle: '',
             heroSubtitle: '',
             ctaText: 'Book Now',
+            secondaryCtaText: '',
             aboutTitle: '',
             aboutDescription: '',
             aboutImage: null,
@@ -228,8 +272,8 @@ export const useAppStore = create<AppState>()(
             stripeCustomerId: null,
             stripeSubscriptionId: null,
             subscriptionStatus: 'trialing',
-            trialStartDate: null,
-            trialEndDate: null,
+            trialStartDate: newBusiness.trial_start_date,
+            trialEndDate: newBusiness.trial_end_date,
             planType: 'pro',
             services: [],
             workingHours: [],
@@ -336,6 +380,7 @@ export const useAppStore = create<AppState>()(
           heroTitle: business.hero_title || '',
           heroSubtitle: business.hero_subtitle || '',
           ctaText: business.cta_text || '',
+          secondaryCtaText: business.secondary_cta_text || '',
           aboutTitle: business.about_title || '',
           aboutDescription: business.about_description || '',
           aboutImage: business.about_image || null,
@@ -354,14 +399,21 @@ export const useAppStore = create<AppState>()(
           trialEndDate: business.trial_end_date || null,
           planType: business.plan_type || 'pro',
           services: mappedServices,
-          workingHours: (availability || []).map((h: any) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
+          workingHours: (availability || []).map((h: WorkingHour) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
           bookings: mappedBookings,
           reviews: reviews || [],
           proofOfWork: proof_items || []
         } 
       });
     } catch (err: any) {
+      console.error('Fetch business error:', err);
       set({ error: err.message });
+      
+      // Auto-retry once after 2 seconds on network failure
+      const count = retryCount || 0;
+      if (count < 1) {
+        setTimeout(() => get().fetchBusiness(count + 1), 2000);
+      }
     } finally {
       set({ loading: false });
     }
@@ -402,6 +454,7 @@ export const useAppStore = create<AppState>()(
         if ('heroTitle' in updates) dbUpdates.hero_title = updates.heroTitle;
         if ('heroSubtitle' in updates) dbUpdates.hero_subtitle = updates.heroSubtitle;
         if ('ctaText' in updates) dbUpdates.cta_text = updates.ctaText;
+        if ('secondaryCtaText' in updates) dbUpdates.secondary_cta_text = updates.secondaryCtaText;
         if ('aboutTitle' in updates) dbUpdates.about_title = updates.aboutTitle;
         if ('aboutDescription' in updates) dbUpdates.about_description = updates.aboutDescription;
         if ('aboutImage' in updates) dbUpdates.about_image = updates.aboutImage;
@@ -439,7 +492,13 @@ export const useAppStore = create<AppState>()(
             .update(dbUpdates)
             .eq('id', latestBusiness.id);
 
-          if (error) console.error('Business update error:', error);
+          if (error) {
+            console.error('Business update error:', error);
+            if (error.code === '23505') {
+               alert('That subdomain or slug is already taken by another business. Reverting your changes.');
+               get().fetchBusiness(0);
+            }
+          }
         }
       } catch (err: any) {
         console.error('Save error:', err.message);
@@ -457,20 +516,26 @@ export const useAppStore = create<AppState>()(
     if (!business) return;
 
     const tempId = `temp-${Date.now()}`;
-    const newReview = { id: tempId, ...review, business_id: business.id };
+    const newReview: Review = { 
+      id: tempId, 
+      author_name: review.author_name,
+      rating: review.rating,
+      content: review.content,
+      created_at: new Date().toISOString()
+    };
     
-    set({ business: { ...business, reviews: [...(business.reviews || []), newReview] } });
+    set({ business: { ...business, reviews: [newReview, ...(business.reviews || [])] } });
 
     const { data, error } = await supabase.from('reviews').insert([{ 
-      customer_name: review.customer_name,
+      author_name: review.author_name,
       rating: review.rating,
-      comment: review.comment,
+      content: review.content,
       business_id: business.id 
     }]).select().single();
     
     if (!error && data) {
       set(state => ({
-        business: state.business ? { ...state.business, reviews: state.business.reviews?.map(r => r.id === tempId ? data : r) } : null
+        business: state.business ? { ...state.business, reviews: state.business.reviews?.map(r => r.id === tempId ? data as Review : r) } : null
       }));
     } else get().fetchBusiness();
   },
@@ -490,19 +555,24 @@ export const useAppStore = create<AppState>()(
     if (!business) return;
 
     const tempId = `temp-${Date.now()}`;
-    const newItem = { id: tempId, ...item, business_id: business.id };
+    const newItem: ProofItem = { 
+      id: tempId, 
+      image_url: item.image_url, 
+      title: item.caption,
+      created_at: new Date().toISOString()
+    };
     
-    set({ business: { ...business, proofOfWork: [...(business.proofOfWork || []), newItem] } });
+    set({ business: { ...business, proofOfWork: [newItem, ...(business.proofOfWork || [])] } });
 
     const { data, error } = await supabase.from('proof_items').insert([{ 
       image_url: item.image_url,
-      caption: item.caption,
+      title: item.caption,
       business_id: business.id 
     }]).select().single();
     
     if (!error && data) {
       set(state => ({
-        business: state.business ? { ...state.business, proofOfWork: state.business.proofOfWork?.map(p => p.id === tempId ? data : p) } : null
+        business: state.business ? { ...state.business, proofOfWork: state.business.proofOfWork?.map(p => p.id === tempId ? data as ProofItem : p) } : null
       }));
     } else get().fetchBusiness();
   },
@@ -521,44 +591,52 @@ export const useAppStore = create<AppState>()(
     const { business } = get();
     if (!business) return;
 
-    const tempId = `temp-${Date.now()}`;
-    const newService = { id: tempId, ...service, booking_fee_enabled: service.bookingFeeEnabled, booking_fee_amount: service.bookingFeeAmount, business_id: business.id };
-    
-    set({ business: { ...business, services: [...(business.services || []), newService] } });
+    try {
+      const { data: sData, error: sError } = await supabase.from('services').insert([{
+        business_id: business.id,
+        name: service.name || 'New Service',
+        description: service.description || '',
+        price: service.price || 0,
+        duration: service.duration || 60,
+        booking_fee_enabled: service.bookingFeeEnabled || false,
+        booking_fee_amount: service.bookingFeeAmount || 0,
+        active: true
+      }]).select().single();
 
-    const { data: sData, error: sError } = await supabase.from('services').insert([{
-      business_id: business.id,
-      name: service.name,
-      description: service.description,
-      price: service.price,
-      duration: service.duration,
-      booking_fee_enabled: service.bookingFeeEnabled,
-      booking_fee_amount: service.bookingFeeAmount,
-      active: service.active
-    }]).select().single();
+      if (sError) throw sError;
 
-    if (sError) {
-      get().fetchBusiness();
-      return;
-    }
+      let newAddOns: AddOn[] = [];
+      if (service.addOns && service.addOns.length > 0) {
+        const { data: aData, error: aError } = await supabase.from('addons').insert(
+          service.addOns.map((a: any) => ({
+            service_id: sData.id,
+            name: a.name,
+            price: a.price,
+            duration: a.duration || 0,
+            active: true
+          }))
+        ).select();
+        
+        if (aError) console.error('Addons save error:', aError);
+        if (aData) newAddOns = aData;
+      }
+      
+      const newService: Service = {
+        ...sData,
+        bookingFeeEnabled: sData.booking_fee_enabled,
+        bookingFeeAmount: sData.booking_fee_amount,
+        addOns: newAddOns,
+        active: sData.active
+      };
 
-    if (service.addOns?.length > 0) {
-      await supabase.from('addons').insert(
-        service.addOns.map((a: any) => ({
-          service_id: sData.id,
-          name: a.name,
-          price: a.price,
-          duration: a.duration || 0,
-          active: true
-        }))
-      );
-    }
-    
-    if (sData) {
-      set(state => ({
-        business: state.business ? { ...state.business, services: state.business.services?.map(s => s.id === tempId ? sData : s) } : null
-      }));
-      get().fetchBusiness();
+      set({ 
+        business: { 
+          ...business, 
+          services: [...(business.services || []), newService] 
+        } 
+      });
+    } catch (err: any) {
+      set({ error: err.message });
     }
   },
 
@@ -692,6 +770,7 @@ export const useAppStore = create<AppState>()(
           heroTitle: business.hero_title,
           heroSubtitle: business.hero_subtitle,
           ctaText: business.cta_text,
+          secondaryCtaText: business.secondary_cta_text,
           aboutTitle: business.about_title,
           aboutDescription: business.about_description,
           aboutImage: business.about_image,
@@ -720,12 +799,42 @@ export const useAppStore = create<AppState>()(
     const service = business.services.find(s => s.id === data.serviceId);
     if (!service) throw new Error('Service not found');
 
-    // Calculate end time
-    const [h, m] = data.time.split(':').map(Number);
-    const endMinutes = h * 60 + m + service.duration;
+    // Parse 12-hour time "02:15 PM" into 24-hour minutes
+    const timeMatch = data.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    let startMinutes = 0;
+    
+    if (timeMatch) {
+       let h = parseInt(timeMatch[1], 10);
+       const m = parseInt(timeMatch[2], 10);
+       const period = timeMatch[3].toUpperCase();
+       
+       if (period === 'PM' && h < 12) h += 12;
+       if (period === 'AM' && h === 12) h = 0;
+       
+       startMinutes = h * 60 + m;
+    } else {
+       // Fallback for 24h
+       const [h, m] = data.time.split(':').map(Number);
+       startMinutes = h * 60 + m;
+    }
+
+    const startH = Math.floor(startMinutes / 60) % 24;
+    const startM = startMinutes % 60;
+    const startTime24 = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}:00`;
+
+    // Calculate end time using service + addon durations
+    let totalDuration = service.duration;
+    if (data.addOnIds && data.addOnIds.length > 0) {
+      data.addOnIds.forEach((id: string) => {
+        const addon = service.addOns.find((a: any) => a.id === id);
+        if (addon) totalDuration += addon.duration;
+      });
+    }
+
+    const endMinutes = startMinutes + totalDuration;
     const endH = Math.floor(endMinutes / 60) % 24;
     const endM = endMinutes % 60;
-    const endTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`;
+    const endTime24 = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`;
 
     const { data: bData, error: bError } = await supabase
       .from('bookings')
@@ -736,10 +845,12 @@ export const useAppStore = create<AppState>()(
         customer_email: data.customerEmail,
         customer_phone: data.customerPhone,
         date: data.date,
-        start_time: data.time,
-        end_time: endTime,
+        start_time: startTime24,
+        end_time: endTime24,
         total_amount: data.totalPrice,
-        status: 'confirmed',
+        paid_amount: data.depositDue || 0,
+        payment_status: data.depositDue > 0 ? 'pending' : 'paid',
+        status: data.depositDue > 0 ? 'pending' : 'confirmed',
         notes: data.notes
       }])
       .select()
@@ -757,6 +868,28 @@ export const useAppStore = create<AppState>()(
     }
 
     return bData;
+  },
+
+  createCheckoutSession: async (bookingId: string) => {
+    const { business } = get();
+    if (!business) return null;
+
+    const protocol = window.location.hostname.includes('localhost') ? 'http' : 'https';
+    const domain = import.meta.env.VITE_ROOT_DOMAIN || 'localhost:5173';
+    const successUrl = `${protocol}://${business.subdomain}.${domain}/?booking_success=true`;
+    const cancelUrl = `${protocol}://${business.subdomain}.${domain}/?booking_cancel=true`;
+
+    const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+      body: { 
+        bookingId, 
+        businessId: business.id,
+        successUrl,
+        cancelUrl
+      }
+    });
+
+    if (error) throw error;
+    return data.url;
   },
 
   updateBookingStatus: async (id, status) => {
@@ -857,12 +990,82 @@ export const useAppStore = create<AppState>()(
     } finally {
       set({ loading: false });
     }
+  },
+
+  updatePassword: async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error };
+  },
+
+  uploadLogo: async (file: File) => {
+    const { business } = get();
+    if (!business) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${business.id}-${Math.random()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('business-assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('business-assets')
+        .getPublicUrl(filePath);
+
+      await get().updateBusiness({ logo: publicUrl });
+      return publicUrl;
+    } catch (err: any) {
+      console.error('Logo upload error:', err.message);
+      return null;
+    }
+  },
+
+  updateWorkingHours: async (hours) => {
+    const { business } = get();
+    if (!business) return;
+
+    set(state => ({
+      business: state.business ? { ...state.business, workingHours: hours } : null
+    }));
+
+    try {
+      // 1. Delete existing hours for this business
+      const { error: dError } = await supabase
+        .from('availability')
+        .delete()
+        .eq('business_id', business.id);
+
+      if (dError) throw dError;
+
+      // 2. Insert new hours
+      const { error: iError } = await supabase
+        .from('availability')
+        .insert(
+          hours.map(h => ({
+            business_id: business.id,
+            day_of_week: h.dayOfWeek !== undefined ? h.dayOfWeek : h.day_of_week,
+            start_time: h.startTime || h.start_time,
+            end_time: h.endTime || h.end_time,
+            is_open: h.isOpen !== undefined ? h.isOpen : h.is_open
+          }))
+        );
+
+      if (iError) throw iError;
+      
+    } catch (err: any) {
+      set({ error: err.message });
+      // Revert if failed
+      get().fetchBusiness(0);
+    }
   }
 }), {
   name: 'bookflow-storage',
   storage: createJSONStorage(() => localStorage),
   partialize: (state) => ({ 
     onboardingStep: state.onboardingStep,
-    // We can partialize more UI state here later
   }),
 }));

@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { getOptimizedImageUrl } from '../../../utils/images';
 import { Star, Calendar as CalendarIcon, ShieldCheck, CheckCircle2, Zap, ChevronRight } from 'lucide-react';
 import type { SectionProps } from '../templates/types';
 
@@ -21,9 +22,11 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
         >
           {business.coverImage ? (
             <img 
-              src={business.coverImage} 
+              src={getOptimizedImageUrl(business.coverImage, { width: 1920, quality: 85 })} 
               className="w-full h-full object-cover" 
               alt="Hero" 
+              loading="eager"
+              fetchPriority="high"
             />
           ) : (
              <div className="w-full h-full bg-[#1a1a1a]" />
@@ -261,9 +264,10 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
             >
               {business.coverImage && (
                 <img 
-                  src={business.coverImage} 
+                  src={getOptimizedImageUrl(business.coverImage, { width: 1200, quality: 80 })} 
                   alt="Hero"
                   className="w-full h-full object-cover"
+                  loading="eager"
                 />
               )}
               {!business.coverImage && (
@@ -298,7 +302,12 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
           </motion.div>
           {business.coverImage && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="aspect-4/5 rounded-[40px] overflow-hidden shadow-2xl">
-              <img src={business.coverImage} className="w-full h-full object-cover" alt="Hero" />
+              <img 
+                src={getOptimizedImageUrl(business.coverImage, { width: 1000, quality: 80 })} 
+                className="w-full h-full object-cover" 
+                alt="Hero" 
+                loading="eager"
+              />
             </motion.div>
           )}
         </div>
@@ -310,7 +319,14 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
     return (
       <section className="relative min-h-[700px] flex items-center justify-center">
         <div className="absolute inset-0">
-          {business.coverImage && <img src={business.coverImage} className="w-full h-full object-cover" alt="Hero" />}
+          {business.coverImage && (
+            <img 
+              src={getOptimizedImageUrl(business.coverImage, { width: 1920, quality: 80 })} 
+              className="w-full h-full object-cover" 
+              alt="Hero" 
+              loading="eager"
+            />
+          )}
           <div className="absolute inset-0 bg-black/50" />
         </div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="relative z-10 text-center max-w-3xl px-6 space-y-8">
@@ -373,7 +389,14 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
   return (
     <section className="relative min-h-[600px] flex items-center justify-center text-center overflow-hidden">
       <div className={`absolute inset-0 transition-opacity duration-1000 ${business.coverImage ? 'opacity-100' : 'opacity-0'}`}>
-        {business.coverImage && <img src={business.coverImage} className="w-full h-full object-cover" alt="Hero" />}
+        {business.coverImage && (
+          <img 
+            src={getOptimizedImageUrl(business.coverImage, { width: 1920, quality: 80 })} 
+            className="w-full h-full object-cover" 
+            alt="Hero" 
+            loading="eager"
+          />
+        )}
         <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
       </div>
       <div className={`absolute inset-0 transition-opacity duration-1000 ${business.coverImage ? 'opacity-0' : 'opacity-100'} bg-bg-secondary`} />

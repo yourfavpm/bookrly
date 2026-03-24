@@ -20,6 +20,7 @@ interface ServiceEditorProps {
 
 export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose }) => {
   const { business, addService, updateService } = useAppStore();
+  const isStripeReady = business?.stripeConnected && business?.stripeDetailsSubmitted;
 
   const existingService = business?.services.find(s => s.id === serviceId);
 
@@ -38,6 +39,13 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
   if (!business) return null;
 
   const handleSave = async () => {
+    if (!formData.name.trim()) return alert('Service name is required');
+    if (formData.price < 0) return alert('Price cannot be negative');
+    if (formData.duration <= 0) return alert('Duration must be greater than 0 minutes');
+    if (formData.bookingFeeEnabled && (formData.bookingFeeAmount < 0 || formData.bookingFeeAmount > formData.price)) {
+      return alert('Booking deposit must be between $0 and the total service price');
+    }
+
     if (serviceId) {
       await updateService(serviceId, formData);
     } else {
@@ -167,7 +175,12 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
                    </div>
                 </div>
                 <button 
-                  onClick={() => setFormData({...formData, bookingFeeEnabled: !formData.bookingFeeEnabled})}
+                  onClick={() => {
+                     if (!isStripeReady && !formData.bookingFeeEnabled) {
+                        return alert('Stripe Connection Required: Please complete your payment setup in Settings > Payments to enable required deposits.');
+                     }
+                     setFormData({...formData, bookingFeeEnabled: !formData.bookingFeeEnabled});
+                  }}
                   className={`w-11 h-6.5 rounded-full transition-all duration-300 relative flex items-center px-1 cursor-pointer ${formData.bookingFeeEnabled ? 'bg-brand shadow-lg shadow-brand/20' : 'bg-bg-tertiary'}`}
                 >
                    <div className={`w-4.5 h-4.5 rounded-full bg-white shadow-sm transition-all duration-300 ${formData.bookingFeeEnabled ? 'translate-x-4.5' : 'translate-x-0'}`} />

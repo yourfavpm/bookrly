@@ -20,6 +20,7 @@ import { PublicLayout } from './components/layout/PublicLayout';
 import { AuthObserver } from './components/auth/AuthObserver';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LandingPage } from './features/landing/LandingPage';
+import { NotFoundPage } from './features/errors/NotFoundPage';
 
 function App() {
   return (
@@ -69,6 +70,9 @@ function App() {
           
           {/* Redirects */}
           <Route path="/" element={<LandingPage />} />
+
+          {/* 404 Catch-all */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AuthObserver>
     </Router>

@@ -20,8 +20,13 @@ interface BookingFlowProps {
 }
 
 export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
-  const { business } = useAppStore();
-  const [step, setStep] = useState(1);
+  const { business, createBooking, createCheckoutSession } = useAppStore();
+  const isStripeReady = business?.stripeConnected && business?.stripeDetailsSubmitted;
+  const [step, setStep] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('booking_success') === 'true' ? 7 : 1;
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -59,6 +64,11 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     return total;
   }, [selectedService, selectedAddOns]);
 
+  const depositDue = useMemo(() => {
+     if (!selectedService || !selectedService.bookingFeeEnabled) return subtotal;
+     return Math.min(selectedService.bookingFeeAmount || 0, subtotal);
+  }, [selectedService, subtotal]);
+
   const availableDates = useMemo(() => {
     return Array.from({ length: 14 }, (_, i) => {
       const d = new Date();
@@ -67,7 +77,71 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     });
   }, []);
 
-  const timeSlots = ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'];
+  const timeSlots = useMemo(() => {
+    if (!selectedDate || !selectedService || !business) return [];
+    
+    // Parse selected date treating it as local to prevent strict UTC shifts
+    const [year, month, day] = selectedDate.split('-');
+    const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const dayOfWeek = dateObj.getDay();
+    
+    const dayHours = business.workingHours.find(h => h.dayOfWeek === dayOfWeek);
+    if (!dayHours || !dayHours.isOpen) return [];
+
+    // Calculate dynamic duration payload
+    let totalDurationMinutes = selectedService.duration;
+    selectedAddOns.forEach(name => {
+      const addon = selectedService.addOns.find((a: any) => a.name === name);
+      if (addon) totalDurationMinutes += addon.duration;
+    });
+
+    const [startH, startM] = dayHours.startTime.split(':').map(Number);
+    const [endH, endM] = dayHours.endTime.split(':').map(Number);
+    const openMinutes = startH * 60 + startM;
+    const closeMinutes = endH * 60 + endM;
+
+    // Fast same-day clipping
+    const now = new Date();
+    const isToday = now.getFullYear() === dateObj.getFullYear() && 
+                    now.getMonth() === dateObj.getMonth() && 
+                    now.getDate() === dateObj.getDate();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // Pull collision blockers
+    const todaysBookings = business.bookings.filter(
+       b => b.date === selectedDate && b.status !== 'cancelled'
+    );
+
+    const slots: string[] = [];
+    
+    // Compute 15-minute structural nodes
+    for (let m = openMinutes; m + totalDurationMinutes <= closeMinutes; m += 15) {
+       if (isToday && m <= currentMinutes + 30) continue;
+       
+       const slotStart = m;
+       const slotEnd = m + totalDurationMinutes;
+       
+       const isOverlap = todaysBookings.some(booking => {
+          const [bh, bm] = booking.time.split(':').map(Number);
+          const endStr = (booking as any).end_time;
+          const [eh, em] = endStr ? endStr.split(':').map(Number) : [bh + Math.floor(totalDurationMinutes/60), bm + (totalDurationMinutes%60)];
+          const bStart = bh * 60 + bm;
+          const bEnd = eh * 60 + em;
+          
+          return (slotStart < bEnd) && (slotEnd > bStart);
+       });
+
+       if (!isOverlap) {
+          const h = Math.floor(m / 60);
+          const mins = m % 60;
+          const period = h >= 12 ? 'PM' : 'AM';
+          const displayH = h % 12 || 12;
+          slots.push(`${displayH.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')} ${period}`);
+       }
+    }
+
+    return slots;
+  }, [selectedDate, selectedService, selectedAddOns, business.workingHours, business.bookings]);
 
   if (!business) return null;
 
@@ -343,7 +417,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                    </div>
                 </div>
                 <Button 
-                   disabled={!contactInfo.name || !contactInfo.email || !contactInfo.phone}
+                   disabled={!contactInfo.name || !contactInfo.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)}
                    className="w-full h-16 rounded-2xl font-bold text-lg shadow-md hover:-translate-y-1 transition-transform" 
                    style={{ backgroundColor: business.primaryColor }} 
                    onClick={nextStep}
@@ -392,16 +466,67 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                         );
                       })}
                       
-                      <div className="pt-6 mt-4 border-t border-border-light flex justify-between items-center">
-                         <span className="text-lg font-bold text-text-primary">Total Due</span>
-                         <span className="text-3xl font-bold" style={{ color: business.primaryColor }}>${subtotal}</span>
+                      <div className="pt-6 mt-4 border-t border-border-light flex justify-between items-center text-text-tertiary">
+                         <span className="text-base font-bold">Total Service Value</span>
+                         <span className="text-lg font-bold">${subtotal}</span>
                       </div>
+                      
+                      <div className="pt-3 mt-3 border-t border-border-light border-dashed flex justify-between items-center">
+                         <span className="text-lg font-bold text-text-primary">Due Today</span>
+                         <span className="text-3xl font-bold" style={{ color: business.primaryColor }}>
+                            ${depositDue}
+                         </span>
+                      </div>
+                      
+                      {selectedService.bookingFeeEnabled && (
+                         <div className="text-right mt-1">
+                            <p className="text-xs font-medium text-text-tertiary">Remaining balance of ${subtotal - depositDue} due at appointment.</p>
+                         </div>
+                      )}
                    </div>
                 </div>
 
-                <Button className="w-full h-16 rounded-2xl font-bold text-lg shadow-md group flex items-center justify-center gap-2 transition-all hover:-translate-y-1" style={{ backgroundColor: business.primaryColor }} onClick={nextStep}>
-                   Confirm Order & Pay <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                </Button>
+                {depositDue > 0 && !isStripeReady ? (
+                   <div className="p-5 bg-amber-50/50 text-amber-800 rounded-2xl text-sm font-medium border border-amber-200/50 flex flex-col gap-2 shadow-sm text-center">
+                      <span className="font-bold text-amber-900 border-b border-amber-200/30 pb-2 flex items-center justify-center gap-2"><ShieldCheck size={16}/> Online Payments Temporarily Unavailable</span>
+                      <span className="text-amber-700/80">This professional's payment setup is currently incomplete. Please try again later.</span>
+                   </div>
+                ) : (
+                   <Button disabled={isSubmitting} className="w-full h-16 rounded-2xl font-bold text-lg shadow-md group flex items-center justify-center gap-2 transition-all hover:-translate-y-1" style={{ backgroundColor: business.primaryColor }} onClick={async () => {
+                       setIsSubmitting(true);
+                       try {
+                           const booking = await createBooking({
+                               serviceId: selectedService.id,
+                               addOnIds: selectedService.addOns.filter((a: any) => selectedAddOns.includes(a.name)).map((a: any) => a.id),
+                               date: selectedDate,
+                               time: selectedTime,
+                               customerName: contactInfo.name,
+                               customerEmail: contactInfo.email,
+                               customerPhone: contactInfo.phone,
+                               notes: contactInfo.notes,
+                               totalPrice: subtotal,
+                               depositDue: depositDue
+                           });
+                           
+                           if (depositDue > 0) {
+                               const checkoutUrl = await createCheckoutSession(booking.id);
+                               if (checkoutUrl) {
+                                   window.location.href = checkoutUrl;
+                                   return;
+                               }
+                           }
+                           
+                           nextStep();
+                       } catch (err) {
+                           console.error('Booking error:', err);
+                           alert('Failed to process booking. Please try again or contact support.');
+                       } finally {
+                           setIsSubmitting(false);
+                       }
+                   }}>
+                      {isSubmitting ? 'Processing...' : (depositDue > 0 ? 'Confirm Order & Pay' : 'Confirm Appointment')} {!isSubmitting && <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />}
+                   </Button>
+                )}
              </motion.div>
            )}
 
@@ -433,7 +558,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                          {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric' })} at {selectedTime}
                       </p>
                       <p className="text-xs font-bold text-success flex items-center justify-center sm:justify-start gap-1.5 pt-2">
-                         <ShieldCheck size={14} /> Paid in Full: ${subtotal}
+                         <ShieldCheck size={14} /> Deposited: ${depositDue} • Remaining: ${subtotal - depositDue}
                       </p>
                    </div>
                 </div>

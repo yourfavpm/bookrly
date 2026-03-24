@@ -25,9 +25,14 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
       isMobile,
       isPreview
     });
-  }, [business, isMobile]);
+  }, [business, isMobile, isPreview]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('booking_success') === 'true' || params.get('booking_cancel') === 'true') {
+      setTimeout(() => setIsBooking(true), 0);
+    }
+
     const resolveTenant = async () => {
       if (isPreview) return;
 

@@ -9,6 +9,7 @@ const STEPS = [
   { id: 'info', title: 'Business Info', description: 'Basic contact details' },
   { id: 'branding', title: 'Branding', description: 'Logo and colors' },
   { id: 'hero', title: 'Hero Section', description: 'Your main headline' },
+  { id: 'about', title: 'About Section', description: 'Share your story' },
   { id: 'socials', title: 'Socials', description: 'Connect accounts' },
   { id: 'publish', title: 'Publish', description: 'Go live with your site' }
 ];
@@ -154,6 +155,15 @@ export const WebsiteCustomizer: React.FC = () => {
                   className="w-full p-3 rounded-lg border border-border-polaris bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/5 focus:border-brand min-h-[80px]"
                 />
               </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Secondary CTA</label>
+                <Input 
+                  value={business.secondaryCtaText || ''} 
+                  onChange={e => updateBusiness({ secondaryCtaText: e.target.value })}
+                  placeholder="e.g. View Services"
+                  className="h-11 rounded-lg border-border-polaris shadow-sm"
+                />
+              </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Hero Background</label>
                 <div className="aspect-video rounded-xl bg-bg-canvas/30 border border-border-polaris flex items-center justify-center relative overflow-hidden group">
@@ -162,6 +172,48 @@ export const WebsiteCustomizer: React.FC = () => {
                     <Camera className="text-white" size={24} />
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'cover')} />
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'about':
+        return (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Headline</label>
+                <Input 
+                  value={business.aboutTitle || ''} 
+                  onChange={e => updateBusiness({ aboutTitle: e.target.value })}
+                  placeholder="e.g. My Story"
+                  className="h-11 rounded-lg border-border-polaris shadow-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Your Story</label>
+                <textarea 
+                  value={business.aboutDescription || ''} 
+                  onChange={e => updateBusiness({ aboutDescription: e.target.value })}
+                  placeholder="Tell clients about yourself and your expertise..."
+                  className="w-full p-3 rounded-lg border border-border-polaris bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/5 focus:border-brand min-h-[120px]"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">About Image (Optional)</label>
+                <div className="aspect-square max-w-[200px] rounded-xl bg-bg-canvas/30 border border-dashed border-border-polaris flex items-center justify-center relative overflow-hidden group">
+                  {business.aboutImage ? <img src={business.aboutImage} className="w-full h-full object-cover" alt="About" /> : <Camera className="text-text-tertiary" size={24} />}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                    <Camera className="text-white" size={24} />
+                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                       if (e.target.files?.[0]) {
+                          if (e.target.files[0].size > 5 * 1024 * 1024) { alert('Image too large. max 5MB'); return; }
+                          handleUpload(e.target.files[0], 'about');
+                       }
+                    }} />
+                  </div>
+                  {uploading === 'about' && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>}
                 </div>
               </div>
             </div>

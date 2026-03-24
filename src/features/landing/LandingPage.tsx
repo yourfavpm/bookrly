@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   ChevronRight, 
@@ -14,21 +14,15 @@ import {
   DollarSign
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
 export const LandingPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const user = useAppStore((state) => state.user);
-  const loading = useAppStore((state) => state.loading);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    // Redirect to dashboard if user is already authenticated
-    if (!loading && user) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, loading, navigate]);
+  // Allow logged-in users to still view the landing page freely.
+  // The Login/Signup endpoints natively auto-redirect them if they proceed.
 
   const companies = [
     { name: 'STUDIO', icon: <div className="w-5 h-5 bg-black rounded-lg" /> },
@@ -54,12 +48,22 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/60 hover:text-black transition-colors px-6">Login</Link>
-            <Link to="/signup">
-              <Button size="sm" className="h-10 px-6 font-bold text-[10px] uppercase tracking-widest bg-black text-white hover:bg-black/90 transition-all" style={{ borderRadius: 9999 }}>
-                Get Started
-              </Button>
-            </Link>
+            {user ? (
+              <Link to="/dashboard">
+                <Button size="sm" className="h-10 px-6 font-bold text-[10px] uppercase tracking-widest bg-black text-white hover:bg-black/90 transition-all" style={{ borderRadius: 9999 }}>
+                  Go to Dashboard <ArrowRight size={14} className="ml-1.5" />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/60 hover:text-black transition-colors px-6">Login</Link>
+                <Link to="/signup">
+                  <Button size="sm" className="h-10 px-6 font-bold text-[10px] uppercase tracking-widest bg-black text-white hover:bg-black/90 transition-all" style={{ borderRadius: 9999 }}>
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -282,12 +286,21 @@ export const LandingPage: React.FC = () => {
                 placeholder="Enter your email"
                 className="flex-1 min-w-0 bg-transparent border-none outline-none px-5 py-3 text-sm font-semibold text-black placeholder:text-black/30"
               />
-              <Link to="/signup">
-                <Button className="h-11 px-7 font-bold shadow-lg shadow-black/5 transition-all hover:scale-[1.02] active:scale-[0.98] bg-black text-white shrink-0 text-sm" style={{ borderRadius: 9999 }}>
-                  Get Started
-                  <ArrowRight size={15} className="ml-1.5" />
-                </Button>
-              </Link>
+              {user ? (
+                <Link to="/dashboard">
+                  <Button className="h-11 px-7 font-bold shadow-lg shadow-black/5 transition-all hover:scale-[1.02] active:scale-[0.98] bg-black text-white shrink-0 text-sm" style={{ borderRadius: 9999 }}>
+                    Go to Dashboard
+                    <ArrowRight size={15} className="ml-1.5" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/signup">
+                  <Button className="h-11 px-7 font-bold shadow-lg shadow-black/5 transition-all hover:scale-[1.02] active:scale-[0.98] bg-black text-white shrink-0 text-sm" style={{ borderRadius: 9999 }}>
+                    Get Started
+                    <ArrowRight size={15} className="ml-1.5" />
+                  </Button>
+                </Link>
+              )}
             </div>
             
             <p className="text-black/30 text-[11px] font-bold uppercase tracking-widest">Free to start · No credit card needed</p>

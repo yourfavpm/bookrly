@@ -1,8 +1,9 @@
-import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, ChevronDown, Plus, Palette, Clock, ShieldCheck, Image, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, Plus, Palette, Clock, ShieldCheck, Image, MessageSquare, LogOut } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { InstallAppPrompt } from '../../components/ui/InstallAppPrompt';
+import { GlobalError } from '../../components/ui/GlobalError';
 import React from 'react';
 
 interface NavItemProps {
@@ -35,6 +36,7 @@ export const DashboardLayout: React.FC = () => {
   const loading = useAppStore((state) => state.loading);
   const createSubscription = useAppStore((state) => state.createSubscription);
   const updateBusiness = useAppStore((state) => state.updateBusiness);
+  const signOut = useAppStore((state) => state.signOut);
   const location = useLocation();
 
   const isTrialing = business?.subscriptionStatus === 'trialing';
@@ -80,9 +82,9 @@ export const DashboardLayout: React.FC = () => {
   const isSelected = (to: string) => currentPath === to || (to === '/dashboard/overview' && currentPath === '/dashboard');
 
   return (
-    <div className="flex flex-col h-screen bg-white font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-bg-header font-sans overflow-hidden">
       {/* Header - System Frame Anchor (Layer 0) - Static */}
-      <header className="h-16 bg-bg-header border-b border-white/5 flex items-center justify-between px-6 lg:px-8 z-50 text-white shrink-0">
+      <header className="h-16 flex items-center justify-between px-6 lg:px-8 z-50 text-white shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-medium italic">B</div>
           <div className="flex flex-col lg:flex-row lg:items-center gap-0 lg:gap-2">
@@ -122,18 +124,17 @@ export const DashboardLayout: React.FC = () => {
           
           <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block" />
 
-          <button className="flex items-center gap-2 px-1 py-1 rounded-lg hover:bg-white/10 transition-all group">
-            <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center text-white font-medium text-xs">
-              {business.name?.charAt(0) || 'B'}
+          <button onClick={() => signOut()} className="flex items-center gap-2 px-1 py-1 rounded-lg hover:bg-white/10 transition-all group" title="Sign Out">
+            <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center text-white font-medium text-xs group-hover:bg-red-500 group-hover:border-red-500 transition-colors">
+              <LogOut size={14} className="group-hover:text-white" />
             </div>
-            <ChevronDown size={12} className="text-white/40 hidden sm:block" />
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden relative bg-white rounded-t-[24px] shadow-[0_-8px_30px_rgba(0,0,0,0.2)] ring-1 ring-white/10 mx-1 lg:mx-2 border-t border-white/10">
         {/* Sidebar - Static Sidebar with independent scroll (Layer 1) */}
-        <aside className="hidden lg:flex flex-col w-64 bg-bg-sidebar border-r border-border-polaris/40 overflow-y-auto shrink-0 z-40 p-6">
+        <aside className="hidden lg:flex flex-col w-64 bg-bg-sidebar border-r border-border-polaris/40 overflow-y-auto shrink-0 z-40 p-6 rounded-tl-[24px]">
           {isTrialing && !isTrialExpired && (
             <div className="mb-8 p-5 rounded-xl bg-white border border-border-polaris/30 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
@@ -173,6 +174,10 @@ export const DashboardLayout: React.FC = () => {
                 <Plus size={16} />
                 <span className="text-xs font-medium">Business Setup</span>
              </Link>
+             <button onClick={() => signOut()} className="w-full flex items-center gap-3 px-3 py-2 text-text-secondary hover:text-red-500 transition-colors mt-1">
+                <LogOut size={16} />
+                <span className="text-xs font-medium">Sign Out</span>
+             </button>
           </div>
         </aside>
 
@@ -239,6 +244,7 @@ export const DashboardLayout: React.FC = () => {
       )}
 
       <InstallAppPrompt />
+      <GlobalError />
     </div>
   );
 };

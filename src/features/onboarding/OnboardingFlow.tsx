@@ -149,6 +149,13 @@ export const OnboardingFlow: React.FC = () => {
     init();
   }, [user, business, fetchBusiness, initializing, initAttempted]);
 
+  // Prevent users from looping back into onboarding if they're already finished
+  useEffect(() => {
+    if (business && onboardingStep > 13) {
+       navigate('/dashboard', { replace: true });
+    }
+  }, [business, onboardingStep, navigate]);
+
   const totalSteps = 13;
 
   const handleNext = async () => {
@@ -310,6 +317,9 @@ export const OnboardingFlow: React.FC = () => {
                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
+                             if (file.size > 5 * 1024 * 1024) { alert('File too large. Maximum size is 5MB.'); return; }
+                             if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { alert('Invalid file type. Please upload a JPG, PNG, or WEBP.'); return; }
+                             
                              setUploading(true);
                              const fileExt = file.name.split('.').pop();
                              const filePath = `${business.id}/logo-${Date.now()}.${fileExt}`;
@@ -387,6 +397,9 @@ export const OnboardingFlow: React.FC = () => {
                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
+                             if (file.size > 10 * 1024 * 1024) { alert('Cover image too large. Maximum size is 10MB.'); return; }
+                             if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { alert('Invalid file type. Please upload a JPG, PNG, or WEBP.'); return; }
+
                              setUploading(true);
                              const fileExt = file.name.split('.').pop();
                              const filePath = `${business.id}/cover-${Date.now()}.${fileExt}`;
@@ -426,6 +439,13 @@ export const OnboardingFlow: React.FC = () => {
                    onChange={(e) => updateBusiness({ heroSubtitle: e.target.value })}
                    className="rounded-2xl bg-bg-secondary/20 border-border-light/40"
                  />
+                 <Input 
+                   label="Primary Button Text"
+                   placeholder="e.g. Book Appointment"
+                   value={business.ctaText || 'Book Now'}
+                   onChange={(e) => updateBusiness({ ctaText: e.target.value })}
+                   className="rounded-2xl bg-bg-secondary/20 border-border-light/40"
+                 />
               </div>
             </StepWrapper>
           )}
@@ -451,16 +471,19 @@ export const OnboardingFlow: React.FC = () => {
                       label="Price ($)" 
                       placeholder="0" 
                       type="number" 
+                      min="0"
                       value={tempService.price || ''}
-                      onChange={e => setTempService(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+                      onChange={e => setTempService(p => ({ ...p, price: Math.max(0, parseFloat(e.target.value) || 0) }))}
                       className="rounded-2xl bg-bg-secondary/20 border-border-light/40" 
                     />
                     <Input 
                       label="Duration (m)" 
                       placeholder="60" 
                       type="number" 
+                      min="5"
+                      step="5"
                       value={tempService.duration || ''}
-                      onChange={e => setTempService(p => ({ ...p, duration: parseInt(e.target.value) || 0 }))}
+                      onChange={e => setTempService(p => ({ ...p, duration: Math.max(5, parseInt(e.target.value) || 60) }))}
                       className="rounded-2xl bg-bg-secondary/20 border-border-light/40" 
                     />
                  </div>
@@ -589,9 +612,25 @@ export const OnboardingFlow: React.FC = () => {
                     <div key={day.id} className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${hours?.isOpen ? 'bg-bg-secondary/20 border-border-light/30' : 'bg-transparent border-dashed border-border-light/50 opacity-40'}`}>
                         <span className="text-[11px] font-medium uppercase tracking-widest text-text-primary w-12">{day.label}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-text-tertiary font-medium tabular-nums">{hours?.startTime || '09:00'}</span>
-                          <span className="text-text-tertiary">/</span>
-                          <span className="text-[10px] text-text-tertiary font-medium tabular-nums">{hours?.endTime || '17:00'}</span>
+                          <input 
+                             type="time" 
+                             className="w-16 text-[10px] text-text-tertiary font-medium bg-transparent border-none outline-none p-0 cursor-pointer" 
+                             value={hours?.startTime || '09:00'}
+                             onChange={(e) => {
+                                 const updated = business.workingHours.map(h => h.dayOfWeek === day.id ? { ...h, startTime: e.target.value } : h);
+                                 updateBusiness({ workingHours: updated });
+                             }}
+                          />
+                          <span className="text-text-tertiary">-</span>
+                          <input 
+                             type="time" 
+                             className="w-16 text-[10px] text-text-tertiary font-medium bg-transparent border-none outline-none p-0 cursor-pointer text-right" 
+                             value={hours?.endTime || '17:00'}
+                             onChange={(e) => {
+                                 const updated = business.workingHours.map(h => h.dayOfWeek === day.id ? { ...h, endTime: e.target.value } : h);
+                                 updateBusiness({ workingHours: updated });
+                             }}
+                          />
                         </div>
                         <button 
                           onClick={() => {
