@@ -666,9 +666,9 @@ export const useAppStore = create<AppState>()(
         }).eq('id', id);
 
         await supabase.from('addons').delete().eq('service_id', id);
-        if (service.addOns?.length > 0) {
+        if ((service.addOns?.length ?? 0) > 0) {
           await supabase.from('addons').insert(
-            service.addOns.map((a: any) => ({
+            (service.addOns ?? []).map((a: any) => ({
               service_id: id,
               name: a.name,
               price: a.price,

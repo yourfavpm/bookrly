@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import type { WorkingHour } from '../../store/useAppStore';
 import { Card } from '../../components/ui/Card';

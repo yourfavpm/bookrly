@@ -107,12 +107,12 @@ export const PublicPreview: React.FC = () => {
                     <div className="flex gap-1 text-amber-400">
                       {[1,2,3,4,5].map(s => <Star key={s} size={16} className={s <= r.rating ? 'fill-current' : 'text-border-default'} />)}
                     </div>
-                    <p className="text-sm text-text-secondary leading-relaxed italic">"{r.text || 'No review content yet...'}"</p>
+                    <p className="text-sm text-text-secondary leading-relaxed italic">"{r.content || 'No review content yet...'}"</p>
                     <div className="flex items-center gap-3 pt-4 border-t border-border-light">
                        <div className="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-brand font-bold text-xs" style={{ backgroundColor: `${business.primaryColor}15`, color: business.primaryColor }}>
-                          {r.name?.charAt(0) || '?'}
+                          {r.author_name?.charAt(0) || '?'}
                        </div>
-                       <span className="font-bold text-sm text-text-primary">{r.name || 'Anonymous'}</span>
+                       <span className="font-bold text-sm text-text-primary">{r.author_name || 'Anonymous'}</span>
                     </div>
                   </div>
                 ))}
@@ -137,13 +137,13 @@ export const PublicPreview: React.FC = () => {
                 {business.proofOfWork.map(p => (
                   <div key={p.id} className="break-inside-avoid rounded-3xl overflow-hidden border border-border-light bg-white group cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
                     <div className="relative">
-                      {p.image ? (
-                        <img src={p.image} alt={p.caption} className="w-full h-auto" />
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.title} className="w-full h-auto" />
                       ) : (
                         <div className="h-64 bg-bg-secondary flex items-center justify-center text-text-tertiary"><ImageIcon size={40} /></div>
                       )}
                       <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                         <p className="text-white text-sm font-medium">{p.caption || 'Project visual'}</p>
+                         <p className="text-white text-sm font-medium">{p.title || 'Project visual'}</p>
                       </div>
                     </div>
                   </div>

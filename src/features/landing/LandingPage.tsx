@@ -11,9 +11,7 @@ import {
   CreditCard,
   Trophy,
   Users,
-  DollarSign,
-  Link2,
-  Blocks
+  DollarSign
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Link } from 'react-router-dom';

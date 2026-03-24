@@ -14,6 +14,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import type { AddOn } from '../../store/useAppStore';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/Button';
@@ -91,7 +92,7 @@ export const OnboardingFlow: React.FC = () => {
 
   // Local state for complex steps
   const [tempService, setTempService] = useState({ name: '', price: 0, duration: 60 });
-  const [tempAddOns, setTempAddOns] = useState<{name: string, price: number}[]>([]);
+  const [tempAddOns, setTempAddOns] = useState<Partial<AddOn>[]>([]);
   const [feeEnabled, setFeeEnabled] = useState(false);
   const [feeAmount, setFeeAmount] = useState(0);
 
@@ -161,9 +162,25 @@ export const OnboardingFlow: React.FC = () => {
   const handleNext = async () => {
     if (onboardingStep === 7) {
        // Save the first service
-       if (tempService.name) {
-          await addService({ ...tempService, active: true, bookingFeeEnabled: feeEnabled, bookingFeeAmount: feeAmount, addOns: tempAddOns });
-       }
+        if (tempService.name) {
+           const finalAddOns = tempAddOns.map((a, i) => ({
+              id: `temp-${i}`,
+              name: a.name || '',
+              price: a.price || 0,
+              duration: 0,
+              active: true
+           })) as AddOn[];
+           
+           await addService({ 
+              ...tempService, 
+              id: 'temp',
+              description: '',
+              active: true, 
+              bookingFeeEnabled: feeEnabled, 
+              bookingFeeAmount: feeAmount, 
+              addOns: finalAddOns 
+           });
+        }
     }
     
     if (onboardingStep < totalSteps) {

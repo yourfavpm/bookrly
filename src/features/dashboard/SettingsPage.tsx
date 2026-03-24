@@ -9,12 +9,9 @@ import {
   CreditCard,
   Users,
   ShieldCheck,
-  ChevronRight,
   ArrowLeft,
-  CheckCircle2,
   Upload,
-  ExternalLink,
-  XCircle
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
