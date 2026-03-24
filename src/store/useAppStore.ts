@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
-interface AddOn {
+export interface AddOn {
   id: string;
   name: string;
   price: number;
@@ -12,7 +12,7 @@ interface AddOn {
   description?: string;
 }
 
-interface Service {
+export interface Service {
   id: string;
   name: string;
   description: string;
@@ -50,6 +50,7 @@ interface Booking {
   addOns: string[];
   createdAt: string;
   notes?: string;
+  end_time?: string;
 }
 
 interface Review {

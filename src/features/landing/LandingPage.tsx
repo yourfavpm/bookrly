@@ -11,11 +11,67 @@ import {
   CreditCard,
   Trophy,
   Users,
-  DollarSign
+  DollarSign,
+  Link2,
+  Blocks
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
+
+interface Template {
+  name: string;
+  niche: string;
+  image: string;
+}
+
+const MarqueeColumn: React.FC<{ 
+  templates: Template[]; 
+  speed?: number; 
+  reverse?: boolean; 
+  className?: string;
+}> = ({ templates, speed = 20, reverse = false, className = "" }) => {
+  // Multiply templates for a seamless loop
+  const duplicatedTemplates = [...templates, ...templates];
+
+  return (
+    <div className={`flex flex-col gap-6 md:gap-8 ${className}`}>
+      <motion.div
+        animate={{
+          y: reverse ? ["-50%", "0%"] : ["0%", "-50%"],
+        }}
+        transition={{
+          duration: speed,
+          repeat: Infinity,
+          ease: "linear",
+          repeatType: "loop"
+        }}
+        className="flex flex-col gap-6 md:gap-8"
+      >
+        {duplicatedTemplates.map((template, i) => (
+          <div 
+            key={i} 
+            className="w-[280px] md:w-[360px] flex-none group cursor-pointer"
+          >
+            <div className="relative aspect-[4/5] overflow-hidden bg-white shadow-sm border border-black/3 transition-all duration-700 group-hover:shadow-2xl group-hover:shadow-black/5">
+              <img 
+                src={template.image} 
+                alt={template.name}
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-700" />
+            </div>
+            <div className="mt-5 space-y-1 px-1">
+               <p className="text-[10px] font-bold text-brand uppercase tracking-[0.2em]">{template.niche}</p>
+               <h3 className="text-xl font-medium tracking-tight text-black">{template.name}</h3>
+            </div>
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+};
+
 
 export const LandingPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -151,17 +207,192 @@ export const LandingPage: React.FC = () => {
             <p className="text-[11px] font-bold text-black/30 uppercase tracking-[0.25em] text-center">Built for service providers in North America</p>
             <div className="overflow-hidden">
               <motion.div 
-                animate={{ x: [0, -1200] }}
-                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear", repeatType: "loop" }}
                 className="flex items-center gap-16 whitespace-nowrap select-none"
               >
-                {[...companies, ...companies, ...companies, ...companies].map((company, i) => (
+                {[...companies, ...companies].map((company, i) => (
                   <div key={i} className="flex items-center gap-2.5 text-black">
                     {company.icon}
                     <span className="text-xs font-bold tracking-[0.2em] uppercase">{company.name}</span>
                   </div>
                 ))}
               </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Template Showcase (Moving Gallery Redesign) */}
+        <section className="py-32 bg-[#FAFAF8] overflow-hidden relative">
+          <div className="max-w-7xl mx-auto px-6 mb-20">
+             <motion.div 
+               initial={{ opacity: 0, y: 30 }}
+               whileInView={{ opacity: 1, y: 0 }}
+               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+               viewport={{ once: true }}
+               className="max-w-2xl"
+             >
+                <div className="flex items-center gap-4 mb-6">
+                   <span className="h-px w-12 bg-brand/30" />
+                   <span className="text-[12px] font-bold text-brand uppercase tracking-[0.3em]">The Collection</span>
+                </div>
+                <h2 className="text-5xl lg:text-7xl font-medium tracking-tight text-black leading-[1.1] mb-8">
+                   Designed for your <br />
+                   <span className="italic font-serif">kind of business</span>
+                </h2>
+                <p className="text-lg text-black/60 max-w-lg">
+                  Beautifully crafted templates optimized for speed, conversion, and your unique brand identity.
+                </p>
+             </motion.div>
+          </div>
+
+          <div className="relative h-[700px] overflow-hidden">
+            {/* Gradient Overlays for smooth entry/exit */}
+            <div className="absolute inset-x-0 top-0 h-40 bg-linear-to-b from-[#FAFAF8] to-transparent z-10" />
+            <div className="absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-[#FAFAF8] to-transparent z-10" />
+
+            <div className="flex justify-center gap-6 md:gap-12 px-6">
+               <MarqueeColumn 
+                 speed={12} 
+                 templates={[
+                    { name: "Editorial Luxe", niche: "Salon & Spa", image: "/images/templates/salon_luxe.png" },
+                    { name: "Minimalist Studio", niche: "Creative Agency", image: "/images/templates/creative_studio.png" },
+                    { name: "Active Flow", niche: "Fitness & Yoga", image: "/images/templates/fitness_zen.png" }
+                 ]} 
+               />
+               <MarqueeColumn 
+                 speed={10} 
+                 reverse
+                 className="hidden md:block"
+                 templates={[
+                    { name: "Professional Core", niche: "Consulting & Law", image: "/images/templates/professional_consulting.png" },
+                    { name: "Bold Ink", niche: "Tattoo & Barber", image: "/images/templates/tattoo_ink.png" },
+                    { name: "Editorial Luxe", niche: "Salon & Spa", image: "/images/templates/salon_luxe.png" }
+                 ]} 
+               />
+               <MarqueeColumn 
+                 speed={14} 
+                 className="hidden lg:block lg:mt-32"
+                 templates={[
+                    { name: "Active Flow", niche: "Fitness & Yoga", image: "/images/templates/fitness_zen.png" },
+                    { name: "Professional Core", niche: "Consulting & Law", image: "/images/templates/professional_consulting.png" },
+                    { name: "Minimalist Studio", niche: "Creative Agency", image: "/images/templates/creative_studio.png" }
+                 ]} 
+               />
+            </div>
+          </div>
+        </section>
+
+        {/* Why Bukd (Editorial Differentiation) */}
+        <section className="py-32 bg-white border-t border-black/5">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="mb-24">
+               <motion.div
+                 initial={{ opacity: 0, y: 20 }}
+                 whileInView={{ opacity: 1, y: 0 }}
+                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                 viewport={{ once: true }}
+                 className="space-y-6"
+               >
+                 <span className="text-[12px] font-bold text-brand uppercase tracking-[0.3em]">The Differentiation</span>
+                 <h2 className="text-5xl lg:text-7xl font-medium tracking-tight text-black leading-[1.1]">
+                   More than a <br />
+                   <span className="italic font-serif">booking link</span>
+                 </h2>
+               </motion.div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 relative">
+               {/* Vertical Dividers (Desktop) */}
+               <div className="absolute inset-y-0 left-1/3 w-px bg-black/[0.03] hidden md:block" />
+               <div className="absolute inset-y-0 left-2/3 w-px bg-black/[0.03] hidden md:block" />
+
+               {/* Column 1: Booking Tools */}
+               <motion.div 
+                 initial={{ opacity: 0, x: -20 }}
+                 whileInView={{ opacity: 1, x: 0 }}
+                 transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                 viewport={{ once: true }}
+                 className="pb-16 md:pb-0 md:pr-12 lg:pr-20 group"
+               >
+                  <div className="space-y-8">
+                     <div className="space-y-2">
+                        <h3 className="text-[11px] font-bold text-black/40 uppercase tracking-[0.2em]">Competitors</h3>
+                        <p className="text-3xl font-medium text-black/90">Booking tools give you a link</p>
+                     </div>
+                     <ul className="space-y-6">
+                        {[
+                           "Zero brand control",
+                           "Fragmented customer flow",
+                           "No custom domains",
+                           "Limited SEO discovery"
+                        ].map((point, i) => (
+                           <li key={i} className="flex items-center gap-3 text-sm font-medium text-black/40 group-hover:text-black/60 transition-colors">
+                              <span className="w-1.5 h-1.5 rounded-full bg-black/10" />
+                              {point}
+                           </li>
+                        ))}
+                     </ul>
+                  </div>
+               </motion.div>
+
+               {/* Column 2: Website Builders */}
+               <motion.div 
+                 initial={{ opacity: 0, x: -20 }}
+                 whileInView={{ opacity: 1, x: 0 }}
+                 transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                 viewport={{ once: true }}
+                 className="py-16 md:py-0 border-y border-black/[0.03] md:border-none md:px-12 lg:px-20 group"
+               >
+                  <div className="space-y-8">
+                     <div className="space-y-2">
+                        <h3 className="text-[11px] font-bold text-black/40 uppercase tracking-[0.2em]">Alternatives</h3>
+                        <p className="text-3xl font-medium text-black/90">Website builders give you complexity</p>
+                     </div>
+                     <ul className="space-y-6">
+                        {[
+                           "Steep learning curve",
+                           "Decision fatigue",
+                           "Performance lag",
+                           "Manual plugin management"
+                        ].map((point, i) => (
+                           <li key={i} className="flex items-center gap-3 text-sm font-medium text-black/40 group-hover:text-black/60 transition-colors">
+                              <span className="w-1.5 h-1.5 rounded-full bg-black/10" />
+                              {point}
+                           </li>
+                        ))}
+                     </ul>
+                  </div>
+               </motion.div>
+
+               {/* Column 3: Bukd */}
+               <motion.div 
+                 initial={{ opacity: 0, x: -20 }}
+                 whileInView={{ opacity: 1, x: 0 }}
+                 transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                 viewport={{ once: true }}
+                 className="pt-16 md:pt-0 md:pl-12 lg:pl-20 group"
+               >
+                  <div className="space-y-8">
+                     <div className="space-y-2">
+                        <h3 className="text-[11px] font-bold text-brand uppercase tracking-[0.2em]">The Bukd Way</h3>
+                        <p className="text-3xl font-medium text-black underline decoration-brand/30 decoration-2 underline-offset-8">Bukd gives you a complete booking website</p>
+                     </div>
+                     <ul className="space-y-6">
+                        {[
+                           "Your brand, your domain",
+                           "Conversion-optimized flow",
+                           "Ready in under 5 minutes",
+                           "Unified management dashboard"
+                        ].map((point, i) => (
+                           <li key={i} className="flex items-center gap-3 text-sm font-bold text-black group-hover:text-brand transition-colors">
+                              <span className="w-1.5 h-1.5 rounded-full bg-brand" />
+                              {point}
+                           </li>
+                        ))}
+                     </ul>
+                  </div>
+               </motion.div>
             </div>
           </div>
         </section>

@@ -4,7 +4,10 @@ import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { InstallAppPrompt } from '../../components/ui/InstallAppPrompt';
 import { GlobalError } from '../../components/ui/GlobalError';
-import React from 'react';
+import { NotificationPopover } from '../dashboard/NotificationPopover';
+import { AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+import { Bell } from 'lucide-react';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -38,6 +41,7 @@ export const DashboardLayout: React.FC = () => {
   const updateBusiness = useAppStore((state) => state.updateBusiness);
   const signOut = useAppStore((state) => state.signOut);
   const location = useLocation();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const isTrialing = business?.subscriptionStatus === 'trialing';
   const trialEndDate = business?.trialEndDate ? new Date(business.trialEndDate) : null;
@@ -56,14 +60,6 @@ export const DashboardLayout: React.FC = () => {
 
   if (!business && !loading) {
     return <Navigate to="/onboarding" replace />;
-  }
-
-  if (!business) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-bg-secondary">
-        <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
   }
 
   const navItems = [
@@ -88,10 +84,14 @@ export const DashboardLayout: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-medium italic">B</div>
           <div className="flex flex-col lg:flex-row lg:items-center gap-0 lg:gap-2">
-             <span className="text-sm font-semibold text-white tracking-tight">{business.name || 'Your Business'}</span>
-             <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-md font-bold w-fit mt-1 lg:mt-0 ${isActive ? 'bg-success text-white' : 'bg-white/10 text-white/40'}`}>
-               {isActive ? 'Pro' : isTrialing ? 'Trial' : 'Inactive'}
+             <span className="text-sm font-semibold text-white tracking-tight">
+               {business?.name || (loading ? 'Loading...' : 'Your Business')}
              </span>
+             {business && (
+               <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-md font-bold w-fit mt-1 lg:mt-0 ${isActive ? 'bg-success text-white' : isTrialing ? 'bg-white/10 text-white/40' : 'bg-white/10 text-white/40'}`}>
+                 {isActive ? 'Pro' : isTrialing ? 'Trial' : 'Inactive'}
+               </span>
+             )}
           </div>
         </div>
 
@@ -99,14 +99,15 @@ export const DashboardLayout: React.FC = () => {
           <div className="flex items-center gap-2 mr-1 lg:mr-2 border-r border-white/10 pr-4 lg:pr-6">
             <span className="text-[10px] font-medium text-white/60 uppercase tracking-widest hidden sm:block">Site</span>
             <button 
-              onClick={() => updateBusiness({ isPublished: !business.isPublished })}
-              className={`w-9 h-5 rounded-full transition-all duration-300 relative flex items-center px-0.5 cursor-pointer ${business.isPublished ? 'bg-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-white/10'}`}
-              title={business.isPublished ? "Unpublish Site" : "Publish Site"}
+              onClick={() => business && updateBusiness({ isPublished: !business.isPublished })}
+              disabled={!business}
+              className={`w-9 h-5 rounded-full transition-all duration-300 relative flex items-center px-0.5 cursor-pointer ${business?.isPublished ? 'bg-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-white/10'}`}
+              title={business?.isPublished ? "Unpublish Site" : "Publish Site"}
             >
-              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${business.isPublished ? 'translate-x-4' : 'translate-x-0'}`} />
+              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${business?.isPublished ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
-            <span className={`text-[10px] font-bold uppercase tracking-widest min-w-8 ${business.isPublished ? 'text-emerald-400' : 'text-white/40'}`}>
-              {business.isPublished ? 'Live' : 'Draft'}
+            <span className={`text-[10px] font-bold uppercase tracking-widest min-w-8 ${business?.isPublished ? 'text-emerald-400' : 'text-white/40'}`}>
+              {business ? (business.isPublished ? 'Live' : 'Draft') : '...'}
             </span>
           </div>
 
@@ -114,6 +115,21 @@ export const DashboardLayout: React.FC = () => {
             <ExternalLink size={12} />
             Preview
           </Link>
+
+          <div className="relative">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={`p-2 rounded-lg transition-all relative ${showNotifications ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+            >
+              <Bell size={20} />
+              <div className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-bg-header" />
+            </button>
+            <AnimatePresence>
+              {showNotifications && (
+                <NotificationPopover onClose={() => setShowNotifications(false)} />
+              )}
+            </AnimatePresence>
+          </div>
 
           <Link 
             to="/dashboard/settings" 
@@ -184,7 +200,14 @@ export const DashboardLayout: React.FC = () => {
         {/* Main Content Area - Work Surface (Layer 2) - Scrollable */}
         <main className="flex-1 min-w-0 bg-white relative overflow-y-auto">
           <div className="p-8 lg:p-12 max-w-[1200px] mx-auto min-h-full">
-            <Outlet />
+            {!business && loading ? (
+              <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
+                <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-sm text-text-secondary font-medium uppercase tracking-widest">Loading business console...</p>
+              </div>
+            ) : (
+              <Outlet />
+            )}
           </div>
           
           {/* Mobile padding for bottom nav */}
