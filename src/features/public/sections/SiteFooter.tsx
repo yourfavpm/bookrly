@@ -3,10 +3,51 @@ import { MapPin, Phone, Mail, Instagram, Facebook, Twitter } from 'lucide-react'
 import type { SectionProps } from '../templates/types';
 
 interface FooterProps extends SectionProps {
-  variant?: 'full' | 'simple' | 'minimal' | 'editorial';
+  variant?: 'full' | 'simple' | 'minimal' | 'editorial' | 'noir';
 }
 
 export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }) => {
+  if (variant === 'noir') {
+    return (
+      <footer className="py-24 px-6 md:px-12 lg:px-24 bg-[#0B0B0D] border-t border-[#F5F5F7]/10">
+        <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-16 md:gap-24 items-start">
+          <div className="col-span-1 md:col-span-6 space-y-8">
+            <h2 className="text-3xl font-serif text-[#F5F5F7] tracking-tight italic">{business.name}</h2>
+            <div className="flex gap-8 items-center pt-4">
+              {business.socials?.instagram && <a href={business.socials.instagram} className="text-[#A1A1AA] hover:text-[#E8CFC0] transition-colors"><Instagram size={18} /></a>}
+              {business.socials?.facebook && <a href={business.socials.facebook} className="text-[#A1A1AA] hover:text-[#E8CFC0] transition-colors"><Facebook size={18} /></a>}
+              {business.socials?.twitter && <a href={business.socials.twitter} className="text-[#A1A1AA] hover:text-[#E8CFC0] transition-colors"><Twitter size={18} /></a>}
+            </div>
+          </div>
+          
+          <div className="col-span-1 md:col-span-3 space-y-6">
+            <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium italic">Contact</span>
+            <div className="space-y-4 text-[13px] text-[#A1A1AA] font-light">
+              {business.email && <p className="hover:text-[#F5F5F7] transition-colors">{business.email}</p>}
+              {business.phone && <p className="hover:text-[#F5F5F7] transition-colors">{business.phone}</p>}
+              {business.address && <p>{business.address}</p>}
+            </div>
+          </div>
+
+          <div className="col-span-1 md:col-span-3 space-y-6 md:text-right">
+             <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium italic">Platform</span>
+             <p className="text-[10px] text-[#A1A1AA] uppercase tracking-[0.3em]">
+               System by <span className="text-[#F5F5F7]">Bukd</span>
+             </p>
+          </div>
+
+          <div className="col-span-full pt-12 border-t border-[#F5F5F7]/5 flex flex-col md:flex-row justify-between gap-6">
+            <p className="text-[9px] uppercase tracking-[0.4em] text-[#A1A1AA]/40">© 2026 {business.name}. All Rights Reserved.</p>
+            <div className="flex gap-8">
+               <span className="text-[9px] uppercase tracking-[0.4em] text-[#A1A1AA]/40 hover:text-[#E8CFC0] transition-colors cursor-pointer">Privacy</span>
+               <span className="text-[9px] uppercase tracking-[0.4em] text-[#A1A1AA]/40 hover:text-[#E8CFC0] transition-colors cursor-pointer">Terms</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
   if (variant === 'editorial') {
     return (
       <footer className="py-12 md:py-20 px-6 bg-white border-t border-text-primary/10">
@@ -72,7 +113,7 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }
             {/* Right side - legal/credit */}
             <div className="col-span-1 md:col-span-7 space-y-6 md:text-right">
               <p className="text-[10px] text-text-tertiary uppercase tracking-widest">
-                Powered by <span className="font-medium text-text-primary">Bookflow</span>
+                Powered by <span className="font-medium text-text-primary">Bukd</span>
               </p>
               <p className="text-[10px] text-text-tertiary">
                 © 2026 {business.name}. All rights reserved.
@@ -88,7 +129,7 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }
     return (
       <footer className="py-12 px-6 border-t border-border-light text-center">
         <p className="text-xs text-text-tertiary">© 2026 {business.name}. All rights reserved.</p>
-        <p className="text-xs text-text-tertiary mt-2">Powered by <span className="font-medium" style={{ color: business.primaryColor }}>Bookflow</span></p>
+        <p className="text-xs text-text-tertiary mt-2">Powered by <span className="font-medium" style={{ color: business.primaryColor }}>Bukd</span></p>
       </footer>
     );
   }
@@ -105,7 +146,7 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }
             {business.email && <span className="flex items-center gap-2"><Mail size={14} /> {business.email}</span>}
             {business.phone && <span className="flex items-center gap-2"><Phone size={14} /> {business.phone}</span>}
           </div>
-          <p className="text-[10px] text-text-tertiary uppercase tracking-widest">Powered by <span className="font-medium" style={{ color: business.primaryColor }}>Bookflow</span></p>
+          <p className="text-[10px] text-text-tertiary uppercase tracking-widest">Powered by <span className="font-medium" style={{ color: business.primaryColor }}>Bukd</span></p>
         </div>
       </footer>
     );
@@ -133,7 +174,7 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }
           </div>
           <div className="space-y-6">
             <span className="text-[10px] font-medium text-text-tertiary uppercase tracking-[0.3em]">Platform</span>
-            <p className="text-lg font-medium tracking-tight text-text-primary">Powered by <span className="italic" style={{ color: business.primaryColor }}>Bookflow</span></p>
+            <p className="text-lg font-medium tracking-tight text-text-primary">Powered by <span className="italic" style={{ color: business.primaryColor }}>Bukd</span></p>
           </div>
         </div>
         <div className="pt-10 border-t border-border-light flex flex-col md:flex-row justify-between items-center gap-6">

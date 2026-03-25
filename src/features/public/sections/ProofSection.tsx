@@ -5,7 +5,7 @@ import { getOptimizedImageUrl } from '../../../utils/images';
 import type { SectionProps } from '../templates/types';
 
 interface ProofProps extends SectionProps {
-  variant?: 'grid' | 'masonry' | 'filmstrip' | 'overlap-gallery' | 'visual-studio-masonry' | 'home-services-slider';
+  variant?: 'grid' | 'masonry' | 'filmstrip' | 'overlap-gallery' | 'visual-studio-masonry' | 'home-services-slider' | 'noir-gallery';
 }
 
 export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPreview, variant = 'grid' }) => {
@@ -20,7 +20,65 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
     return null;
   }
 
-  if (variant === 'home-services-slider') {
+  if (variant === 'noir-gallery') {
+    return (
+      <section id="gallery" className="py-32 px-6 md:px-12 lg:px-24 bg-[#0B0B0D] overflow-hidden">
+        <div className="max-w-[1400px] mx-auto space-y-20">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-[#F5F5F7]/10 pb-12">
+            <div className="space-y-4">
+              <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium italic">Signature Work</span>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#F5F5F7] leading-none">The Portfolio</h2>
+            </div>
+            <p className="text-sm text-[#A1A1AA] max-w-xs font-light leading-relaxed">
+              A cinematic journey through our most celebrated transformations.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-20">
+            {items.map((item, idx) => {
+              // Create an interesting staggered layout
+              const span = idx % 3 === 0 ? 'md:col-span-8' : 'md:col-span-4';
+              const offset = idx % 2 === 0 ? 'md:pt-20' : '';
+              
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 1.2, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                  viewport={{ once: true }}
+                  className={`${span} ${offset} relative group`}
+                >
+                  <div className="relative aspect-4/5 overflow-hidden bg-[#121216]">
+                    {item.image_url ? (
+                      <img 
+                        src={getOptimizedImageUrl(item.image_url, { width: 1000, quality: 85 })} 
+                        className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000 ease-out" 
+                        alt={item.caption || "Portfolio item"} 
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[#121216]" />
+                    )}
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-[#0B0B0D]/40 opacity-0 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-8">
+                       <span className="text-[10px] uppercase tracking-[0.3em] text-[#E8CFC0] translate-y-4 group-hover:translate-y-0 transition-transform duration-700">Studio Session</span>
+                       <p className="text-[#F5F5F7] font-serif text-lg md:text-xl mt-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-700 delay-100 italic">{item.caption || "Beauty Refined"}</p>
+                    </div>
+                  </div>
+                  {/* Floating index for editorial feel */}
+                  <div className="absolute -top-4 -left-4 text-[4rem] font-serif text-[#F5F5F7]/5 pointer-events-none italic">
+                     0{idx + 1}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === 'masonry') {
     const hasEnoughImages = items.length >= 2 && items[0].image_url && items[1].image_url;
 
     return (
@@ -47,7 +105,7 @@ export const ProofSection: React.FC<ProofProps> = ({ business, isMobile, isPrevi
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="relative w-full aspect-square md:aspect-[21/9] rounded-[32px] overflow-hidden shadow-2xl bg-slate-200 group"
+                className="relative w-full aspect-square md:aspect-21/9 rounded-[32px] overflow-hidden shadow-2xl bg-slate-200 group"
               >
                 {/* After Image (Background) */}
                 <div className="absolute inset-0">

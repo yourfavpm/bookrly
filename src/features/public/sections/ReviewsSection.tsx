@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import type { SectionProps } from '../templates/types';
 
 interface ReviewsProps extends SectionProps {
-  variant?: 'grid' | 'vertical' | 'featured' | 'floating-stack' | 'visual-studio-strip' | 'home-services-trust';
+  variant?: 'grid' | 'vertical' | 'featured' | 'floating-stack' | 'visual-studio-strip' | 'home-services-trust' | 'noir-quotes';
 }
 
 export const ReviewsSection: React.FC<ReviewsProps> = ({ business, isMobile, isPreview, variant = 'grid' }) => {
@@ -23,6 +23,54 @@ export const ReviewsSection: React.FC<ReviewsProps> = ({ business, isMobile, isP
       {[1,2,3,4,5].map(s => <Star key={s} size={14} className={s <= (rating || 5) ? 'fill-current' : 'text-border-default'} />)}
     </div>
   );
+
+  if (variant === 'noir-quotes') {
+    return (
+      <section id="reviews" className="py-32 px-6 md:px-12 lg:px-24 bg-[#0B0B0D] overflow-hidden">
+        <div className="max-w-[1400px] mx-auto space-y-20">
+          <div className="text-center space-y-4">
+            <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium">Acclaimed</span>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#F5F5F7] leading-none italic">The Experience</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24">
+            {reviews.map((r, idx) => (
+              <motion.div
+                key={r.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.2, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                viewport={{ once: true }}
+                className="space-y-8 relative"
+              >
+                {/* Large Quote Mark */}
+                <div className="absolute -top-12 -left-8 text-[12rem] font-serif text-[#E8CFC0]/5 pointer-events-none self-start h-24 flex items-center">
+                  “
+                </div>
+                
+                <div className="space-y-6 relative z-10">
+                  <div className="flex gap-1 text-[#E8CFC0]">
+                    {[1, 2, 3, 4, 5].map(s => <Star key={s} size={12} className={s <= (r.rating || 5) ? 'fill-current' : 'text-[#A1A1AA]/20'} />)}
+                  </div>
+                  <p className="text-[#F5F5F7] text-xl md:text-2xl lg:text-3xl font-light leading-relaxed italic tracking-wide">
+                    {r.comment}
+                  </p>
+                  <div className="flex items-center gap-4 pt-6 border-t border-[#F5F5F7]/10">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-[#121216]">
+                       <div className="w-full h-full flex items-center justify-center text-[#E8CFC0] font-bold text-xs">
+                          {(r.customer_name || 'C').charAt(0)}
+                       </div>
+                    </div>
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#A1A1AA] font-bold">{r.customer_name || 'Client'}</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (variant === 'floating-stack') {
     const displayReviews = reviews.slice(0, 3);

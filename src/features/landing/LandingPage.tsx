@@ -94,10 +94,10 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-brand/20">
-                <div className="w-3 h-3 bg-white rounded-sm" />
+              <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-brand/20">
+                <div className="w-3.5 h-3.5 bg-white rounded-[2px]" />
               </div>
-              <span className="text-lg font-bold tracking-tight text-black">Bookflow</span>
+              <span className="text-xl font-bold tracking-tight text-black">Bukd</span>
             </Link>
           </div>
 
@@ -176,7 +176,7 @@ export const LandingPage: React.FC = () => {
                 <div className="relative z-10 bg-white/50 backdrop-blur-sm rounded-[32px] lg:rounded-[48px] shadow-2xl shadow-black/5 border border-black/3 overflow-hidden p-1.5 lg:p-2 group max-w-[90%] lg:max-w-[85%]">
                    <img 
                      src="/images/hero_illustration.png" 
-                     alt="Bookflow Dashboard"
+                     alt="Bukd Dashboard"
                      className="w-full h-auto rounded-[26px] lg:rounded-[40px] shadow-sm transform group-hover:scale-[1.01] transition-transform duration-700"
                    />
                 </div>
@@ -532,18 +532,18 @@ export const LandingPage: React.FC = () => {
                   Questions?<br />We've got answers.
                 </h2>
                 <p className="text-white/50 font-medium text-sm">
-                  Everything you need to know about getting started with Bookflow.
+                  Everything you need to know about getting started with Bukd.
                 </p>
               </div>
 
               <div className="lg:col-span-8 space-y-3">
                 {[
                   { q: "How quickly can I launch my booking website?", a: "Most businesses go live in under 10 minutes. Just add your services, set your hours, and share your link." },
-                  { q: "Do I need any technical skills?", a: "Not at all. Bookflow is designed for service professionals — no coding, no design experience needed." },
+                  { q: "Do I need any technical skills?", a: "Not at all. Bukd is designed for service professionals — no coding, no design experience needed." },
                   { q: "How do payments work?", a: "We integrate directly with Stripe. Your customers pay securely online, and funds go straight to your bank account." },
                   { q: "Can I customize my website to match my brand?", a: "Absolutely. Upload your logo, choose your colors, add your cover image, and write your own content." },
                   { q: "Is there a free plan?", a: "Yes. You can start for free and upgrade as your business grows. No credit card required to get started." },
-                  { q: "What types of businesses use Bookflow?", a: "Salons, spas, consultants, coaches, photographers, tattoo artists, barbers — any service-based business." }
+                  { q: "What types of businesses use Bukd?", a: "Salons, spas, consultants, coaches, photographers, tattoo artists, barbers — any service-based business." }
                 ].map((faq, i) => (
                   <details key={i} className="group">
                     <summary className="flex items-center justify-between p-6 bg-white/3 border border-white/6 rounded-2xl cursor-pointer list-none hover:bg-white/6 transition-all">
@@ -609,7 +609,7 @@ export const LandingPage: React.FC = () => {
                 <div className="w-8 h-8 bg-brand rounded-xl flex items-center justify-center">
                   <div className="w-3 h-3 bg-white rounded-sm" />
                 </div>
-                <span className="text-lg font-bold tracking-tight">Bookflow</span>
+                <span className="text-lg font-bold tracking-tight">Bukd</span>
               </Link>
               <p className="text-sm text-white/40 font-medium leading-relaxed max-w-xs">
                 The easiest way to launch a booking website and accept payments for your service business.
@@ -662,7 +662,7 @@ export const LandingPage: React.FC = () => {
 
           {/* Bottom Bar */}
           <div className="py-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">© 2026 Bookflow. All rights reserved.</p>
+            <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">© 2026 Bukd. All rights reserved.</p>
             <p className="text-[10px] text-white/20 font-medium">Made with care for service businesses everywhere.</p>
           </div>
         </div>

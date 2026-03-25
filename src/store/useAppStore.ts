@@ -430,11 +430,11 @@ export const useAppStore = create<AppState>()(
     }));
 
     // 2. Debounce the DB persist
-    if ((window as any).__bookrly_save_timer) {
-      clearTimeout((window as any).__bookrly_save_timer);
+    if ((window as any).__bukd_save_timer) {
+      clearTimeout((window as any).__bukd_save_timer);
     }
 
-    (window as any).__bookrly_save_timer = setTimeout(async () => {
+    (window as any).__bukd_save_timer = setTimeout(async () => {
       const latestBusiness = get().business;
       if (!latestBusiness) return;
 
@@ -649,11 +649,11 @@ export const useAppStore = create<AppState>()(
       } : null
     }));
 
-    if ((window as any)[`__bookrly_timer_svc_${id}`]) {
-      clearTimeout((window as any)[`__bookrly_timer_svc_${id}`]);
+    if ((window as any)[`__bukd_timer_svc_${id}`]) {
+      clearTimeout((window as any)[`__bukd_timer_svc_${id}`]);
     }
 
-    (window as any)[`__bookrly_timer_svc_${id}`] = setTimeout(async () => {
+    (window as any)[`__bukd_timer_svc_${id}`] = setTimeout(async () => {
       try {
         await supabase.from('services').update({
           name: service.name,
@@ -906,11 +906,11 @@ export const useAppStore = create<AppState>()(
       } : null
     }));
 
-    if ((window as any)[`__bookrly_timer_rev_${id}`]) {
-      clearTimeout((window as any)[`__bookrly_timer_rev_${id}`]);
+    if ((window as any)[`__bukd_timer_rev_${id}`]) {
+      clearTimeout((window as any)[`__bukd_timer_rev_${id}`]);
     }
 
-    (window as any)[`__bookrly_timer_rev_${id}`] = setTimeout(async () => {
+    (window as any)[`__bukd_timer_rev_${id}`] = setTimeout(async () => {
       await supabase.from('reviews').update(updates).eq('id', id);
     }, 800);
   },
@@ -923,11 +923,11 @@ export const useAppStore = create<AppState>()(
       } : null
     }));
 
-    if ((window as any)[`__bookrly_timer_proof_${id}`]) {
-      clearTimeout((window as any)[`__bookrly_timer_proof_${id}`]);
+    if ((window as any)[`__bukd_timer_proof_${id}`]) {
+      clearTimeout((window as any)[`__bukd_timer_proof_${id}`]);
     }
 
-    (window as any)[`__bookrly_timer_proof_${id}`] = setTimeout(async () => {
+    (window as any)[`__bukd_timer_proof_${id}`] = setTimeout(async () => {
       await supabase.from('proof_items').update(updates).eq('id', id);
     }, 800);
   },
@@ -1064,7 +1064,7 @@ export const useAppStore = create<AppState>()(
     }
   }
 }), {
-  name: 'bookflow-storage',
+  name: 'bukd-storage',
   storage: createJSONStorage(() => localStorage),
   partialize: (state) => ({ 
     onboardingStep: state.onboardingStep,

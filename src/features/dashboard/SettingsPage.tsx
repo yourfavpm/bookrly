@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import { calculateDaysRemaining } from '../../lib/dateUtils';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -142,7 +143,7 @@ export const SettingsPage: React.FC = () => {
   );
 
   const renderWebsite = () => {
-    const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || 'bookflow.ca';
+    const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || 'bukd.co';
     const siteUrl = `${formData.subdomain}.${rootDomain}`;
     
     return (
@@ -240,7 +241,7 @@ export const SettingsPage: React.FC = () => {
     const isTrialing = business.subscriptionStatus === 'trialing';
     const trialEndDate = business.trialEndDate ? new Date(business.trialEndDate) : null;
     const isActive = business.subscriptionStatus === 'active';
-    const trialDaysLeft = trialEndDate ? Math.max(0, Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 0;
+    const trialDaysLeft = calculateDaysRemaining(trialEndDate);
 
     return (
       <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">

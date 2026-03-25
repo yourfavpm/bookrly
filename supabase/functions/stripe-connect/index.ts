@@ -51,7 +51,7 @@ serve(async (req) => {
             name: business.name,
             url: business.custom_domain 
               ? `https://${business.custom_domain}` 
-              : `https://${business.subdomain}.bookflow.ca`,
+              : `https://${business.subdomain}.bukd.co`,
             support_phone: business.phone || undefined,
           },
           metadata: {

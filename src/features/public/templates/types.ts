@@ -27,6 +27,7 @@ export interface SectionProps {
     workingHours: Array<{ dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean }>;
   };
   onBook: () => void;
+  scrollTo: (id: string) => void;
   isMobile?: boolean;
   isPreview?: boolean;
 }
@@ -41,4 +42,5 @@ export interface TemplateInfo {
   category: string;
   description: string;
   color: string; // For the thumbnail card
+  thumbnail?: string; // Optonal screenshot path
 }

@@ -1,31 +1,54 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { Globe, ShieldCheck } from 'lucide-react';
+import { Globe, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
 import { getTemplateComponent } from './templates/templateRegistry';
 import { BookingModal } from './sections/BookingModal';
+import { getSampleBusiness } from './templates/sampleData';
 
 interface PublicWebsiteProps {
   forcedView?: 'desktop' | 'mobile';
   isPreview?: boolean;
+  isDemo?: boolean;
 }
 
-export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPreview }) => {
-  const { subdomain: paramSubdomain } = useParams<{ subdomain: string }>();
-  const { business, fetchPublicBusiness, loading, error, user } = useAppStore();
+export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPreview, isDemo: propIsDemo }) => {
+  const { subdomain: paramSubdomain, templateKey: demoTemplateKey } = useParams<{ subdomain: string, templateKey: string }>();
+  const { business: storeBusiness, fetchPublicBusiness, loading, error, user, updateBusiness } = useAppStore();
   const [isBooking, setIsBooking] = useState(false);
   const isMobile = forcedView === 'mobile';
+  const navigate = useNavigate();
+
+  // Determine if we are in demo mode
+  const isDemo = propIsDemo || !!demoTemplateKey;
+
+  const business = useMemo(() => {
+    if (!storeBusiness && !isDemo) return null;
+    if (isDemo && demoTemplateKey) {
+      const sample = getSampleBusiness(demoTemplateKey, storeBusiness || { id: 'demo', primaryColor: '#000000', services: [], proofOfWork: [], reviews: [] } as any);
+      return {
+        ...sample,
+        subscriptionStatus: 'active', // Mock for demo
+        isPublished: true,
+      } as any;
+    }
+    return storeBusiness;
+  }, [storeBusiness, isDemo, demoTemplateKey]);
 
   const layoutElement = useMemo(() => {
     if (!business) return null;
-    const component = getTemplateComponent(business.templateKey || 'clean_classic');
+    const component = getTemplateComponent(business.templateKey || (demoTemplateKey as string) || 'clean_classic');
     return React.createElement(component, {
       business: business as any,
       onBook: () => setIsBooking(true),
       isMobile,
-      isPreview
+      isPreview: isPreview || isDemo,
+      scrollTo: (id: string) => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
     });
-  }, [business, isMobile, isPreview]);
+  }, [business, isMobile, isPreview, isDemo, demoTemplateKey]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -108,8 +131,45 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
 
   return (
     <div className="min-h-full bg-white flex flex-col relative font-sans">
+      {/* Demo Header */}
+      {isDemo && (
+        <div className="bg-brand text-white px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-xl overflow-hidden">
+          <div className="absolute inset-0 bg-white/10 -skew-x-12 translate-x-1/2" />
+          <div className="flex items-center gap-4 relative z-10">
+            <button 
+              onClick={() => navigate('/dashboard/templates')}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <Sparkles size={14} className="text-white/80" />
+                <span className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-80">Viewing Template Demo</span>
+              </div>
+              <h3 className="text-lg font-bold tracking-tight">
+                {demoTemplateKey?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </h3>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 relative z-10">
+            <button 
+              onClick={() => {
+                if (demoTemplateKey) {
+                  updateBusiness({ templateKey: demoTemplateKey });
+                  navigate('/dashboard/website');
+                }
+              }}
+              className="bg-white text-brand px-6 py-2 rounded-xl font-bold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all"
+            >
+              Use This Template
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Owner preview bar - only show on actual public site, not in-editor preview */}
-      {user && !isPreview && (
+      {user && !isPreview && !isDemo && (
         <div className="bg-text-primary text-white px-4 py-2.5 flex items-center justify-between text-xs sticky top-0 z-50">
           <span className="font-medium opacity-80">You're previewing your live site</span>
           <button 

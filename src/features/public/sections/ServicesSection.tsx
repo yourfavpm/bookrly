@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import type { SectionProps } from '../templates/types';
 
 interface ServicesProps extends SectionProps {
-  variant?: 'grid' | 'list' | 'compact' | 'horizontal' | 'visual-studio-floating' | 'home-services-grid';
+  variant?: 'grid' | 'list' | 'compact' | 'horizontal' | 'visual-studio-floating' | 'home-services-grid' | 'editorial-grid';
 }
 
 export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isMobile, isPreview, variant = 'grid' }) => {
@@ -13,6 +13,66 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
   if (services.length === 0 && !isPreview) {
     return null;
   }
+  if (variant === 'editorial-grid') {
+    return (
+      <section id="services" className="py-32 px-6 md:px-12 lg:px-24 bg-[#0B0B0D] overflow-hidden">
+        <div className="max-w-[1400px] mx-auto space-y-20">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-[#F5F5F7]/10 pb-12">
+            <div className="space-y-4">
+              <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium italic">Collections</span>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#F5F5F7] leading-none">Curated Offerings</h2>
+            </div>
+            <p className="text-sm text-[#A1A1AA] max-w-xs font-light leading-relaxed">
+              Tailored beauty experiences designed for your most significant moments.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            {services.map((s, idx) => {
+              const isLarge = idx % 3 === 0;
+              return (
+                <motion.div
+                  key={s.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1, delay: idx * 0.1 }}
+                  viewport={{ once: true }}
+                  className={`${isLarge ? 'md:col-span-8 aspect-[16/9]' : 'md:col-span-4 aspect-[4/5]'} relative group overflow-hidden cursor-pointer`}
+                  onClick={onBook}
+                >
+                  {/* Subtle Image background or placeholder */}
+                  <div className="absolute inset-0 bg-[#121216]">
+                    <div className="absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-700 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
+                    {/* Placeholder color or pattern if no service image (we don't have service.image yet in the store, but we can assume it might exist) */}
+                    <div className="w-full h-full bg-gradient-to-br from-[#121216] to-[#0B0B0D]" />
+                  </div>
+
+                  {/* Content Overlay */}
+                  <div className="absolute inset-0 z-20 p-8 flex flex-col justify-end">
+                    <div className="space-y-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                      <span className="text-[9px] uppercase tracking-[0.3em] text-[#E8CFC0]">
+                        {s.duration} minutes
+                      </span>
+                      <h3 className="text-2xl md:text-3xl font-serif text-[#F5F5F7]">{s.name}</h3>
+                      <p className="text-xs text-[#A1A1AA] max-w-xs opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100 font-light">
+                        {s.description}
+                      </p>
+                    </div>
+                    <div className="mt-8 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                      <span className="text-lg font-light text-[#F5F5F7]">${s.price}</span>
+                      <div className="h-[1px] flex-1 bg-[#F5F5F7]/10" />
+                      <span className="text-[9px] uppercase tracking-[0.2em] text-[#F5F5F7]">Book Now</span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (variant === 'list') {
     return (
       <section id="services" className="py-24 px-6 max-w-4xl mx-auto w-full space-y-12">

@@ -198,7 +198,7 @@ export const PublicPreview: React.FC = () => {
                  <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic text-sm" style={{ backgroundColor: business.primaryColor }}>B</div>
                  <span className="text-lg font-bold tracking-tight">{business.name}</span>
               </div>
-              <p className="text-sm text-text-tertiary font-normal">Premium booking powered by Bookflow Canada.</p>
+              <p className="text-sm text-text-tertiary font-normal">Premium booking powered by Bukd.</p>
             </div>
             <div className="space-y-6">
                <h4 className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Navigation</h4>
@@ -213,7 +213,7 @@ export const PublicPreview: React.FC = () => {
                <ul className="space-y-4 text-sm font-semibold text-text-secondary">
                   <li className="flex items-center justify-center md:justify-start gap-3"><MapPin size={16} /> Vancouver, Canada</li>
                   <li className="flex items-center justify-center md:justify-start gap-3"><Phone size={16} /> (555) 123-4567</li>
-                  <li className="flex items-center justify-center md:justify-start gap-3"><Globe size={16} /> {business.name.toLowerCase().replace(/\s+/g, '-')}.bookflow.ca</li>
+                  <li className="flex items-center justify-center md:justify-start gap-3"><Globe size={16} /> {business.name.toLowerCase().replace(/\s+/g, '-')}.bukd.co</li>
                </ul>
             </div>
          </div>

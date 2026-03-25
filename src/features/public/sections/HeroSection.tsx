@@ -6,10 +6,82 @@ import type { SectionProps } from '../templates/types';
 
 interface HeroProps extends SectionProps {
   scrollTo: (id: string) => void;
-  variant?: 'centered' | 'split' | 'full-image' | 'card' | 'minimal' | 'editorial-luxe' | 'visual-studio' | 'home-services-split';
+  variant?: 'centered' | 'split' | 'full-image' | 'card' | 'minimal' | 'editorial-luxe' | 'visual-studio' | 'home-services-split' | 'noir';
 }
 
 export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, isMobile, variant = 'centered' }) => {
+  if (variant === 'noir') {
+    return (
+      <section className="relative min-h-[100svh] flex items-center overflow-hidden bg-[#0B0B0D]">
+        {/* Grain Overlay for editorial feel */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+        
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 min-h-[100svh]">
+          {/* Left: Text Content */}
+          <div className="flex flex-col justify-center px-8 md:px-16 lg:px-24 py-20 md:py-0 space-y-12 z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              className="space-y-6"
+            >
+              <div className="space-y-2">
+                <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium">
+                  {business.category || 'Beauty Refined'}
+                </span>
+                <h1 className="text-5xl md:text-6xl lg:text-[7rem] font-serif leading-[0.9] text-[#F5F5F7] tracking-tighter">
+                  {business.heroTitle || "Beauty, Refined."}
+                </h1>
+              </div>
+              
+              <p className="text-sm md:text-base text-[#A1A1AA] max-w-md leading-relaxed font-light tracking-wide">
+                {business.heroSubtitle || "Luxury beauty services tailored to your presence."}
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-6 pt-8">
+                <button 
+                  onClick={onBook}
+                  className="px-10 py-4 bg-[#E8CFC0] text-[#0B0B0D] tracking-widest text-[10px] uppercase font-bold hover:bg-white transition-all duration-500 shadow-2xl shadow-[#E8CFC0]/10"
+                >
+                  {business.ctaText || "Book Appointment"}
+                </button>
+                <button 
+                  onClick={() => scrollTo('services')}
+                  className="px-10 py-4 border border-[#F5F5F7]/10 text-[#F5F5F7] tracking-widest text-[10px] uppercase font-bold hover:bg-white/5 transition-all duration-500"
+                >
+                  View Services
+                </button>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Right: Full-bleed Image */}
+          <div className="relative h-[60vh] md:h-auto overflow-hidden">
+            <motion.div
+              initial={{ scale: 1.1, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full h-full"
+            >
+              {business.coverImage ? (
+                <img 
+                  src={getOptimizedImageUrl(business.coverImage, { width: 1400, quality: 85 })} 
+                  className="w-full h-full object-cover" 
+                  alt="Editorial Beauty"
+                />
+              ) : (
+                <div className="w-full h-full bg-[#121216]" />
+              )}
+              {/* Subtle Vignette */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0B0B0D] via-transparent to-transparent hidden md:block" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0D] via-transparent to-transparent md:hidden" />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (variant === 'visual-studio') {
     return (
       <section className="relative min-h-[100svh] flex items-end pb-24 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden bg-black">

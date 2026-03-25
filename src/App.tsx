@@ -67,6 +67,11 @@ function App() {
               <PublicLayout><PublicWebsite isPreview={true} /></PublicLayout>
             </ProtectedRoute>
           } />
+
+          {/* Template Demo (Sample Data) */}
+          <Route path="/demo/:templateKey" element={
+            <PublicLayout><PublicWebsite isDemo={true} /></PublicLayout>
+          } />
           
           {/* Redirects */}
           <Route path="/" element={<LandingPage />} />

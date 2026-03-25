@@ -6,14 +6,26 @@ import { HomeServicesLayout, HomeServicesAltLayout } from './layouts/HomeService
 import { ModernAppointmentsLayout, ModernAppointmentsAltLayout } from './layouts/ModernAppointments';
 import { PersonalBrandLayout, PersonalBrandAltLayout } from './layouts/PersonalBrand';
 
+import { NoirEditorialLayout } from './layouts/NoirEditorial';
+
 // Template metadata for the switcher UI
 export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProps> })[] = [
+  {
+    key: 'noir_editorial',
+    name: 'Noir Editorial',
+    category: 'Premium',
+    description: 'Cinematic, dark-themed beauty portfolio',
+    color: '#0B0B0D',
+    thumbnail: '/thumbnails/noir_editorial.png',
+    component: NoirEditorialLayout,
+  },
   {
     key: 'clean_classic',
     name: 'Editorial Luxe',
     category: 'Premium',
     description: 'Refined, minimal design for high-end brands',
     color: '#111111',
+    thumbnail: '/thumbnails/clean_classic.png',
     component: EditorialLuxeLayout,
   },
   {
@@ -22,6 +34,7 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
     category: 'Premium',
     description: 'Editorial style with reviews elevated',
     color: '#333333',
+    thumbnail: '/thumbnails/clean_classic_alt.png',
     component: EditorialLuxeAltLayout,
   },
   {
@@ -30,6 +43,7 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
     category: 'Creative',
     description: 'Gallery-forward — ideal for beauty & creatives',
     color: '#ec4899',
+    thumbnail: '/thumbnails/visual_studio.png',
     component: VisualStudioLayout,
   },
   {
@@ -38,6 +52,7 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
     category: 'Creative',
     description: 'Horizontal gallery with compact service cards',
     color: '#f472b6',
+    thumbnail: '/thumbnails/visual_studio_alt.png',
     component: VisualStudioAltLayout,
   },
   {
@@ -46,6 +61,7 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
     category: 'Trust-First',
     description: 'Strong CTA with reviews up front',
     color: '#14b8a6',
+    thumbnail: '/thumbnails/home_services.png',
     component: HomeServicesLayout,
   },
   {
@@ -54,6 +70,7 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
     category: 'Trust-First',
     description: 'Card hero with clean service listing',
     color: '#2dd4bf',
+    thumbnail: '/thumbnails/home_services_alt.png',
     component: HomeServicesAltLayout,
   },
   {
@@ -62,6 +79,7 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
     category: 'Booking',
     description: 'Booking-forward with polished minimal feel',
     color: '#f59e0b',
+    thumbnail: '/thumbnails/modern_appointments.png',
     component: ModernAppointmentsLayout,
   },
   {
@@ -70,6 +88,7 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
     category: 'Booking',
     description: 'Card hero with horizontal scroll services',
     color: '#fbbf24',
+    thumbnail: '/thumbnails/modern_appointments_alt.png',
     component: ModernAppointmentsAltLayout,
   },
   {
@@ -78,6 +97,7 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
     category: 'Personal',
     description: 'Founder-focused with prominent about section',
     color: '#8b5cf6',
+    thumbnail: '/thumbnails/personal_brand.png',
     component: PersonalBrandLayout,
   },
   {
@@ -86,6 +106,7 @@ export const TEMPLATES: (TemplateInfo & { component: React.FC<TemplateLayoutProp
     category: 'Personal',
     description: 'Ultra-clean with vertical testimonials',
     color: '#a78bfa',
+    thumbnail: '/thumbnails/personal_brand_alt.png',
     component: PersonalBrandAltLayout,
   },
 ];

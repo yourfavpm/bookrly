@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import { calculateDaysRemaining } from '../../lib/dateUtils';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { 
@@ -81,9 +82,7 @@ export const DashboardOverview: React.FC = () => {
   const progressPercent = Math.round((completedSteps / onboardingSteps.length) * 100);
 
   const trialDaysLeft = useMemo(() => {
-    if (!business?.trialEndDate) return null;
-    const diff = new Date(business.trialEndDate).getTime() - new Date().getTime();
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    return calculateDaysRemaining(business?.trialEndDate);
   }, [business]);
 
   if (!business) return null;

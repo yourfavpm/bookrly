@@ -43,20 +43,24 @@ export const TemplateSelector: React.FC = () => {
                 }`}
                 onClick={() => updateBusiness({ templateKey: t.key })}
               >
-                {/* Visual Representation (Minimal) */}
-                <div className="h-32 relative overflow-hidden" style={{ backgroundColor: `${t.color}05` }}>
-                  <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity" 
-                       style={{ backgroundImage: `radial-gradient(circle at 2px 2px, ${t.color} 1px, transparent 0)`, backgroundSize: '16px 16px' }} />
+                {/* Visual Representation (Live Thumbnail) */}
+                <div className="h-40 relative overflow-hidden bg-bg-secondary">
+                  {t.thumbnail ? (
+                    <img 
+                      src={t.thumbnail} 
+                      alt={t.name} 
+                      className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-110" 
+                    />
+                  ) : (
+                    <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity" 
+                         style={{ backgroundImage: `radial-gradient(circle at 2px 2px, ${t.color} 1px, transparent 0)`, backgroundSize: '16px 16px' }} />
+                  )}
                   
-                  <div className="absolute inset-4 rounded-xl border border-dashed border-text-tertiary/20 flex flex-col p-2 bg-white/40 backdrop-blur-sm">
-                    <div className="h-2 w-1/2 rounded-full mb-2" style={{ backgroundColor: `${t.color}20` }} />
-                    <div className="h-1.5 w-3/4 rounded-full mb-1 opacity-40" style={{ backgroundColor: `${t.color}10` }} />
-                    <div className="h-1.5 w-2/3 rounded-full mb-auto opacity-40" style={{ backgroundColor: `${t.color}10` }} />
-                  </div>
+                  <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors" />
 
                   {isActive && (
-                    <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-brand text-white flex items-center justify-center shadow-md animate-in zoom-in duration-300">
-                      <Check size={12} strokeWidth={3} />
+                    <div className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center shadow-lg animate-in zoom-in duration-300 ring-2 ring-white">
+                      <Check size={14} strokeWidth={3} />
                     </div>
                   )}
                 </div>
@@ -81,7 +85,14 @@ export const TemplateSelector: React.FC = () => {
                       {isActive ? 'Active' : 'Select'}
                     </Button>
                     
-                    <button className="p-1.5 rounded-lg bg-bg-secondary text-text-tertiary hover:text-brand transition-colors shrink-0" title="Full Preview">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(`/demo/${t.key}`, '_blank');
+                      }}
+                      className="p-1.5 rounded-lg bg-bg-secondary text-text-tertiary hover:text-brand transition-colors shrink-0" 
+                      title="Full Live Demo"
+                    >
                       <ExternalLink size={14} />
                     </button>
                   </div>

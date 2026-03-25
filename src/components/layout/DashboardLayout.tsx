@@ -1,5 +1,6 @@
 import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, Plus, Palette, Clock, ShieldCheck, Image, MessageSquare, LogOut, ChevronLeft } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { calculateDaysRemaining } from '../../lib/dateUtils';
 import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { InstallAppPrompt } from '../../components/ui/InstallAppPrompt';
@@ -45,9 +46,7 @@ export const DashboardLayout: React.FC = () => {
   const isActive = business?.subscriptionStatus === 'active';
   const isRestricted = isTrialExpired || (!isTrialing && !isActive);
 
-  const trialDaysLeft = trialEndDate 
-    ? Math.max(0, Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-    : 0;
+  const trialDaysLeft = calculateDaysRemaining(trialEndDate);
 
   const handleSubscribe = async () => {
     const url = await createSubscription();
@@ -188,7 +187,7 @@ export const DashboardLayout: React.FC = () => {
               <div className="p-6 border-b border-black/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                    <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic text-sm">B</div>
-                   <span className="font-bold tracking-tight">Console</span>
+                   <span className="font-bold tracking-tight">Bukd Console</span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-black/20 hover:text-black/40"><ChevronLeft size={20} /></button>
               </div>
