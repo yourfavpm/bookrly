@@ -18,11 +18,12 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const BookingsPage: React.FC = () => {
-  const { business, updateBookingStatus } = useAppStore();
+  const { business, updateBookingStatus, refundBooking } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'completed' | 'cancelled'>('all');
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+  const [isRefunding, setIsRefunding] = useState(false);
 
   const filteredBookings = useMemo(() => {
     if (!business) return [];
@@ -53,6 +54,7 @@ export const BookingsPage: React.FC = () => {
       case 'paid': return 'text-emerald-700 bg-emerald-50';
       case 'partially_paid': return 'text-brand bg-brand/5';
       case 'pending': return 'text-amber-700 bg-amber-50';
+      case 'refunded': return 'text-red-700 bg-red-50';
       default: return 'text-text-tertiary bg-bg-canvas';
     }
   };
@@ -312,7 +314,7 @@ export const BookingsPage: React.FC = () => {
  
                   <footer className="p-8 border-t border-border-polaris bg-bg-canvas/10 flex flex-col sm:flex-row gap-4 pb-24 lg:pb-8">
                      {selectedBooking.status === "pending" && (
-                        <Button 
+                        <Button
                           className="flex-1 rounded-lg font-bold h-12 bg-emerald-600 text-white uppercase text-[10px] tracking-widest"
                           onClick={async () => {
                             await updateBookingStatus(selectedBooking.id, "confirmed");
@@ -322,8 +324,27 @@ export const BookingsPage: React.FC = () => {
                            Confirm Booking
                         </Button>
                      )}
-                     {(selectedBooking.status === "confirmed" || selectedBooking.status === "pending") && (
-                        <Button 
+                     {selectedBooking.paymentStatus === "paid" && selectedBooking.status !== "cancelled" && (
+                        <Button
+                          variant="secondary"
+                          disabled={isRefunding}
+                          className="flex-1 rounded-lg font-bold h-12 text-red-600 hover:bg-red-50 border-red-100 uppercase text-[10px] tracking-widest disabled:opacity-60"
+                          onClick={async () => {
+                            if (confirm("Refund this booking? The full amount will be returned to the customer.")) {
+                              setIsRefunding(true);
+                              try {
+                                await refundBooking(selectedBooking.id);
+                                setSelectedBookingId(null);
+                              } catch { /* error handled by store */ }
+                              setIsRefunding(false);
+                            }
+                          }}
+                        >
+                           {isRefunding ? 'Refunding...' : 'Refund Payment'}
+                        </Button>
+                     )}
+                     {(selectedBooking.status === "confirmed" || selectedBooking.status === "pending") && selectedBooking.paymentStatus !== "paid" && (
+                        <Button
                           variant="secondary"
                           className="flex-1 rounded-lg font-bold h-12 text-red-600 hover:bg-red-50 border-red-100 uppercase text-[10px] tracking-widest"
                           onClick={async () => {

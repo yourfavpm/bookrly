@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 type SettingsSection = 'menu' | 'profile' | 'website' | 'payments' | 'billing' | 'team' | 'security';
 
 export const SettingsPage: React.FC = () => {
-  const { business, updateBusiness, user, setupStripeConnect, refreshStripeStatus, createSubscription, uploadLogo, updatePassword } = useAppStore();
+  const { business, updateBusiness, user, setupStripeConnect, refreshStripeStatus, createSubscription, openBillingPortal, uploadLogo, updatePassword } = useAppStore();
   const [activeSection, setActiveSection] = useState<SettingsSection>('menu');
   const [formData, setFormData] = useState({ ...business });
   const [isConnecting, setIsConnecting] = useState(false);
@@ -199,7 +199,9 @@ export const SettingsPage: React.FC = () => {
 
   const renderPayments = () => {
     const isConnected = business.stripeConnected && business.stripeDetailsSubmitted;
-    
+    const params = new URLSearchParams(window.location.search);
+    const justReturned = params.get('return') === 'true';
+
     return (
       <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
         <div className="flex items-center gap-4">
@@ -208,28 +210,52 @@ export const SettingsPage: React.FC = () => {
           </button>
           <div className="space-y-0.5">
             <h1 className="text-xl font-medium tracking-tight text-text-primary">Payments</h1>
-            <p className="text-[11px] text-text-tertiary font-normal">Payouts and transactions.</p>
+            <p className="text-[11px] text-text-tertiary font-normal">Accept payments from your customers.</p>
           </div>
         </div>
 
-        <div className="max-w-xl">
+        <div className="max-w-xl space-y-4">
+          {justReturned && isConnected && (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-success/5 border border-success/10 text-success">
+              <CreditCard size={18} />
+              <p className="text-sm font-medium">Stripe connected successfully! You can now accept payments.</p>
+            </div>
+          )}
+
           <Card className="p-8 space-y-8 overflow-hidden relative">
             <div className="flex items-center gap-6">
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white ${isConnected ? 'bg-[#635BFF]' : 'bg-bg-canvas text-text-tertiary border'}`}>
                 <CreditCard size={24} />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-semibold">Stripe</h3>
+                <h3 className="text-lg font-semibold">Stripe Connect</h3>
                 <div className="flex items-center gap-2">
-                   {isConnected ? <span className="text-[9px] font-bold text-success uppercase tracking-widest bg-success/5 px-2 py-0.5 rounded border border-success/10">Connected</span> : <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Disconnected</span>}
+                   {isConnected ? <span className="text-[9px] font-bold text-success uppercase tracking-widest bg-success/5 px-2 py-0.5 rounded border border-success/10">Connected</span> : <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Not Connected</span>}
                 </div>
               </div>
             </div>
-            
-            <p className="text-[11px] text-text-tertiary leading-relaxed">Accept payments from customers instantly. Funds are paid out directly to your connected bank account.</p>
-            
+
+            <p className="text-[11px] text-text-tertiary leading-relaxed">
+              {isConnected
+                ? 'Your Stripe account is connected. Customers can pay you directly when they book. A 3% platform fee applies per transaction.'
+                : 'Connect your Stripe account to start accepting payments from customers. Funds go directly to your bank account.'}
+            </p>
+
+            {isConnected && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-xl bg-bg-canvas/30 border border-border-polaris space-y-1">
+                  <p className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">Charges</p>
+                  <p className={`text-sm font-semibold ${business.stripeChargesEnabled ? 'text-success' : 'text-amber-500'}`}>{business.stripeChargesEnabled ? 'Enabled' : 'Pending'}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-bg-canvas/30 border border-border-polaris space-y-1">
+                  <p className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest">Payouts</p>
+                  <p className={`text-sm font-semibold ${business.stripePayouts_enabled ? 'text-success' : 'text-amber-500'}`}>{business.stripePayouts_enabled ? 'Enabled' : 'Pending'}</p>
+                </div>
+              </div>
+            )}
+
             <Button onClick={async () => { setIsConnecting(true); const url = await setupStripeConnect(); if (url) window.location.href = url; setIsConnecting(false); }} disabled={isConnecting} className={`w-full h-14 rounded-xl font-bold text-[10px] uppercase tracking-widest ${isConnected ? 'bg-bg-canvas text-text-primary border border-border-polaris' : 'bg-[#635BFF] text-white'}`}>
-              {isConnecting ? 'Opening...' : isConnected ? 'Stripe Dashboard' : 'Setup Payments'}
+              {isConnecting ? 'Opening...' : isConnected ? 'Open Stripe Dashboard' : 'Connect Stripe Account'}
             </Button>
           </Card>
         </div>
@@ -241,7 +267,32 @@ export const SettingsPage: React.FC = () => {
     const isTrialing = business.subscriptionStatus === 'trialing';
     const trialEndDate = business.trialEndDate ? new Date(business.trialEndDate) : null;
     const isActive = business.subscriptionStatus === 'active';
+    const isPastDue = business.subscriptionStatus === 'past_due';
+    const isCanceled = business.subscriptionStatus === 'canceled';
     const trialDaysLeft = calculateDaysRemaining(trialEndDate);
+
+    const params = new URLSearchParams(window.location.search);
+    const showUpgradeSuccess = params.get('upgraded') === 'true';
+    const showCanceled = params.get('canceled') === 'true';
+
+    const [isRedirecting, setIsRedirecting] = useState(false);
+
+    const handleUpgrade = async () => {
+      setIsRedirecting(true);
+      const url = await createSubscription();
+      if (url) window.location.href = url;
+      else setIsRedirecting(false);
+    };
+
+    const handleManageBilling = async () => {
+      setIsRedirecting(true);
+      const url = await openBillingPortal();
+      if (url) window.location.href = url;
+      else setIsRedirecting(false);
+    };
+
+    const statusLabel = isTrialing ? 'Free Trial' : isActive ? 'Pro Plan' : isPastDue ? 'Past Due' : isCanceled ? 'Canceled' : 'No Plan';
+    const statusColor = isActive ? 'text-success bg-success/5 border-success/10' : isPastDue ? 'text-red-500 bg-red-50 border-red-200' : isCanceled ? 'text-text-tertiary bg-bg-tertiary border-border-polaris' : 'text-brand bg-brand/5 border-brand/10';
 
     return (
       <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
@@ -255,24 +306,63 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="max-w-xl">
+        <div className="max-w-xl space-y-4">
+          {showUpgradeSuccess && (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-success/5 border border-success/10 text-success">
+              <ShieldCheck size={18} />
+              <p className="text-sm font-medium">You're on Pro! Your subscription is now active.</p>
+            </div>
+          )}
+
+          {showCanceled && (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-bg-canvas border border-border-polaris text-text-secondary">
+              <CreditCard size={18} />
+              <p className="text-sm font-medium">Checkout was canceled. You can upgrade anytime.</p>
+            </div>
+          )}
+
+          {isPastDue && (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+              <CreditCard size={18} />
+              <p className="text-sm font-medium">Your last payment failed. Please update your payment method to avoid interruption.</p>
+            </div>
+          )}
+
           <Card className="p-8 space-y-8">
             <div className="flex justify-between items-start">
               <div className="space-y-2">
-                <div className="text-[10px] font-bold text-brand uppercase tracking-widest bg-brand/5 px-3 py-1 rounded-full w-fit border border-brand/10">
-                  {isTrialing ? 'Free Trial' : isActive ? 'Pro Plan' : 'No Plan'}
+                <div className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full w-fit border ${statusColor}`}>
+                  {statusLabel}
                 </div>
                 <h3 className="text-2xl font-bold">GetBukd Pro</h3>
-                <p className="text-xs text-text-tertiary">{isTrialing ? `Your trial expires in ${trialDaysLeft} days.` : 'Full power for your business.'}</p>
+                <p className="text-xs text-text-tertiary">
+                  {isTrialing ? `Your trial expires in ${trialDaysLeft} days.` : isActive ? 'Full power for your business.' : isPastDue ? 'Update your payment to continue.' : isCanceled ? 'Your subscription has been canceled.' : 'Subscribe to unlock all features.'}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold">$19<span className="text-sm font-medium text-text-tertiary">/mo</span></p>
+                <p className="text-3xl font-bold">$10<span className="text-sm font-medium text-text-tertiary">/mo</span></p>
               </div>
             </div>
 
-            <Button onClick={async () => { const url = await createSubscription(); if (url) window.location.href = url; }} className="w-full h-14 rounded-xl bg-black text-white font-bold text-[10px] uppercase tracking-widest transition-all hover:scale-[1.02]">
-              {isActive ? 'Manage Billing' : 'Upgrade Now'}
-            </Button>
+            {(isTrialing || isCanceled || (!isActive && !isPastDue)) && (
+              <Button
+                onClick={handleUpgrade}
+                disabled={isRedirecting}
+                className="w-full h-14 rounded-xl bg-black text-white font-bold text-[10px] uppercase tracking-widest transition-all hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100"
+              >
+                {isRedirecting ? 'Redirecting...' : isCanceled ? 'Resubscribe' : 'Upgrade Now'}
+              </Button>
+            )}
+
+            {(isActive || isPastDue) && (
+              <Button
+                onClick={handleManageBilling}
+                disabled={isRedirecting}
+                className={`w-full h-14 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100 ${isPastDue ? 'bg-red-600 text-white' : 'bg-bg-canvas text-text-primary border border-border-polaris'}`}
+              >
+                {isRedirecting ? 'Redirecting...' : isPastDue ? 'Update Payment Method' : 'Manage Billing'}
+              </Button>
+            )}
           </Card>
         </div>
       </div>

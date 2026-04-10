@@ -54,10 +54,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     return total;
   }, [selectedService, selectedAddOns]);
 
-  const depositDue = useMemo(() => {
-     if (!selectedService || !selectedService.bookingFeeEnabled) return subtotal;
-     return Math.min(selectedService.bookingFeeAmount || 0, subtotal);
-  }, [selectedService, subtotal]);
+  const totalDue = subtotal;
 
   const availableDates = useMemo(() => {
     return Array.from({ length: 14 }, (_, i) => {
@@ -451,10 +448,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                           customerPhone: contactInfo.phone,
                           notes: contactInfo.notes,
                           totalPrice: subtotal,
-                          depositDue: depositDue
+                          depositDue: totalDue
                       });
-                      
-                      if (depositDue > 0 && isStripeReady) {
+
+                      if (isStripeReady) {
                           const checkoutUrl = await createCheckoutSession(booking.id);
                           if (checkoutUrl) {
                               window.location.href = checkoutUrl;
@@ -468,7 +465,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                       setIsSubmitting(false);
                   }
                 }}
-                nextLabel={depositDue > 0 ? (isStripeReady ? 'Pay & Confirm' : 'Confirm Appointment') : 'Confirm Appointment'}
+                nextLabel={isStripeReady ? 'Pay & Confirm' : 'Confirm Appointment'}
                 isLoading={isSubmitting}
              >
                 <div className="grid gap-6">
@@ -497,15 +494,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                          <span>Subtotal</span>
                          <span>${subtotal}</span>
                       </div>
-                      {depositDue < subtotal && (
-                        <div className="flex justify-between items-center text-xs text-text-tertiary">
-                           <span>Due later</span>
-                           <span>-${subtotal - depositDue}</span>
-                        </div>
-                      )}
                       <div className="flex justify-between items-center text-lg font-bold text-text-primary pt-2 border-t border-border-light">
-                         <span>Due Today</span>
-                         <span>${depositDue}</span>
+                         <span>Total</span>
+                         <span>${totalDue}</span>
                       </div>
                    </div>
                 </div>
@@ -543,7 +534,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                          </div>
                          <div className="flex items-center gap-3 text-sm text-text-secondary">
                             <CheckCircle2 size={14} className="text-success" />
-                            <span>Deposit Paid: ${depositDue}</span>
+                            <span>Amount Paid: ${totalDue}</span>
                          </div>
                       </div>
                    </Card>
