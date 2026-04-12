@@ -158,7 +158,9 @@ interface AppState {
   createCheckoutSession: (bookingId: string) => Promise<string | null>;
   setupStripeConnect: () => Promise<string | null>;
   refreshStripeStatus: () => Promise<void>;
+  refundBooking: (bookingId: string) => Promise<void>;
   createSubscription: () => Promise<string | null>;
+  openBillingPortal: () => Promise<string | null>;
   updatePassword: (password: string) => Promise<{ error: any }>;
   uploadLogo: (file: File) => Promise<string | null>;
   updateWorkingHours: (hours: WorkingHour[]) => Promise<void>;
@@ -880,7 +882,7 @@ export const useAppStore = create<AppState>()(
     const successUrl = `${protocol}://${business.subdomain}.${domain}/?booking_success=true`;
     const cancelUrl = `${protocol}://${business.subdomain}.${domain}/?booking_cancel=true`;
 
-    const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+    const { data, error } = await supabase.functions.invoke('booking-checkout', {
       body: { 
         bookingId, 
         businessId: business.id,
@@ -896,6 +898,30 @@ export const useAppStore = create<AppState>()(
   updateBookingStatus: async (id, status) => {
     const { error } = await supabase.from('bookings').update({ status }).eq('id', id);
     if (!error) get().fetchBusiness();
+  },
+
+  refundBooking: async (bookingId: string) => {
+    set({ error: null });
+    try {
+      const { error } = await supabase.functions.invoke('booking-refund', {
+        body: { bookingId },
+      });
+
+      if (error) throw error;
+
+      // Update local state
+      set(state => ({
+        business: state.business ? {
+          ...state.business,
+          bookings: state.business.bookings.map(b =>
+            b.id === bookingId ? { ...b, paymentStatus: 'refunded', status: 'cancelled' } : b
+          )
+        } : null
+      }));
+    } catch (err: any) {
+      set({ error: err.message });
+      throw err;
+    }
   },
 
   updateReview: async (id, updates) => {
@@ -935,7 +961,7 @@ export const useAppStore = create<AppState>()(
   setupStripeConnect: async () => {
     set({ loading: true, error: null });
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-connect', {
+      const { data, error } = await supabase.functions.invoke('connect-onboarding', {
         body: { action: 'create-onboarding-link' },
       });
 
@@ -954,7 +980,7 @@ export const useAppStore = create<AppState>()(
     if (!business?.stripeAccountId) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-connect', {
+      const { data, error } = await supabase.functions.invoke('connect-onboarding', {
         body: { action: 'refresh-status' },
       });
 
@@ -979,8 +1005,25 @@ export const useAppStore = create<AppState>()(
   createSubscription: async () => {
     set({ loading: true, error: null });
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-subscription', {
+      const { data, error } = await supabase.functions.invoke('stripe-subscription-checkout', {
         body: { action: 'create-checkout-session' },
+      });
+
+      if (error) throw error;
+      return data.url;
+    } catch (err: any) {
+      set({ error: err.message });
+      return null;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  openBillingPortal: async () => {
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-subscription-checkout', {
+        body: { action: 'create-portal-session' },
       });
 
       if (error) throw error;

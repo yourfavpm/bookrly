@@ -314,7 +314,7 @@ export const DashboardLayout: React.FC = () => {
                 onClick={handleSubscribe}
                 className="w-full h-16 rounded-[24px] bg-brand text-white font-medium text-xs uppercase tracking-widest shadow-2xl shadow-brand/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                Go Pro — $19/mo
+                Go Pro — $10/mo
               </Button>
               <p className="text-[10px] text-text-tertiary font-normal">
                 Includes all features, custom domains, and zero platform fees.
