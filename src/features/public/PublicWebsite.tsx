@@ -14,7 +14,7 @@ interface PublicWebsiteProps {
 
 export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPreview, isDemo: propIsDemo }) => {
   const { subdomain: paramSubdomain, templateKey: demoTemplateKey } = useParams<{ subdomain: string, templateKey: string }>();
-  const { business: storeBusiness, fetchPublicBusiness, loading, error, user, updateBusiness } = useAppStore();
+  const { business: storeBusiness, fetchPublicBusiness, loading, error, user, updateBusiness, isCanada } = useAppStore();
   const [isBooking, setIsBooking] = useState(false);
   const isMobile = forcedView === 'mobile';
   const navigate = useNavigate();
@@ -131,6 +131,15 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
 
   return (
     <div className="min-h-full bg-white flex flex-col relative font-sans">
+      {/* Canada First Banner */}
+      {isCanada && !isDemo && (
+        <div className="bg-red-600 text-white px-4 py-2 flex items-center justify-center gap-2 sticky top-0 z-60 shadow-md">
+          <span className="text-[10px] font-black uppercase tracking-[0.25em] flex items-center gap-2">
+            🇨🇦 Proudly Supporting Canadian Businesses
+          </span>
+        </div>
+      )}
+
       {/* Demo Header */}
       {isDemo && (
         <div className="bg-brand text-white px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-xl overflow-hidden">

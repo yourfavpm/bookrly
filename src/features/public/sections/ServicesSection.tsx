@@ -1,6 +1,6 @@
-import React from 'react';
-import { Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAppStore } from '../../../store/useAppStore';
+import { formatPrice } from '../../../utils/formatters';
 import type { SectionProps } from '../templates/types';
 
 interface ServicesProps extends SectionProps {
@@ -8,6 +8,7 @@ interface ServicesProps extends SectionProps {
 }
 
 export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isMobile, isPreview, variant = 'grid' }) => {
+  const { currency } = useAppStore();
   const services = business.services || [];
   
   if (services.length === 0 && !isPreview) {
@@ -59,7 +60,7 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
                       </p>
                     </div>
                     <div className="mt-8 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                      <span className="text-lg font-light text-[#F5F5F7]">${s.price}</span>
+                      <span className="text-lg font-light text-[#F5F5F7]">{formatPrice(s.price, currency)}</span>
                       <div className="h-[1px] flex-1 bg-[#F5F5F7]/10" />
                       <span className="text-[9px] uppercase tracking-[0.2em] text-[#F5F5F7]">Book Now</span>
                     </div>
@@ -89,7 +90,7 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
               </div>
               <div className="flex items-center gap-6 ml-6">
                 <div className="text-right">
-                  <span className="text-lg font-medium" style={{ color: business.primaryColor }}>${s.price}</span>
+                  <span className="text-lg font-medium" style={{ color: business.primaryColor }}>{formatPrice(s.price, currency)}</span>
                   <span className="block text-[10px] text-text-tertiary uppercase tracking-widest">{s.duration} min</span>
                 </div>
                 <button onClick={onBook} className="px-5 py-2.5 rounded-xl text-white text-xs font-medium transition-all hover:scale-105 active:scale-95 border-none cursor-pointer" style={{ backgroundColor: business.primaryColor }}>
@@ -118,7 +119,7 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-sm text-text-primary">{s.name}</h3>
-                <span className="text-xs text-text-tertiary">{s.duration} min • ${s.price}</span>
+                <span className="text-xs text-text-tertiary">{s.duration} min • {formatPrice(s.price, currency)}</span>
               </div>
             </div>
           ))}
@@ -150,7 +151,7 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
                   <p className="text-xs md:text-sm text-text-secondary leading-relaxed mb-6 flex-1 font-light">{s.description}</p>
                   <div className="flex items-end justify-between pt-4 border-t border-text-primary/5">
                     <div>
-                      <span className="text-xl md:text-2xl font-light tracking-tight text-text-primary">${s.price}</span>
+                      <span className="text-xl md:text-2xl font-light tracking-tight text-text-primary">{formatPrice(s.price, currency)}</span>
                       <span className="block text-[10px] text-text-tertiary uppercase tracking-widest mt-1">{s.duration} min</span>
                     </div>
                     <button 
@@ -185,7 +186,7 @@ export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isM
               <div className="w-12 h-12 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-tertiary transition-all duration-500 group-hover:scale-105" style={{ color: business.primaryColor }}>
                 <Clock size={24} />
               </div>
-              <span className="text-2xl font-medium tracking-tight" style={{ color: business.primaryColor }}>${s.price}</span>
+              <span className="text-2xl font-medium tracking-tight" style={{ color: business.primaryColor }}>{formatPrice(s.price, currency)}</span>
             </div>
             <h3 className="font-medium text-xl mb-3 text-text-primary leading-tight">{s.name}</h3>
             <p className="text-text-secondary text-sm leading-relaxed mb-8 line-clamp-3 opacity-80">{s.description}</p>

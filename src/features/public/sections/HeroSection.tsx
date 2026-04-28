@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { getOptimizedImageUrl } from '../../../utils/images';
-import { Star, Calendar as CalendarIcon, ShieldCheck, CheckCircle2, Zap, ChevronRight } from 'lucide-react';
+import { Star, Calendar as CalendarIcon, ShieldCheck, CheckCircle2, Zap, ChevronRight, MapPin } from 'lucide-react';
+import { useAppStore } from '../../../store/useAppStore';
 import type { SectionProps } from '../templates/types';
 
 interface HeroProps extends SectionProps {
@@ -10,6 +11,8 @@ interface HeroProps extends SectionProps {
 }
 
 export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, isMobile, variant = 'centered' }) => {
+  const { isCanada } = useAppStore();
+
   if (variant === 'noir') {
     return (
       <section className="relative min-h-[100svh] flex items-center overflow-hidden bg-[#0B0B0D]">
@@ -27,7 +30,7 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
             >
               <div className="space-y-2">
                 <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium">
-                  {business.category || 'Beauty Refined'}
+                  {isCanada ? '🇨🇦 Canada\'s Premier ' : ''}{business.category || 'Beauty Refined'}
                 </span>
                 <h1 className="text-5xl md:text-6xl lg:text-[7rem] font-serif leading-[0.9] text-[#F5F5F7] tracking-tighter">
                   {business.heroTitle || "Beauty, Refined."}
@@ -168,9 +171,9 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
           >
             {/* Top Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm">
-              <Star size={14} className="text-amber-500 fill-amber-500" />
+              {isCanada ? <MapPin size={14} className="text-red-500" /> : <Star size={14} className="text-amber-500 fill-amber-500" />}
               <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">
-                Top Rated {business.category || 'Service'}
+                {isCanada ? "Proudly Serving Canada" : `Top Rated ${business.category || 'Service'}`}
               </span>
             </div>
 
@@ -475,6 +478,11 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, i
       
       <div className="relative z-10 max-w-4xl px-6 space-y-8 py-20">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="space-y-6">
+          {isCanada && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/90 mx-auto mb-4">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">🇨🇦 Canada First Platform</span>
+            </div>
+          )}
           <h1 className={`${isMobile ? 'text-3xl' : 'text-4xl md:text-6xl'} font-medium tracking-tight leading-[1.1] ${business.coverImage ? 'text-white' : 'text-text-primary'}`}>
             {business.heroTitle || "Your premium headline goes here"}
           </h1>

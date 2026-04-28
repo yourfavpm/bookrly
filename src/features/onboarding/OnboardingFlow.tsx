@@ -20,6 +20,7 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
+import { formatPrice } from '../../utils/formatters';
 
 const StepWrapper: React.FC<{ 
   children: React.ReactNode, 
@@ -83,7 +84,7 @@ const StepWrapper: React.FC<{
 );
 
 export const OnboardingFlow: React.FC = () => {
-  const { onboardingStep, setOnboardingStep, business, updateBusiness, user, fetchBusiness, addService } = useAppStore();
+  const { onboardingStep, setOnboardingStep, business, updateBusiness, user, fetchBusiness, addService, currency } = useAppStore();
   const navigate = useNavigate();
   const [isSuccess, setIsSuccess] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -485,7 +486,7 @@ export const OnboardingFlow: React.FC = () => {
                  />
                  <div className="grid grid-cols-2 gap-4">
                     <Input 
-                      label="Price ($)" 
+                      label={`Price (${currency})`} 
                       placeholder="0" 
                       type="number" 
                       min="0"
@@ -531,7 +532,7 @@ export const OnboardingFlow: React.FC = () => {
                  {feeEnabled && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                       <Input 
-                        placeholder="Deposit Amount ($)" 
+                        placeholder={`Deposit Amount (${currency})`} 
                         type="number"
                         value={feeAmount || ''}
                         onChange={e => setFeeAmount(parseFloat(e.target.value) || 0)}
@@ -556,7 +557,7 @@ export const OnboardingFlow: React.FC = () => {
                    <div key={i} className="flex gap-2 p-4 rounded-2xl bg-bg-secondary/20 border border-border-light/40 items-center">
                       <div className="flex-1 min-w-0">
                          <p className="text-[11px] font-medium text-text-primary truncate">{addon.name}</p>
-                         <p className="text-[9px] text-text-tertiary font-normal">${addon.price}</p>
+                         <p className="text-[9px] text-text-tertiary font-normal">{formatPrice(addon.price || 0, currency)}</p>
                       </div>
                       <button 
                         onClick={() => setTempAddOns(p => p.filter((_, idx) => idx !== i))}

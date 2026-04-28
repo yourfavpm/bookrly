@@ -12,13 +12,14 @@ import { useAppStore } from '../../store/useAppStore';
 import type { Service, AddOn } from '../../store/useAppStore';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { formatPrice } from '../../utils/formatters';
 
 interface BookingFlowProps {
   onCancel?: () => void;
 }
 
 export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
-  const { business, createBooking, createCheckoutSession } = useAppStore();
+  const { business, createBooking, createCheckoutSession, currency } = useAppStore();
   const isStripeReady = business?.stripeConnected && business?.stripeDetailsSubmitted;
   const [step, setStep] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -148,7 +149,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     <div className="mb-10 text-center">
       <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest mb-1">Total</p>
       <p className="text-3xl font-bold tracking-tight text-text-primary">
-        ${subtotal}
+        {formatPrice(subtotal, currency)}
       </p>
     </div>
   );
@@ -257,7 +258,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                      >
                         <div className="flex justify-between items-start mb-1">
                            <h3 className="font-bold text-text-primary group-hover:text-brand transition-colors">{s.name}</h3>
-                           <span className="font-bold text-text-primary">${s.price}</span>
+                           <span className="font-bold text-text-primary">{formatPrice(s.price, currency)}</span>
                         </div>
                         <p className="text-[11px] text-text-tertiary line-clamp-2 leading-relaxed">{s.description}</p>
                         <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
@@ -305,7 +306,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                                  <p className="text-[10px] text-text-tertiary">+{addon.duration} mins</p>
                               </div>
                            </div>
-                           <span className="font-bold text-sm text-text-primary">+${addon.price}</span>
+                           <span className="font-bold text-sm text-text-primary">+{formatPrice(addon.price, currency)}</span>
                         </button>
                        );
                      })
@@ -492,11 +493,11 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                    <div className="space-y-3 px-2">
                       <div className="flex justify-between items-center text-xs text-text-secondary">
                          <span>Subtotal</span>
-                         <span>${subtotal}</span>
+                         <span>{formatPrice(subtotal, currency)}</span>
                       </div>
                       <div className="flex justify-between items-center text-lg font-bold text-text-primary pt-2 border-t border-border-light">
                          <span>Total</span>
-                         <span>${totalDue}</span>
+                         <span>{formatPrice(totalDue, currency)}</span>
                       </div>
                    </div>
                 </div>
@@ -534,7 +535,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                          </div>
                          <div className="flex items-center gap-3 text-sm text-text-secondary">
                             <CheckCircle2 size={14} className="text-success" />
-                            <span>Amount Paid: ${totalDue}</span>
+                            <span>Amount Paid: {formatPrice(totalDue, currency)}</span>
                          </div>
                       </div>
                    </Card>

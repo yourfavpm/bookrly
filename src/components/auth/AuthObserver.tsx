@@ -10,6 +10,9 @@ export const AuthObserver: React.FC<{ children: React.ReactNode }> = ({ children
     const handleAuthStateChange = async (_event: string, session: any) => {
       if (!mounted) return;
       
+      // Also trigger location detection once
+      useAppStore.getState().detectLocation();
+      
       const user = session?.user ?? null;
       useAppStore.setState({ user, loading: !!user });
       

@@ -1,9 +1,8 @@
-import React from 'react';
-import { useAppStore } from '../../store/useAppStore';
-import { Star, Clock, MapPin, Phone, Instagram, Facebook, Globe, ShieldCheck, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { Star, Clock, MapPin, Phone, Instagram, Facebook, Globe, ShieldCheck, ChevronRight, Image as ImageIcon, Map } from 'lucide-react';
+import { formatPrice } from '../../utils/formatters';
 
 export const PublicPreview: React.FC = () => {
-  const { business } = useAppStore();
+  const { business, currency, isCanada } = useAppStore();
 
   if (!business) return null;
 
@@ -18,6 +17,11 @@ export const PublicPreview: React.FC = () => {
              <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic text-sm" style={{ backgroundColor: business.primaryColor }}>B</div>
            )}
            <span className="text-lg font-bold tracking-tight">{business.name || 'Your Business'}</span>
+           {isCanada && (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-600 rounded-lg border border-red-100 ml-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Canada First</span>
+              </div>
+            )}
         </div>
         <div className="hidden md:flex items-center gap-8">
            <span className="text-sm font-medium text-text-secondary hover:text-brand cursor-pointer">Services</span>
@@ -72,13 +76,15 @@ export const PublicPreview: React.FC = () => {
                <div key={s.id} className="p-8 rounded-[32px] border border-border-light bg-white hover:shadow-2xl hover:border-brand/10 transition-all duration-500 group cursor-pointer flex flex-col">
                   <div className="flex justify-between items-start mb-6">
                     <h3 className="font-bold text-xl group-hover:text-brand transition-colors">{s.name}</h3>
-                    <span className="text-lg font-bold text-text-secondary" style={{ color: business.primaryColor }}>${s.price}</span>
+                    <span className="text-lg font-bold text-text-secondary" style={{ color: business.primaryColor }}>
+                      {formatPrice(s.price, currency)}
+                    </span>
                   </div>
                    <div className="flex items-center gap-4 text-xs font-bold text-text-tertiary uppercase tracking-widest mb-10">
                       <span className="flex items-center gap-1.5"><Clock size={14} /> {s.duration} MIN</span>
                       {s.bookingFeeEnabled && (
                         <span className="flex items-center gap-1.5 text-success">
-                          <ShieldCheck size={14} /> ${s.bookingFeeAmount} DEPOSIT
+                          <ShieldCheck size={14} /> {formatPrice(s.bookingFeeAmount, currency)} DEPOSIT
                         </span>
                       )}
                    </div>

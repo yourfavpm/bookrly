@@ -20,7 +20,7 @@ interface ServiceEditorProps {
 }
 
 export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose }) => {
-  const { business, addService, updateService } = useAppStore();
+  const { business, addService, updateService, currency } = useAppStore();
   const isStripeReady = business?.stripeConnected && business?.stripeDetailsSubmitted;
 
   const existingService = business?.services.find(s => s.id === serviceId);
@@ -143,7 +143,7 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-normal text-text-secondary">Basic Price ($)</label>
+                  <label className="text-xs font-normal text-text-secondary">Basic Price ({currency})</label>
                   <Input 
                     type="number"
                     placeholder="0.00"
@@ -197,7 +197,7 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
                  animate={{ opacity: 1, y: 0 }}
                  className="space-y-1.5"
                >
-                 <label className="text-xs font-normal text-text-secondary">Booking Fee Amount ($)</label>
+                 <label className="text-xs font-normal text-text-secondary">Booking Fee Amount ({currency})</label>
                  <Input 
                    type="number"
                    placeholder="25.00"
@@ -242,7 +242,7 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
                             <Input 
                               className="w-24 rounded-xl"
                               type="number"
-                              placeholder="$0"
+                              placeholder={currency === 'CAD' ? '0 CAD' : '$0'}
                               value={addon.price || ''}
                               onChange={(e) => handleUpdateAddOn(index, { price: parseFloat(e.target.value) || 0 })}
                             />

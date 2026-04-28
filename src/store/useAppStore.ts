@@ -122,6 +122,8 @@ interface AppState {
   loading: boolean;
   error: string | null;
   onboardingStep: number;
+  isCanada: boolean;
+  currency: 'USD' | 'CAD';
   
   // Actions
   setUser: (user: User | null) => void;
@@ -143,6 +145,7 @@ interface AppState {
   updateBookingStatus: (id: string, status: string) => Promise<void>;
   updateReview: (id: string, updates: Partial<Review>) => Promise<void>;
   updateProofItem: (id: string, updates: Partial<ProofItem>) => Promise<void>;
+  detectLocation: () => Promise<void>;
   createBooking: (data: {
     serviceId: string;
     addOnIds: string[];
@@ -189,6 +192,8 @@ export const useAppStore = create<AppState>()(
   loading: true,
   error: null,
   onboardingStep: 1,
+  isCanada: false,
+  currency: 'USD',
   
   setUser: (user) => set({ user }),
   setLoading: (loading) => set({ loading }),
@@ -790,12 +795,30 @@ export const useAppStore = create<AppState>()(
       });
     } catch (err: any) {
       set({ error: err.message });
-    } finally {
-      set({ loading: false });
-    }
-  },
+      } finally {
+        set({ loading: false });
+      }
+    },
 
-  createBooking: async (data: any) => {
+    detectLocation: async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        
+        if (data.country_code === 'CA') {
+          set({ isCanada: true, currency: 'CAD' });
+          console.log('[AppStore] Canada detected. Switching to CAD pricing.');
+        } else {
+          set({ isCanada: false, currency: 'USD' });
+        }
+      } catch (err) {
+        console.warn('[AppStore] Geolocation failed:', err);
+        // Default to USD if detection fails
+        set({ isCanada: false, currency: 'USD' });
+      }
+    },
+
+    createBooking: async (data: any) => {
     const { business } = get();
     if (!business) throw new Error('Business not found');
 
