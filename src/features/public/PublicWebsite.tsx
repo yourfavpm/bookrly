@@ -87,9 +87,10 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
     resolveTenant();
   }, [paramSubdomain, fetchPublicBusiness, isPreview]);
 
-  const isTrialing = business?.subscriptionStatus === 'trialing';
+  const gracePeriodDays = 3;
   const trialEndDate = business?.trialEndDate ? new Date(business.trialEndDate) : null;
-  const isTrialExpired = isTrialing && trialEndDate && new Date() > trialEndDate;
+  const restrictionDate = trialEndDate ? new Date(trialEndDate.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000) : null;
+  const isTrialExpired = isTrialing && restrictionDate && new Date() > restrictionDate;
   const isActive = business?.subscriptionStatus === 'active';
   const isRestricted = (isTrialExpired || (!isTrialing && !isActive)) && !isPreview;
 

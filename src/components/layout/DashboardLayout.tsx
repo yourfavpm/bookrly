@@ -44,11 +44,12 @@ export const DashboardLayout: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const isTrialing = business?.subscriptionStatus === 'trialing';
+  const gracePeriodDays = 3;
   const trialEndDate = business?.trialEndDate ? new Date(business.trialEndDate) : null;
-  const isTrialExpired = isTrialing && trialEndDate && new Date() > trialEndDate;
+  const restrictionDate = trialEndDate ? new Date(trialEndDate.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000) : null;
+  const isTrialExpired = isTrialing && restrictionDate && new Date() > restrictionDate;
   const isActive = business?.subscriptionStatus === 'active';
-  const isRestricted = isTrialExpired || (!isTrialing && !isActive);
+  const isRestricted = (isTrialExpired || (!isTrialing && !isActive)) && !isPreview;
 
   const trialDaysLeft = calculateDaysRemaining(trialEndDate);
 
@@ -304,56 +305,51 @@ export const DashboardLayout: React.FC = () => {
         {/* Main Content Area */}
         <main className="flex-1 min-w-0 bg-white relative overflow-y-auto">
           <div className="p-6 lg:p-12 max-w-[1200px] mx-auto min-h-full">
-            {!business && loading ? (
-              <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
-                <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4"></div>
+            {/* Restricted Banner - Non-blocking */}
+            {isRestricted && (
+              <div className="mb-8 p-6 rounded-[32px] bg-linear-to-br from-brand/10 to-brand/5 border border-brand/20 flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-top duration-500">
+                <div className="flex items-center gap-5 text-left">
+                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-brand shadow-sm border border-brand/10">
+                    <CreditCard size={24} />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                      {isTrialExpired ? 'Trial Ended' : 'Subscription Required'}
+                    </h3>
+                    <p className="text-[11px] text-text-secondary leading-relaxed max-w-sm">
+                      {isTrialExpired 
+                        ? "Your trial has ended and your public site is now unpublished. Upgrade to Pro to go live again."
+                        : "An active subscription is required to keep your site published and accept bookings."}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleSubscribe}
+                  className="h-12 px-8 rounded-2xl bg-brand text-white font-medium text-[10px] uppercase tracking-widest shadow-lg shadow-brand/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
+                >
+                  Upgrade to Pro — $10/mo
+                </Button>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="h-full flex flex-col items-center justify-center gap-4 py-20">
+                <div className="w-1.5 h-1.5 rounded-full bg-brand animate-ping" />
                 <p className="text-sm text-text-secondary font-medium uppercase tracking-widest">Loading business console...</p>
               </div>
             ) : (
               <Outlet />
             )}
-          </div>
-        </main>
-      </div>
 
-
-      {/* Subscription Overlay */}
-      {isRestricted && (
-        <div className="fixed inset-0 z-100 bg-white/80 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
-          <div className="w-full max-w-sm text-center space-y-8">
-            <div className="w-20 h-20 bg-brand/10 rounded-[32px] flex items-center justify-center text-brand mx-auto shadow-xl shadow-brand/5 border border-brand/10">
-              <ShieldCheck size={40} />
-            </div>
-            <div className="space-y-3">
-              <h2 className="text-3xl font-medium tracking-tight text-text-primary">
-                {isTrialExpired ? 'Trial Ended' : 'Subscription Required'}
-              </h2>
-              <p className="text-sm text-text-secondary leading-relaxed max-w-[280px] mx-auto">
-                {isTrialExpired 
-                  ? "Your 14-day free trial has come to an end. Upgrade to Pro to keep growing your business."
-                  : "An active subscription is required to access your dashboard and receive bookings."}
-              </p>
-            </div>
-            <div className="space-y-4 pt-4">
-              <Button 
-                onClick={handleSubscribe}
-                className="w-full h-16 rounded-[24px] bg-brand text-white font-medium text-xs uppercase tracking-widest shadow-2xl shadow-brand/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                Go Pro — $10/mo
-              </Button>
-              <p className="text-[10px] text-text-tertiary font-normal">
-                Includes all features, custom domains, and zero platform fees.
-              </p>
-            </div>
             <button 
-              onClick={() => useAppStore.getState().signOut()}
-              className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest hover:text-text-primary transition-colors py-4"
+              onClick={() => signOut()}
+              className="mt-12 text-[10px] font-medium text-text-tertiary uppercase tracking-widest hover:text-text-primary transition-colors py-4"
             >
               Sign Out
             </button>
           </div>
-        </div>
-      )}
+        </main>
+      </div>
 
       <InstallAppPrompt />
       <GlobalError />
