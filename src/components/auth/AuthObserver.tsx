@@ -32,7 +32,7 @@ export const AuthObserver: React.FC<{ children: React.ReactNode }> = ({ children
             .select('role, id, business_id')
             .eq('user_id', user.id)
             .eq('status', 'active')
-            .single();
+            .maybeSingle();
 
           if (!staffError && staffRecord) {
             useAppStore.setState({ staffRole: staffRecord.role as any, staffId: staffRecord.id });

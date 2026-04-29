@@ -44,6 +44,7 @@ export const DashboardLayout: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const isTrialing = business?.subscriptionStatus === 'trialing';
   const gracePeriodDays = 3;
   const trialEndDate = business?.trialEndDate ? new Date(business.trialEndDate) : null;
   const restrictionDate = trialEndDate ? new Date(trialEndDate.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000) : null;
