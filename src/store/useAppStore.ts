@@ -601,7 +601,7 @@ export const useAppStore = create<AppState>()(
         if ('email' in updates) dbUpdates.email = updates.email;
         if ('phone' in updates) dbUpdates.phone = updates.phone;
         if ('category' in updates) dbUpdates.category = updates.category;
-        if ('subdomain' in updates) {
+        if ('subdomain' in updates && updates.subdomain) {
           const slugified = updates.subdomain.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
           dbUpdates.subdomain = slugified;
           dbUpdates.slug = slugified; // Sync slug with subdomain for now

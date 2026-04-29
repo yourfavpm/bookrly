@@ -71,8 +71,8 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, onBook, scrollTo, 
         <div className="max-w-4xl mx-auto px-6 text-center space-y-12">
           <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--t-heading-font)', color: 'var(--t-text-primary)' }}>{business.name}</h2>
           <div className="flex justify-center gap-8 text-sm font-medium" style={{ color: 'var(--t-text-secondary)' }}>
-            <button onClick={() => scrollTo('services')} className="hover:opacity-70 transition-opacity">Services</button>
-            <button onClick={() => scrollTo('about')} className="hover:opacity-70 transition-opacity">About</button>
+            <button onClick={() => scrollTo?.('services')} className="hover:opacity-70 transition-opacity">Services</button>
+            <button onClick={() => scrollTo?.('about')} className="hover:opacity-70 transition-opacity">About</button>
             <button onClick={onBook} className="hover:opacity-70 transition-opacity" style={{ color: 'var(--t-accent)' }}>Book Now</button>
           </div>
           <div className="flex justify-center">
@@ -102,10 +102,10 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, onBook, scrollTo, 
           <div className="space-y-6">
             <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--t-text-primary)' }}>Explore</h3>
             <div className="flex flex-col gap-3 text-sm" style={{ color: 'var(--t-text-secondary)' }}>
-              <button onClick={() => scrollTo('services')} className="text-left hover:opacity-70 w-max transition-opacity">Services</button>
-              <button onClick={() => scrollTo('portfolio')} className="text-left hover:opacity-70 w-max transition-opacity">Portfolio</button>
-              <button onClick={() => scrollTo('about')} className="text-left hover:opacity-70 w-max transition-opacity">About</button>
-              <button onClick={() => scrollTo('reviews')} className="text-left hover:opacity-70 w-max transition-opacity">Reviews</button>
+              <button onClick={() => scrollTo?.('services')} className="text-left hover:opacity-70 w-max transition-opacity">Services</button>
+              <button onClick={() => scrollTo?.('portfolio')} className="text-left hover:opacity-70 w-max transition-opacity">Portfolio</button>
+              <button onClick={() => scrollTo?.('about')} className="text-left hover:opacity-70 w-max transition-opacity">About</button>
+              <button onClick={() => scrollTo?.('reviews')} className="text-left hover:opacity-70 w-max transition-opacity">Reviews</button>
             </div>
           </div>
           

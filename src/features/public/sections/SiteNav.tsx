@@ -33,7 +33,7 @@ export const SiteNav: React.FC<NavProps> = ({ business, scrollTo, onBook }) => {
         {['services', 'about', 'reviews'].map(item => (
           <button 
             key={item}
-            onClick={() => scrollTo(item)}
+            onClick={() => scrollTo?.(item)}
             className="text-sm font-medium transition-colors hover:opacity-70 capitalize"
             style={{ color: 'var(--t-text-secondary)' }}
           >

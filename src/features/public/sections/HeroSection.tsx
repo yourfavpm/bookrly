@@ -38,7 +38,7 @@ export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, v
           {business.ctaText || 'Book Appointment'}
         </button>
         <button 
-          onClick={() => scrollTo('services')}
+          onClick={() => scrollTo?.('services')}
           className="px-8 py-4 text-xs font-bold uppercase tracking-widest border transition-all hover:scale-105"
           style={{ borderColor: 'var(--t-border)', color: 'var(--t-text-primary)', borderRadius: 'var(--t-radius)' }}
         >
