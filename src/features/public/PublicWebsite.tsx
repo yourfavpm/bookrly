@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { Globe, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
+import { getBaseDomain } from '../../lib/domainUtils';
 import { getTemplate } from './templates/templateRegistry';
 import { BookingModal } from './sections/BookingModal';
 import { getSampleBusiness } from './templates/sampleData';
@@ -64,7 +65,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
       let targetSubdomain = paramSubdomain;
       if (!targetSubdomain) {
         const host = window.location.hostname;
-        const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || 'localhost';
+        const rootDomain = getBaseDomain();
         
         if (host !== rootDomain && host.endsWith(rootDomain)) {
           // Subdomain case (e.g. biz.bukd.co)

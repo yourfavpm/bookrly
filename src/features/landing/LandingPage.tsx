@@ -11,7 +11,8 @@ import {
   CreditCard,
   Trophy,
   Users,
-  DollarSign
+  DollarSign,
+  Check
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
@@ -139,7 +140,7 @@ export const LandingPage: React.FC = () => {
                   </h1>
                   
                   <p className="text-xl text-black/70 font-medium leading-relaxed max-w-md">
-                    Get booked and paid without the back and forth. Get started for free and only pay $10/month after 14 days.
+                    Get booked and paid without the back and forth. Get started for free and only pay $6/mo after 14 days.
                   </p>
                 </motion.div>
 
@@ -519,6 +520,111 @@ export const LandingPage: React.FC = () => {
                  </div>
                </div>
              ))}
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-32 bg-[#FAFAF8] relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center space-y-4 mb-20">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="space-y-4"
+              >
+                <span className="text-[12px] font-bold text-brand uppercase tracking-[0.3em]">Pricing</span>
+                <h2 className="text-5xl lg:text-7xl font-medium tracking-tight text-black leading-[1.1]">
+                   Built to grow <br />
+                   <span className="italic font-serif">with your business</span>
+                </h2>
+                <p className="text-lg text-black/50 max-w-xl mx-auto font-medium">
+                  Aggressive pricing built for global scale. Choose the plan that fits your current stage.
+                </p>
+              </motion.div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+              {[
+                {
+                  id: 'starter',
+                  name: 'Starter',
+                  price: '$9',
+                  annualPrice: '$6',
+                  desc: 'For solo providers just getting started',
+                  features: ['1 provider profile', 'Free subdomain', 'Unlimited services', 'Email confirmations', 'Mobile website'],
+                  cta: 'Start for Free',
+                  popular: false
+                },
+                {
+                  id: 'pro',
+                  name: 'Pro',
+                  price: '$25',
+                  annualPrice: '$18',
+                  desc: 'For growing providers ready to scale',
+                  features: ['Custom domain', 'SMS reminders', 'Analytics dashboard', 'Automated reviews', 'AI website copy'],
+                  cta: 'Get Started',
+                  popular: true
+                },
+                {
+                  id: 'business',
+                  name: 'Business',
+                  price: '$59',
+                  annualPrice: '$44',
+                  desc: 'For multi-staff businesses & salons',
+                  features: ['Up to 10 staff', 'Per-staff calendars', 'Packages & bundles', 'Provider mobile app', 'Zero transaction fees'],
+                  cta: 'Scale Now',
+                  popular: false
+                }
+              ].map((plan, i) => (
+                <motion.div
+                  key={plan.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: i * 0.1 }}
+                  viewport={{ once: true }}
+                  className={`relative p-10 bg-white border flex flex-col rounded-[48px] transition-all hover:shadow-2xl hover:shadow-black/5 ${plan.popular ? 'border-brand ring-1 ring-brand/20 scale-105 z-10' : 'border-black/5'}`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-brand text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-xl">
+                      Most Popular
+                    </div>
+                  )}
+                  
+                  <div className="mb-8">
+                    <h3 className="text-2xl font-bold tracking-tight text-black mb-2">{plan.name}</h3>
+                    <p className="text-sm text-black/50 font-medium leading-relaxed">{plan.desc}</p>
+                  </div>
+
+                  <div className="mb-10">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-5xl font-bold text-black">{plan.annualPrice}</span>
+                      <span className="text-black/30 font-medium">/mo</span>
+                    </div>
+                    <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest mt-2">Billed Annually</p>
+                  </div>
+
+                  <ul className="space-y-4 mb-12 flex-1">
+                    {plan.features.map((feature, j) => (
+                      <li key={j} className="flex items-center gap-3 text-sm font-medium text-black/70">
+                        <Check size={16} className="text-brand shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Button className={`w-full h-14 rounded-2xl font-bold text-[11px] uppercase tracking-widest transition-all ${plan.popular ? 'bg-brand text-white shadow-xl shadow-brand/20 hover:scale-[1.02]' : 'bg-black text-white hover:bg-black/90'}`}>
+                    {plan.cta}
+                  </Button>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="mt-20 text-center">
+              <p className="text-sm text-black/40 font-medium mb-6">Need more? We have an Enterprise plan for chains and franchises.</p>
+              <button className="text-sm font-bold text-black hover:text-brand transition-colors border-b border-black pb-1">Contact Sales</button>
+            </div>
           </div>
         </section>
 

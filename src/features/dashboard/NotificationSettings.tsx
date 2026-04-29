@@ -16,6 +16,7 @@ import {
   Zap,
   AlertTriangle
 } from 'lucide-react';
+import { getBaseDomain } from '../../lib/domainUtils';
 
 const TOKENS = [
   { label: 'Client Name', value: '{client_name}' },
@@ -180,8 +181,8 @@ export const NotificationSettings: React.FC = () => {
                               .replace(/{time}/g, '10:00 AM')
                               .replace(/{provider_name}/g, 'Jane')
                               .replace(/{business_name}/g, business?.name || 'Bukd Salon')
-                              .replace(/{cancel_link}/g, 'bukd.co/c/abc123')
-                              .replace(/{review_link}/g, 'bukd.co/r/abc123')
+                              .replace(/{cancel_link}/g, `${getBaseDomain()}/c/abc123`)
+                              .replace(/{review_link}/g, `${getBaseDomain()}/r/abc123`)
                             }
                          </div>
                          <p className="text-[10px] text-text-tertiary italic text-center px-4">

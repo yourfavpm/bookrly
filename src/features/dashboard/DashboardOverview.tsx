@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
+import { getBusinessUrl } from '../../lib/domainUtils';
 import { 
   AreaChart, 
   Area, 
@@ -61,9 +62,7 @@ export const DashboardOverview: React.FC = () => {
 
   const handleCopyLink = React.useCallback(() => {
     if (!business) return;
-    const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || 'localhost:5173';
-    const protocol = rootDomain.includes('localhost') ? 'http' : 'https';
-    const publicUrl = `${protocol}://${business.slug || business.subdomain}.${rootDomain}`;
+    const publicUrl = getBusinessUrl(business.subdomain);
     navigator.clipboard.writeText(publicUrl);
     setCopying(true);
     setTimeout(() => setCopying(false), 2000);

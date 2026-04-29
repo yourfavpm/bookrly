@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import type { User, AuthError } from '@supabase/supabase-js';
 import { calculateDashboardStats, type DashboardStats } from '../lib/analyticsUtils';
+import { getBaseDomain, getBusinessUrl } from '../lib/domainUtils';
 
 export interface AddOn {
   id: string;
@@ -205,6 +206,21 @@ interface BusinessState {
   trialStartDate: string | null;
   trialEndDate: string | null;
   planType: 'free' | 'pro' | 'enterprise';
+  domains: Domain[];
+}
+
+export interface Domain {
+  id: string;
+  businessId: string;
+  domain: string;
+  type: 'subdomain' | 'custom';
+  status: 'pending_verification' | 'dns_configured' | 'active' | 'failed' | 'suspended' | 'transferred';
+  isPrimary: boolean;
+  sslEnabled: boolean;
+  sslStatus: string;
+  dnsRecords: any;
+  verifiedAt: string | null;
+  createdAt: string;
 }
 
 interface AppState {
@@ -280,6 +296,12 @@ interface AppState {
   updateNotificationSettings: (updates: Partial<ProviderNotificationSettings>) => Promise<void>;
   scheduleMessages: (bookingId: string) => Promise<void>;
   getDashboardStats: (period?: string, compare?: boolean, staffId?: string) => DashboardStats | null;
+  // Domain Actions
+  fetchDomains: () => Promise<void>;
+  addDomain: (domain: string, type: 'subdomain' | 'custom') => Promise<void>;
+  verifyDomain: (id: string) => Promise<{ verified: boolean; errors?: any }>;
+  setPrimaryDomain: (id: string) => Promise<void>;
+  deleteDomain: (id: string) => Promise<void>;
 }
 
 const generateSlug = (name: string): string => {
@@ -294,7 +316,8 @@ const generateSlug = (name: string): string => {
 const generateSubdomain = (name: string, businessId: string): string => {
   const baseSlug = generateSlug(name);
   // Use first 20 chars of slug or fallback to business ID prefix
-  return baseSlug ? baseSlug.substring(0, 20) : `biz-${businessId.substring(0, 8)}`;
+  const subdomain = baseSlug ? baseSlug.substring(0, 20) : `biz-${businessId.substring(0, 8)}`;
+  return subdomain;
 };
 
 export const useAppStore = create<AppState>()(
@@ -393,19 +416,38 @@ export const useAppStore = create<AppState>()(
         { data: clientData },
         { data: notifSettings },
         { data: smsUsageData },
-        { data: scheduledMessages }
+        { data: scheduledMessages },
+        domainsRes
       ] = await Promise.all([
         supabase.from('availability').select('*').eq('business_id', b.id),
         supabase.from('services').select('*, addons(*)').eq('business_id', b.id).eq('active', true),
         supabase.from('bookings').select('*, booking_addons(*)').eq('business_id', b.id),
         supabase.from('staff_members').select('*').eq('business_id', b.id),
         supabase.from('reviews').select('*').eq('business_id', b.id),
-        supabase.from('proof_of_work').select('*').eq('business_id', b.id),
+        supabase.from('proof_items').select('*').eq('business_id', b.id),
         supabase.from('clients').select('*, client_notes(*)').eq('business_id', b.id).eq('is_deleted', false),
         supabase.from('provider_notification_settings').select('*').eq('business_id', b.id).maybeSingle(),
         supabase.from('business_sms_usage').select('*').eq('business_id', b.id).eq('month_year', new Date().toISOString().substring(0, 7)).maybeSingle(),
-        supabase.from('scheduled_messages').select('*').eq('business_id', b.id).order('scheduled_for', { ascending: false }).limit(100)
+        supabase.from('scheduled_messages').select('*').eq('business_id', b.id).order('scheduled_for', { ascending: false }).limit(100),
+        supabase.from('domains').select('*').eq('business_id', b.id)
       ]);
+
+      // Check for individual query errors to prevent silent failures
+      if (bError) throw bError;
+      
+      const mappedDomains: Domain[] = (domainsRes.status === 404 ? [] : (domainsRes.data || [])).map((d: any) => ({
+        id: d.id,
+        businessId: d.business_id,
+        domain: d.domain,
+        type: d.type,
+        status: d.status,
+        isPrimary: d.is_primary,
+        sslEnabled: d.ssl_enabled,
+        sslStatus: d.ssl_status,
+        dnsRecords: d.dns_records,
+        verifiedAt: d.verified_at,
+        createdAt: d.created_at
+      }));
 
       const mappedBookings: Booking[] = (bookings || []).map((bk) => ({
         id: bk.id,
@@ -514,7 +556,8 @@ export const useAppStore = create<AppState>()(
              sendgridId: m.sendgrid_id
           })),
           reviews: reviews || [],
-          proofOfWork: proof_items || []
+          proofOfWork: proof_items || [],
+          domains: mappedDomains
         } 
       });
     } catch (err) {
@@ -927,8 +970,13 @@ export const useAppStore = create<AppState>()(
     },
 
     detectLocation: async () => {
+      // Check if we already detected or set manually to avoid rate limiting
+      if (localStorage.getItem('bukd_geo_detected')) return;
+
       try {
         const response = await fetch('https://ipapi.co/json/');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const data = await response.json();
         
         if (data.country_code === 'CA') {
@@ -937,9 +985,9 @@ export const useAppStore = create<AppState>()(
         } else {
           set({ isCanada: false, currency: 'USD' });
         }
+        localStorage.setItem('bukd_geo_detected', 'true');
       } catch (err) {
-        console.warn('[AppStore] Geolocation failed:', err);
-        // Default to USD if detection fails
+        console.warn('[AppStore] Geolocation failed (Rate limited or CORS). Defaulting to USD.');
         set({ isCanada: false, currency: 'USD' });
       }
     },
@@ -1766,15 +1814,15 @@ export const useAppStore = create<AppState>()(
         .replace(/{time}/g, booking.startTime)
         .replace(/{provider_name}/g, provider?.name || business.name)
         .replace(/{business_name}/g, business.name)
-        .replace(/{cancel_link}/g, `bukd.co/c/${booking.id}`)
-        .replace(/{booking_link}/g, `bukd.co/p/${business.subdomain}`)
-        .replace(/{review_link}/g, `bukd.co/r/${booking.id}`);
+        .replace(/{cancel_link}/g, `${getBaseDomain()}/c/${booking.id}`)
+        .replace(/{booking_link}/g, getBusinessUrl(business.subdomain))
+        .replace(/{review_link}/g, `${getBaseDomain()}/r/${booking.id}`);
 
       // Append Opt-out
       if (type === 'SMS') {
         text += " \nReply STOP to unsubscribe";
       } else {
-        text += `\n\n---\nManage your preferences: bukd.co/unsubscribe/${business.id}?clientId=${clientId}`;
+        text += `\n\n---\nManage your preferences: ${getBaseDomain()}/unsubscribe/${business.id}?clientId=${clientId}`;
       }
 
       return text;
@@ -1899,7 +1947,90 @@ export const useAppStore = create<AppState>()(
     };
 
     return stats;
+  },
+
+  fetchDomains: async () => {
+    const { business } = get();
+    if (!business) return;
+    const { data, error } = await supabase.from('domains').select('*').eq('business_id', business.id);
+    if (!error && data) {
+      set((state) => ({
+        business: state.business ? {
+          ...state.business,
+          domains: data.map((d: any) => ({
+            id: d.id,
+            businessId: d.business_id,
+            domain: d.domain,
+            type: d.type,
+            status: d.status,
+            isPrimary: d.is_primary,
+            sslEnabled: d.ssl_enabled,
+            sslStatus: d.ssl_status,
+            dnsRecords: d.dns_records,
+            verifiedAt: d.verified_at,
+            createdAt: d.created_at
+          }))
+        } : null
+      }));
+    }
+  },
+
+  addDomain: async (domain, type) => {
+    const { business } = get();
+    if (!business) return;
+    
+    const dnsRecords = type === 'custom' ? {
+      A: { host: '@', value: '76.76.21.21' },
+      CNAME: { host: 'www', value: `proxy.${getBaseDomain()}` }
+    } : {};
+
+    const { error } = await supabase.from('domains').insert([{
+      business_id: business.id,
+      domain,
+      type,
+      status: type === 'subdomain' ? 'active' : 'pending_verification',
+      dns_records: dnsRecords,
+      is_primary: (business.domains || []).length === 0
+    }]);
+
+    if (!error) get().fetchDomains();
+  },
+
+  verifyDomain: async (id) => {
+    const { error } = await supabase.from('domains').update({
+      status: 'active',
+      verified_at: new Date().toISOString(),
+      ssl_enabled: true,
+      ssl_status: 'active'
+    }).eq('id', id);
+
+    if (error) return { verified: false, errors: error };
+    get().fetchDomains();
+    return { verified: true };
+  },
+
+  setPrimaryDomain: async (id) => {
+    const { business } = get();
+    if (!business) return;
+
+    await supabase.from('domains').update({ is_primary: false }).eq('business_id', business.id);
+    await supabase.from('domains').update({ is_primary: true }).eq('id', id);
+    
+    const domain = (business.domains || []).find(d => d.id === id);
+    if (domain) {
+      await supabase.from('businesses').update({
+        [domain.type === 'subdomain' ? 'subdomain' : 'custom_domain']: domain.domain
+      }).eq('id', business.id);
+    }
+
+    get().fetchDomains();
+  },
+
+  deleteDomain: async (id) => {
+    const { error } = await supabase.from('domains').delete().eq('id', id);
+    if (!error) get().fetchDomains();
   }
+
 }), {
   name: 'bukd-storage',
   storage: createJSONStorage(() => localStorage),

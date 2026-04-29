@@ -16,6 +16,7 @@ import {
 import { useAppStore } from '../../store/useAppStore';
 import type { AddOn } from '../../store/useAppStore';
 import { useNavigate } from 'react-router-dom';
+import { getBusinessUrl } from '../../lib/domainUtils';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -234,10 +235,10 @@ export const OnboardingFlow: React.FC = () => {
               <Card className="p-8 rounded-[38px] border-border-light/50 shadow-sm bg-bg-secondary/20 space-y-8">
                  <div className="space-y-2">
                     <p className="text-[10px] font-normal text-text-tertiary uppercase tracking-widest leading-none">Live URL</p>
-                    <p className="text-sm font-medium text-brand truncate">{business.subdomain}.bukd.co</p>
+                    <p className="text-sm font-medium text-brand truncate">{getBusinessUrl(business.subdomain).replace(/^https?:\/\//, '')}</p>
                  </div>
                  <div className="space-y-3">
-                    <Button className="w-full h-12 rounded-2xl bg-brand text-white font-medium text-[11px] uppercase tracking-widest shadow-lg shadow-brand/10" onClick={() => window.open(`/p/${business.subdomain}`, '_blank')}>
+                    <Button className="w-full h-12 rounded-2xl bg-brand text-white font-medium text-[11px] uppercase tracking-widest shadow-lg shadow-brand/10" onClick={() => window.open(getBusinessUrl(business.subdomain), '_blank')}>
                         <ExternalLink size={14} className="mr-2" /> View Site
                     </Button>
                     <Button variant="secondary" className="w-full h-12 rounded-2xl font-medium text-[11px] uppercase tracking-widest border-border-light/50" onClick={() => navigate('/dashboard')}>
@@ -722,7 +723,7 @@ export const OnboardingFlow: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                            <h4 className="text-sm font-medium text-text-primary tracking-tight truncate">{business.name || 'Your Brand'}</h4>
-                           <p className="text-[10px] text-text-tertiary font-normal truncate opacity-70">{business.subdomain}.bukd.co</p>
+                           <p className="text-[10px] text-text-tertiary font-normal truncate opacity-70">{getBusinessUrl(business.subdomain).replace(/^https?:\/\//, '')}</p>
                         </div>
                      </div>
                  </Card>

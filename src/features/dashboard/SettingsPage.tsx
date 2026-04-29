@@ -15,6 +15,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getBaseDomain, getBusinessUrl } from '../../lib/domainUtils';
 
 type SettingsSection = 'menu' | 'profile' | 'website' | 'payments' | 'billing' | 'team' | 'security';
 
@@ -143,9 +144,8 @@ export const SettingsPage: React.FC = () => {
   );
 
   const renderWebsite = () => {
-    const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || 'bukd.co';
-    const siteUrl = `${formData.subdomain}.${rootDomain}`;
-    
+    const siteUrl = getBusinessUrl(formData.subdomain);
+    const displayUrl = siteUrl.replace(/^https?:\/\//, '');
     return (
       <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
         <div className="flex items-center gap-4">
@@ -165,7 +165,7 @@ export const SettingsPage: React.FC = () => {
               <div className="p-4 bg-bg-canvas/30 rounded-xl border border-border-polaris flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Live URL</p>
-                  <p className="text-xs font-medium tabular-nums mt-1">{siteUrl}</p>
+                  <p className="text-xs font-medium tabular-nums mt-1">{displayUrl}</p>
                 </div>
                 {formData.isPublished ? <div className="px-3 py-1 bg-success/5 border border-success/10 rounded-full text-[8px] font-bold text-success uppercase">Active</div> : <div className="px-3 py-1 bg-bg-tertiary border border-border-polaris rounded-full text-[8px] font-bold text-text-tertiary uppercase">Draft</div>}
               </div>
@@ -183,10 +183,10 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <Button onClick={() => window.open(`https://${siteUrl}`, '_blank')} className="rounded-xl h-11 bg-brand text-white font-bold text-[9px] uppercase tracking-widest">
+                <Button onClick={() => window.open(siteUrl, '_blank')} className="rounded-xl h-11 bg-brand text-white font-bold text-[9px] uppercase tracking-widest">
                   <ExternalLink size={12} className="mr-2" /> Open Site
                 </Button>
-                <Button variant="secondary" onClick={() => { navigator.clipboard.writeText(`https://${siteUrl}`); alert('Copied!'); }} className="rounded-xl h-11 border-border-polaris font-bold text-[9px] uppercase tracking-widest">
+                <Button variant="secondary" onClick={() => { navigator.clipboard.writeText(siteUrl); alert('Copied!'); }} className="rounded-xl h-11 border-border-polaris font-bold text-[9px] uppercase tracking-widest">
                   Copy Link
                 </Button>
               </div>
@@ -263,7 +263,7 @@ export const SettingsPage: React.FC = () => {
     );
   };
 
-  const renderBilling = () => {
+  const BillingSection: React.FC<{ business: any, createSubscription: any, openBillingPortal: any }> = ({ business, createSubscription, openBillingPortal }) => {
     const isTrialing = business.subscriptionStatus === 'trialing';
     const trialEndDate = business.trialEndDate ? new Date(business.trialEndDate) : null;
     const isActive = business.subscriptionStatus === 'active';
@@ -369,42 +369,47 @@ export const SettingsPage: React.FC = () => {
     );
   };
 
-  const renderSecurity = () => (
-    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-      <div className="flex items-center gap-4">
-        <button onClick={() => setActiveSection('menu')} className="p-3 -ml-2 hover:bg-bg-canvas rounded-xl text-text-tertiary transition-all active:scale-90">
-          <ArrowLeft size={20} />
-        </button>
-        <div className="space-y-0.5">
-          <h1 className="text-xl font-medium tracking-tight text-text-primary">Security</h1>
-          <p className="text-[11px] text-text-tertiary font-normal">Account protection settings.</p>
+  const SecuritySection: React.FC<{ updatePassword: any }> = ({ updatePassword }) => {
+    const [passwords, setPasswords] = useState({ next: '', confirm: '' });
+    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+    return (
+      <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+        <div className="flex items-center gap-4">
+          <button onClick={() => setActiveSection('menu')} className="p-3 -ml-2 hover:bg-bg-canvas rounded-xl text-text-tertiary transition-all active:scale-90">
+            <ArrowLeft size={20} />
+          </button>
+          <div className="space-y-0.5">
+            <h1 className="text-xl font-medium tracking-tight text-text-primary">Security</h1>
+            <p className="text-[11px] text-text-tertiary font-normal">Account protection settings.</p>
+          </div>
+        </div>
+
+        <div className="max-w-xl">
+          <Card className="p-8 space-y-8">
+            <div className="space-y-4">
+              <Input label="New Password" type="password" value={passwords.next} onChange={e => setPasswords(p => ({ ...p, next: e.target.value }))} className="rounded-xl" />
+              <Input label="Confirm New Password" type="password" value={passwords.confirm} onChange={e => setPasswords(p => ({ ...p, confirm: e.target.value }))} className="rounded-xl" />
+            </div>
+            <Button 
+              onClick={async () => {
+                if (passwords.next.length < 6) return alert('Min 6 characters');
+                setIsUpdatingPassword(true);
+                const { error } = await updatePassword(passwords.next);
+                setIsUpdatingPassword(false);
+                if (error) alert(error.message);
+                else { alert('Success!'); setPasswords({ next: '', confirm: '' }); }
+              }}
+              disabled={isUpdatingPassword || !passwords.next || passwords.next !== passwords.confirm}
+              className="w-full h-14 rounded-xl bg-text-primary text-white font-bold text-[10px] uppercase tracking-widest"
+            >
+              {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+            </Button>
+          </Card>
         </div>
       </div>
-
-      <div className="max-w-xl">
-        <Card className="p-8 space-y-8">
-          <div className="space-y-4">
-            <Input label="New Password" type="password" value={passwords.next} onChange={e => setPasswords(p => ({ ...p, next: e.target.value }))} className="rounded-xl" />
-            <Input label="Confirm New Password" type="password" value={passwords.confirm} onChange={e => setPasswords(p => ({ ...p, confirm: e.target.value }))} className="rounded-xl" />
-          </div>
-          <Button 
-            onClick={async () => {
-              if (passwords.next.length < 6) return alert('Min 6 characters');
-              setIsUpdatingPassword(true);
-              const { error } = await updatePassword(passwords.next);
-              setIsUpdatingPassword(false);
-              if (error) alert(error.message);
-              else { alert('Success!'); setPasswords({ next: '', confirm: '' }); }
-            }}
-            disabled={isUpdatingPassword || !passwords.next || passwords.next !== passwords.confirm}
-            className="w-full h-14 rounded-xl bg-text-primary text-white font-bold text-[10px] uppercase tracking-widest"
-          >
-            {isUpdatingPassword ? 'Updating...' : 'Update Password'}
-          </Button>
-        </Card>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="max-w-none pb-24 lg:pb-0 min-h-[600px]">
@@ -413,8 +418,8 @@ export const SettingsPage: React.FC = () => {
         {activeSection === 'profile' && <motion.div key="profile" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderProfile()}</motion.div>}
         {activeSection === 'website' && <motion.div key="website" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderWebsite()}</motion.div>}
         {activeSection === 'payments' && <motion.div key="payments" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderPayments()}</motion.div>}
-        {activeSection === 'billing' && <motion.div key="billing" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderBilling()}</motion.div>}
-        {activeSection === 'security' && <motion.div key="security" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>{renderSecurity()}</motion.div>}
+        {activeSection === 'billing' && <motion.div key="billing" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}><BillingSection business={business} createSubscription={createSubscription} openBillingPortal={openBillingPortal} /></motion.div>}
+        {activeSection === 'security' && <motion.div key="security" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}><SecuritySection updatePassword={updatePassword} /></motion.div>}
       </AnimatePresence>
     </div>
   );

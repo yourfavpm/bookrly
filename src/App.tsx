@@ -18,6 +18,8 @@ import { TestimonialsPage } from './features/dashboard/TestimonialsPage';
 import { StaffPage } from './features/dashboard/StaffPage';
 import { ClientsPage } from './features/dashboard/ClientsPage';
 import { ClientProfilePage } from './features/dashboard/ClientProfilePage';
+import { BillingPage } from './features/dashboard/BillingPage';
+import { DomainsPage } from './features/dashboard/DomainsPage';
 import { NotificationSettings } from './features/dashboard/NotificationSettings';
 import { PublicWebsite } from './features/public/PublicWebsite';
 import { UnsubscribePage } from './features/public/UnsubscribePage';
@@ -63,6 +65,8 @@ function App() {
             <Route path="clients/:id" element={<ClientProfilePage />} />
             <Route path="bookings" element={<BookingsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="billing" element={<BillingPage />} />
+            <Route path="domains" element={<DomainsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="settings/notifications" element={<NotificationSettings />} />
           </Route>

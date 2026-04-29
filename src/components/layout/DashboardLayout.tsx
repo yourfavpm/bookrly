@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, Plus, Palette, Clock, ShieldCheck, Image, MessageSquare, LogOut, ChevronLeft, Users, UserPlus } from 'lucide-react';
+import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, Plus, Palette, Clock, ShieldCheck, Image, MessageSquare, LogOut, ChevronLeft, Users, UserPlus, CreditCard } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { calculateDaysRemaining } from '../../lib/dateUtils';
 import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';
@@ -21,22 +21,25 @@ const SidebarItem: React.FC<NavItemProps & { onClick?: () => void }> = ({ icon, 
   <Link 
     to={to} 
     onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-300 ${active ? 'bg-bg-canvas text-text-primary font-medium' : 'text-text-secondary hover:bg-bg-canvas/50 hover:text-text-primary'}`}
+    className={`flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all duration-300 ${active ? 'bg-bg-canvas text-text-primary' : 'text-text-secondary hover:bg-bg-canvas/50 hover:text-text-primary'}`}
   >
     <div className={`transition-colors duration-300 ${active ? 'text-brand' : 'text-text-tertiary'}`}>
       {icon}
     </div>
-    <span className={`text-sm tracking-tight ${active ? 'font-semibold' : 'font-light'}`}>{label}</span>
+    <span className={`text-[11px] uppercase tracking-wider font-bold ${active ? 'text-text-primary' : 'text-text-tertiary group-hover:text-text-primary'}`}>{label}</span>
   </Link>
 );
 
 export const DashboardLayout: React.FC = () => {
-  const business = useAppStore((state) => state.business);
-  const loading = useAppStore((state) => state.loading);
-  const createSubscription = useAppStore((state) => state.createSubscription);
-  const updateBusiness = useAppStore((state) => state.updateBusiness);
-  const signOut = useAppStore((state) => state.signOut);
-  const staffRole = useAppStore((state) => state.staffRole);
+  const { 
+    business, 
+    loading, 
+    error,
+    createSubscription, 
+    updateBusiness, 
+    signOut, 
+    staffRole 
+  } = useAppStore();
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -54,7 +57,9 @@ export const DashboardLayout: React.FC = () => {
     if (url) window.location.href = url;
   };
 
-  if (!business && !loading) {
+  // Only redirect to onboarding if we are sure there is no business AND no error
+  // If there's an error, we stay on the page to show the GlobalError
+  if (!business && !loading && !error) {
     return <Navigate to="/onboarding" replace />;
   }
 
@@ -68,6 +73,8 @@ export const DashboardLayout: React.FC = () => {
     { icon: <Users />, label: 'Team', to: '/dashboard/team', roles: ['owner', 'admin', 'manager'] },
     { icon: <UserPlus />, label: 'Clients', to: '/dashboard/clients', roles: ['owner', 'admin', 'manager', 'staff'] },
     { icon: <Calendar />, label: 'Bookings', to: '/dashboard/bookings', roles: ['owner', 'admin', 'manager', 'staff'] },
+    { icon: <CreditCard />, label: 'Billing', to: '/dashboard/billing', roles: ['owner', 'admin'] },
+    { icon: <Globe />, label: 'Domains', to: '/dashboard/domains', roles: ['owner', 'admin'] },
     { icon: <Bell />, label: 'Notifications', to: '/dashboard/settings/notifications', roles: ['owner', 'admin', 'manager'] },
     { icon: <BarChart3 />, label: 'Analytics', to: '/dashboard/analytics', roles: ['owner', 'admin'] }
   ];
@@ -241,9 +248,9 @@ export const DashboardLayout: React.FC = () => {
 
       <div className="flex flex-1 overflow-hidden relative bg-white lg:rounded-t-[24px] lg:shadow-[0_-8px_30px_rgba(0,0,0,0.2)] lg:ring-1 lg:ring-white/10 lg:mx-2 lg:border-t lg:border-white/10">
         {/* Sidebar - Desktop */}
-        <aside className="hidden lg:flex flex-col w-64 bg-bg-sidebar border-r border-border-polaris/40 overflow-y-auto shrink-0 z-40 p-6 rounded-tl-[24px]">
+        <aside className="hidden lg:flex flex-col w-64 bg-bg-sidebar border-r border-border-polaris/40 overflow-y-auto shrink-0 z-40 p-5 rounded-tl-[24px]">
           {isTrialing && !isTrialExpired && (
-            <div className="mb-8 p-5 rounded-2xl bg-white border border-border-polaris/10 shadow-sm space-y-4">
+            <div className="mb-4 p-4 rounded-2xl bg-white border border-border-polaris/10 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-text-primary uppercase tracking-widest">Trial Mode</span>
                 <span className="text-[10px] font-bold text-brand">{trialDaysLeft} days left</span>
@@ -276,12 +283,20 @@ export const DashboardLayout: React.FC = () => {
           </nav>
 
           {(currentRole === 'owner' || currentRole === 'admin') && (
-            <div className="pt-6 border-t border-border-polaris/30 mt-auto">
-               <p className="text-[9px] font-medium text-text-tertiary uppercase tracking-widest mb-4 px-3">Quick Links</p>
-               <Link to="/onboarding" className="flex items-center gap-3 px-3 py-2 text-text-secondary hover:text-text-primary transition-colors font-light text-xs">
-                  <Plus size={16} />
-                  <span>Business Setup</span>
-               </Link>
+            <div className="pt-4 border-t border-border-polaris/30 mt-4 space-y-1">
+               <p className="text-[9px] font-bold text-text-tertiary uppercase tracking-widest mb-2 px-3">System</p>
+               <SidebarItem 
+                icon={<Plus size={18} strokeWidth={1.5} />} 
+                label="Setup" 
+                to="/onboarding" 
+                active={isSelected('/onboarding')} 
+              />
+              <SidebarItem 
+                icon={<Settings size={18} strokeWidth={1.5} />} 
+                label="Settings" 
+                to="/dashboard/settings" 
+                active={isSelected('/dashboard/settings')} 
+              />
             </div>
           )}
         </aside>

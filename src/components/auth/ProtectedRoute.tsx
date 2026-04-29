@@ -7,10 +7,11 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
   const loading = useAppStore((state) => state.loading);
   const location = useLocation();
 
-  if (loading) {
+  // Only show full-screen loader on initial mount when we don't know if the user is logged in
+  if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-header">
-        <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-1.5 h-1.5 rounded-full bg-brand animate-ping" />
       </div>
     );
   }

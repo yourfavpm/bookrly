@@ -1,6 +1,7 @@
 import { Star, Clock, MapPin, Phone, Instagram, Facebook, Globe, ShieldCheck, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { formatPrice } from '../../utils/formatters';
+import { getBusinessUrl } from '../../lib/domainUtils';
 
 export const PublicPreview: React.FC = () => {
   const { business, currency, isCanada } = useAppStore();
@@ -220,7 +221,7 @@ export const PublicPreview: React.FC = () => {
                <ul className="space-y-4 text-sm font-semibold text-text-secondary">
                   <li className="flex items-center justify-center md:justify-start gap-3"><MapPin size={16} /> Vancouver, Canada</li>
                   <li className="flex items-center justify-center md:justify-start gap-3"><Phone size={16} /> (555) 123-4567</li>
-                  <li className="flex items-center justify-center md:justify-start gap-3"><Globe size={16} /> {business.name.toLowerCase().replace(/\s+/g, '-')}.bukd.co</li>
+                  <li className="flex items-center justify-center md:justify-start gap-3"><Globe size={16} /> {getBusinessUrl(business.subdomain).replace(/^https?:\/\//, '')}</li>
                </ul>
             </div>
          </div>
