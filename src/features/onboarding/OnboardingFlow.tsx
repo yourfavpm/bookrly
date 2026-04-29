@@ -125,7 +125,8 @@ export const OnboardingFlow: React.FC = () => {
             subdomain: `biz-${user.id.slice(0, 8)}`,
             primary_color: '#111111',
             trust_section: 'none',
-            template_key: 'clean_classic'
+            template_key: 'clean_classic',
+            is_published: true
           }])
           .select()
           .single();

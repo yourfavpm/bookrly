@@ -381,17 +381,18 @@ export const useAppStore = create<AppState>()(
            const trialEndDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
            const { data: newBusiness, error: createError } = await supabase
              .from('businesses')
-             .insert([{
-               owner_id: user.id,
-               name: '',
-               email: user.email || '',
-               category: '',
-               primary_color: '#6B21A8',
-               template_key: 'editorial_luxe',
-               subscription_status: 'trialing',
-               trial_start_date: now.toISOString(),
-               trial_end_date: trialEndDate.toISOString(),
-               plan_type: 'pro'
+             .insert([{ 
+                owner_id: user.id, 
+                name: '',
+                subdomain: `biz-${user.id.slice(0, 8)}`,
+                primary_color: '#111111',
+                trust_section: 'none',
+                template_key: 'clean_classic',
+                is_published: true,
+                subscription_status: 'trialing',
+                trial_start_date: now.toISOString(),
+                trial_end_date: trialEndDate.toISOString(),
+                plan_type: 'pro'
              }])
              .select()
              .single();
@@ -857,12 +858,13 @@ export const useAppStore = create<AppState>()(
       // Try to find business by subdomain first, then slug, then custom domain
       // Use slug as fallback since it's always generated
       let query = supabase.from('businesses').select('*');
+      const cleanId = identifier.toLowerCase().trim();
       
       // Build the OR filter safely. We try subdomain, slug, and custom_domain.
       // We wrap it in a try-catch or check for error because 'slug' might not be in the DB yet
       // if migrations haven't run.
       const { data: business, error } = await query
-        .or(`subdomain.eq.${identifier},slug.eq.${identifier},custom_domain.eq.${identifier}`)
+        .or(`subdomain.eq.${cleanId},slug.eq.${cleanId},custom_domain.eq.${cleanId}`)
         .single();
       
       if (error) {
@@ -1509,10 +1511,10 @@ export const useAppStore = create<AppState>()(
     const { business } = get();
     if (!business) return null;
 
-    const protocol = window.location.hostname.includes('localhost') ? 'http' : 'https';
+    const protocol = 'https:';
     const domain = import.meta.env.VITE_ROOT_DOMAIN || 'localhost:5173';
-    const successUrl = `${protocol}://${business.subdomain}.${domain}/?booking_success=true`;
-    const cancelUrl = `${protocol}://${business.subdomain}.${domain}/?booking_cancel=true`;
+    const successUrl = `${protocol}//${business.subdomain}.${domain}/?booking_success=true`;
+    const cancelUrl = `${protocol}//${business.subdomain}.${domain}/?booking_cancel=true`;
 
     const { data, error } = await supabase.functions.invoke('booking-checkout', {
       body: { 

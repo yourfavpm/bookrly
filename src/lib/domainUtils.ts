@@ -5,8 +5,8 @@
 export const getBaseDomain = () => {
   const host = window.location.host;
   
-  // If we're on localhost, just return it
-  if (host.includes('localhost')) {
+  // If we're on localhost or Vercel, just return the full host
+  if (host.includes('localhost') || host.includes('vercel.app')) {
     return host;
   }
   
@@ -33,6 +33,7 @@ export const getBusinessUrl = (subdomain: string, customDomain?: string | null) 
   }
   
   const base = getBaseDomain();
+  const protocol = base.includes('localhost') ? window.location.protocol : 'https:';
   // Using the path-based pattern for free subdomains
-  return `${window.location.protocol}//${base}/p/${subdomain}`;
+  return `${protocol}//${base}/p/${subdomain}`;
 };
