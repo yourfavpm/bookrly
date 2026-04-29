@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { Input } from '../../components/ui/Input';
 import { Palette, Info, Image as ImageIcon, MessageSquare, Users, BookOpen, ExternalLink, X, Check, Eye, Wand2, Type, Globe, Layout } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { getBusinessUrl } from '../../lib/domainUtils';
 import { getTemplate, TEMPLATES, getCategories } from '../public/templates/templateRegistry';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -118,7 +119,7 @@ export const WebsiteCustomizer: React.FC = () => {
                 <Globe size={14} />
                 <span className="text-[9px] font-bold uppercase tracking-widest">Active Site</span>
              </div>
-             <p className="text-[11px] font-medium text-text-primary truncate">{business.subdomain}.bukd.co</p>
+                           <p className="text-[11px] font-medium text-text-primary truncate">{getBusinessUrl(business.subdomain).replace(/^https?:\/\//, '')}</p>
           </div>
         </aside>
 
