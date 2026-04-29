@@ -114,13 +114,24 @@ export const WebsiteCustomizer: React.FC = () => {
             </button>
           ))}
           
-          <div className="mt-8 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
-             <div className="flex items-center gap-2 text-brand mb-1">
-                <Globe size={14} />
-                <span className="text-[9px] font-bold uppercase tracking-widest">Active Site</span>
-             </div>
-                           <p className="text-[11px] font-medium text-text-primary truncate">{getBusinessUrl(business.subdomain).replace(/^https?:\/\//, '')}</p>
-          </div>
+              <div className="mt-8 p-5 rounded-[28px] bg-white border border-slate-100 shadow-sm space-y-4">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-brand">
+                       <Globe size={14} />
+                       <span className="text-[9px] font-bold uppercase tracking-widest">Visibility</span>
+                    </div>
+                    <button 
+                      onClick={() => updateBusiness({ isPublished: !business.isPublished }, true)}
+                      className={`w-9 h-5 rounded-full transition-all relative flex items-center px-0.5 ${business.isPublished ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                    >
+                      <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all ${business.isPublished ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                 </div>
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Active Site</p>
+                    <p className="text-[11px] font-medium text-text-primary truncate">{getBusinessUrl(business.subdomain).replace(/^https?:\/\//, '')}</p>
+                 </div>
+              </div>
         </aside>
 
         {/* Editing Canvas */}

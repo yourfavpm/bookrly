@@ -239,7 +239,7 @@ interface AppState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setBusiness: (business: BusinessState | null) => void;
-  updateBusiness: (updates: Partial<BusinessState>) => Promise<void>;
+  updateBusiness: (updates: Partial<BusinessState>, immediate?: boolean) => Promise<void>;
   setOnboardingStep: (step: number) => void;
   fetchBusiness: (retryCount?: number) => Promise<void>;
   signOut: () => Promise<void>;
@@ -575,7 +575,7 @@ export const useAppStore = create<AppState>()(
     }
   },
 
-  updateBusiness: async (updates) => {
+  updateBusiness: async (updates, immediate = false) => {
     const { business, user } = get();
     if (!business || !user) return;
 
@@ -594,7 +594,57 @@ export const useAppStore = create<AppState>()(
       business: state.business ? { ...state.business, ...nextUpdates } : null
     }));
 
-    // 2. Debounce the DB persist
+    // 2. Prepare DB updates
+    const dbUpdates: Record<string, unknown> = {};
+    if ('name' in updates && updates.name) {
+      dbUpdates.name = updates.name;
+      if (!business.subdomain || business.subdomain.startsWith('biz-')) {
+        const slugified = updates.name.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+        if (slugified && slugified.length >= 3) {
+          dbUpdates.subdomain = slugified;
+          dbUpdates.slug = slugified;
+        }
+      }
+    }
+    if ('email' in updates) dbUpdates.email = updates.email;
+    if ('phone' in updates) dbUpdates.phone = updates.phone;
+    if ('category' in updates) dbUpdates.category = updates.category;
+    if ('subdomain' in updates && updates.subdomain) {
+      const slugified = updates.subdomain.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+      dbUpdates.subdomain = slugified;
+      dbUpdates.slug = slugified;
+    }
+    if ('logo' in updates) dbUpdates.logo = updates.logo;
+    if ('isPublished' in updates) dbUpdates.is_published = updates.isPublished;
+    if ('slug' in updates) dbUpdates.slug = updates.slug;
+    if ('customDomain' in updates) dbUpdates.custom_domain = updates.customDomain;
+    if ('heroTitle' in updates) dbUpdates.hero_title = updates.heroTitle;
+    if ('heroSubtitle' in updates) dbUpdates.hero_subtitle = updates.heroSubtitle;
+    if ('ctaText' in updates) dbUpdates.cta_text = updates.ctaText;
+    if ('secondaryCtaText' in updates) dbUpdates.secondary_cta_text = updates.secondaryCtaText;
+    if ('aboutTitle' in updates) dbUpdates.about_title = updates.aboutTitle;
+    if ('aboutDescription' in updates) dbUpdates.about_description = updates.aboutDescription;
+    if ('aboutImage' in updates) dbUpdates.about_image = updates.aboutImage;
+    if ('templateKey' in updates) dbUpdates.template_key = updates.templateKey;
+    if ('primaryColor' in updates) dbUpdates.primary_color = updates.primaryColor;
+    if ('address' in updates) dbUpdates.address = updates.address;
+
+    // Handle immediate save
+    if (immediate) {
+      if ((window as any).__bukd_save_timer) {
+        clearTimeout((window as any).__bukd_save_timer);
+      }
+      try {
+        const { error } = await supabase.from('businesses').update(dbUpdates).eq('id', business.id);
+        if (error) throw error;
+        console.log('Immediate save successful');
+      } catch (err) {
+        console.error('Immediate save failed:', err);
+      }
+      return;
+    }
+
+    // Debounce the DB persist
     if ((window as unknown as { __bukd_save_timer: ReturnType<typeof setTimeout> }).__bukd_save_timer) {
       clearTimeout((window as unknown as { __bukd_save_timer: ReturnType<typeof setTimeout> }).__bukd_save_timer);
     }
