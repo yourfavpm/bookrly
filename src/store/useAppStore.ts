@@ -579,9 +579,19 @@ export const useAppStore = create<AppState>()(
     const { business, user } = get();
     if (!business || !user) return;
 
+    // 1. Auto-generate subdomain from name if it's currently a default biz-ID
+    const nextUpdates = { ...updates };
+    if (updates.name && updates.name.length >= 3 && (!business.subdomain || business.subdomain.startsWith('biz-'))) {
+      const slugified = updates.name.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+      if (slugified) {
+        nextUpdates.subdomain = slugified;
+        nextUpdates.slug = slugified;
+      }
+    }
+
     // 1. Update local state IMMEDIATELY (no await, no network)
     set((state) => ({
-      business: state.business ? { ...state.business, ...updates } : null
+      business: state.business ? { ...state.business, ...nextUpdates } : null
     }));
 
     // 2. Debounce the DB persist
@@ -598,7 +608,17 @@ export const useAppStore = create<AppState>()(
         const dbUpdates: Record<string, unknown> = {};
         
         // Only persist the fields that were in the original update
-        if ('name' in updates) dbUpdates.name = updates.name;
+        if ('name' in updates && updates.name) {
+          dbUpdates.name = updates.name;
+          // Auto-update subdomain in DB if current is default
+          if (!latestBusiness.subdomain || latestBusiness.subdomain.startsWith('biz-')) {
+            const slugified = updates.name.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+            if (slugified && slugified.length >= 3) {
+              dbUpdates.subdomain = slugified;
+              dbUpdates.slug = slugified;
+            }
+          }
+        }
         if ('email' in updates) dbUpdates.email = updates.email;
         if ('phone' in updates) dbUpdates.phone = updates.phone;
         if ('category' in updates) dbUpdates.category = updates.category;
