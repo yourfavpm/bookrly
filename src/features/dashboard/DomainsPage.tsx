@@ -4,14 +4,10 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { 
   Globe, 
-  CheckCircle2, 
-  AlertCircle, 
-  ExternalLink, 
   Copy, 
   Plus, 
   ShieldCheck, 
   ArrowRight,
-  MoreVertical,
   Trash2,
   Lock
 } from 'lucide-react';
@@ -126,7 +122,7 @@ export const DomainsPage: React.FC = () => {
                     <Button 
                       size="sm" 
                       onClick={() => handleVerify(domain.id)}
-                      loading={verifyingId === domain.id}
+                      isLoading={verifyingId === domain.id}
                       className="bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest h-9 px-4 rounded-lg"
                     >
                       Verify DNS

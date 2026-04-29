@@ -15,7 +15,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getBaseDomain, getBusinessUrl } from '../../lib/domainUtils';
+import { getBusinessUrl } from '../../lib/domainUtils';
 
 type SettingsSection = 'menu' | 'profile' | 'website' | 'payments' | 'billing' | 'team' | 'security';
 
@@ -24,8 +24,6 @@ export const SettingsPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SettingsSection>('menu');
   const [formData, setFormData] = useState({ ...business });
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  const [passwords, setPasswords] = useState({ next: '', confirm: '' });
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   React.useEffect(() => {
@@ -144,7 +142,7 @@ export const SettingsPage: React.FC = () => {
   );
 
   const renderWebsite = () => {
-    const siteUrl = getBusinessUrl(formData.subdomain);
+    const siteUrl = getBusinessUrl(formData.subdomain || '');
     const displayUrl = siteUrl.replace(/^https?:\/\//, '');
     return (
       <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">

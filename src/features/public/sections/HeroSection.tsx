@@ -7,7 +7,7 @@ interface HeroProps extends SectionProps {
   variant?: 'full-image' | 'split' | 'centered' | 'noir' | 'card'; // Matching what TemplateRenderer maps to
 }
 
-export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, isMobile, variant = 'centered' }) => {
+export const HeroSection: React.FC<HeroProps> = ({ business, onBook, scrollTo, variant = 'centered' }) => {
   const renderTextContent = (align: 'left' | 'center' = 'left') => (
     <motion.div
       initial={{ opacity: 0, y: 30 }}

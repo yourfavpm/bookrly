@@ -601,7 +601,11 @@ export const useAppStore = create<AppState>()(
         if ('email' in updates) dbUpdates.email = updates.email;
         if ('phone' in updates) dbUpdates.phone = updates.phone;
         if ('category' in updates) dbUpdates.category = updates.category;
-        if ('subdomain' in updates) dbUpdates.subdomain = updates.subdomain;
+        if ('subdomain' in updates) {
+          const slugified = updates.subdomain.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+          dbUpdates.subdomain = slugified;
+          dbUpdates.slug = slugified; // Sync slug with subdomain for now
+        }
         if ('logo' in updates) dbUpdates.logo = updates.logo;
         if ('isPublished' in updates) dbUpdates.is_published = updates.isPublished;
         if ('slug' in updates) dbUpdates.slug = updates.slug;
@@ -852,9 +856,12 @@ export const useAppStore = create<AppState>()(
     try {
       // Try to find business by subdomain first, then slug, then custom domain
       // Use slug as fallback since it's always generated
-      const { data: business, error } = await supabase
-        .from('businesses')
-        .select('*')
+      let query = supabase.from('businesses').select('*');
+      
+      // Build the OR filter safely. We try subdomain, slug, and custom_domain.
+      // We wrap it in a try-catch or check for error because 'slug' might not be in the DB yet
+      // if migrations haven't run.
+      const { data: business, error } = await query
         .or(`subdomain.eq.${identifier},slug.eq.${identifier},custom_domain.eq.${identifier}`)
         .single();
       

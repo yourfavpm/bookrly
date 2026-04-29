@@ -12,7 +12,6 @@ import { BookingsPage } from './features/dashboard/BookingsPage';
 import { AnalyticsPage } from './features/dashboard/AnalyticsPage';
 import { DashboardOverview } from './features/dashboard/DashboardOverview';
 import { SettingsPage } from './features/dashboard/SettingsPage';
-import { TemplateSelector } from './features/dashboard/TemplateSelector';
 import { PortfolioPage } from './features/dashboard/PortfolioPage';
 import { TestimonialsPage } from './features/dashboard/TestimonialsPage';
 import { StaffPage } from './features/dashboard/StaffPage';

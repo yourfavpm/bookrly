@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, Plus, Palette, Clock, ShieldCheck, Image, MessageSquare, LogOut, ChevronLeft, Users, UserPlus, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, Plus, Clock, ShieldCheck, Image, MessageSquare, LogOut, ChevronLeft, Users, UserPlus, CreditCard } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { calculateDaysRemaining } from '../../lib/dateUtils';
 import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';

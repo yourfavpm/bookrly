@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { Input } from '../../components/ui/Input';
-import { Palette, Info, Image as ImageIcon, MessageSquare, Users, BookOpen, Instagram, ExternalLink, Sparkles, X, Check, Eye, Wand2, Type, Globe, Layout, Facebook, Twitter } from 'lucide-react';
+import { Palette, Info, Image as ImageIcon, MessageSquare, Users, BookOpen, ExternalLink, X, Check, Eye, Wand2, Type, Globe, Layout } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { getTemplate, TEMPLATES, getCategories } from '../public/templates/templateRegistry';
 import { useNavigate } from 'react-router-dom';
@@ -362,7 +362,7 @@ export const WebsiteCustomizer: React.FC = () => {
                               {['instagram', 'facebook', 'twitter'].map(p => (
                                 <div key={p} className="space-y-1.5">
                                   <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest capitalize">{p}</label>
-                                  <Input value={business.socials?.[p] || ''} onChange={e => updateBusiness({ socials: { ...business.socials, [p]: e.target.value } })} className="h-11 rounded-xl px-4 text-xs" placeholder="@handle" />
+                                  <Input value={(business.socials as any)?.[p] || ''} onChange={e => updateBusiness({ socials: { ...(business.socials as any), [p]: e.target.value } })} className="h-11 rounded-xl px-4 text-xs" placeholder="@handle" />
                                 </div>
                               ))}
                           </div>

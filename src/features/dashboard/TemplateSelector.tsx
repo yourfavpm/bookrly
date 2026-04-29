@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Check, Palette, ExternalLink, ChevronRight, Filter } from 'lucide-react';
+import { Check, ExternalLink, ChevronRight, Filter } from 'lucide-react';
 import { TEMPLATES, getCategories } from '../public/templates/templateRegistry';
 import { motion, AnimatePresence } from 'framer-motion';
 

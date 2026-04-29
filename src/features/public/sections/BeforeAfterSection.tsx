@@ -37,10 +37,10 @@ export const BeforeAfterSection: React.FC<BeforeAfterProps> = ({ business, varia
       }}
     >
       {/* After (full) */}
-      <img src={getOptimizedImageUrl(after.image_url, 800)} alt="After" className="absolute inset-0 w-full h-full object-cover" />
+      <img src={getOptimizedImageUrl(after.image_url, { width: 800 })} alt="After" className="absolute inset-0 w-full h-full object-cover" />
       {/* Before (clipped) */}
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${sliderPos}%` }}>
-        <img src={getOptimizedImageUrl(before.image_url, 800)} alt="Before" className="absolute inset-0 w-full h-full object-cover" style={{ width: `${100 / (sliderPos / 100)}%`, maxWidth: 'none' }} />
+        <img src={getOptimizedImageUrl(before.image_url, { width: 800 })} alt="Before" className="absolute inset-0 w-full h-full object-cover" style={{ width: `${100 / (sliderPos / 100)}%`, maxWidth: 'none' }} />
       </div>
       {/* Divider */}
       <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg z-10" style={{ left: `${sliderPos}%` }}>

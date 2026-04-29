@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Check, Info, Shield, Zap, Sparkles, CreditCard, ChevronRight, ArrowRight, Star } from 'lucide-react';
+import { Check, Zap } from 'lucide-react';
 import { PRICING_TIERS, BILLING_CADENCES } from '../../constants/billing';
 import type { BillingCadence } from '../../constants/billing';
 import { Button } from '../../components/ui/Button';

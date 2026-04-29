@@ -164,7 +164,7 @@ export interface SectionProps {
     workingHours: Array<{ dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean }>;
   };
   onBook: () => void;
-  scrollTo: (id: string) => void;
+  scrollTo?: (id: string) => void;
   isMobile?: boolean;
   isPreview?: boolean;
 }
