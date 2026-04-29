@@ -34,6 +34,6 @@ export const getBusinessUrl = (subdomain: string, customDomain?: string | null) 
   
   const base = getBaseDomain();
   const protocol = base.includes('localhost') ? window.location.protocol : 'https:';
-  // Using the path-based pattern for free subdomains
-  return `${protocol}//${base}/p/${subdomain}`;
+  // Use a clean path-based pattern: domain.com/subdomain
+  return `${protocol}//${base}/${subdomain}`;
 };

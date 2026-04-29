@@ -189,6 +189,8 @@ export const OnboardingFlow: React.FC = () => {
     if (onboardingStep < totalSteps) {
       setOnboardingStep(onboardingStep + 1);
     } else {
+      // Force publish the business once onboarding is finished
+      await updateBusiness({ isPublished: true });
       setIsSuccess(true);
     }
   };

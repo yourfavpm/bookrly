@@ -92,6 +92,9 @@ function App() {
           {/* Redirects */}
           <Route path="/" element={<LandingPage />} />
 
+          {/* Public Site Catch-all (for clean URLs like domain.com/name) */}
+          <Route path="/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />
+
           {/* 404 Catch-all */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
