@@ -1,124 +1,64 @@
 import React from 'react';
-import { MapPin, Phone, Mail, Instagram, Facebook, Twitter } from 'lucide-react';
+import { Instagram, Facebook, Twitter, MapPin, Mail, Phone, ArrowUpRight } from 'lucide-react';
 import type { SectionProps } from '../templates/types';
 
 interface FooterProps extends SectionProps {
-  variant?: 'full' | 'simple' | 'minimal' | 'editorial' | 'noir';
+  variant?: 'minimal' | 'standard' | 'ctaHeavy';
 }
 
-export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }) => {
-  if (variant === 'noir') {
+export const SiteFooter: React.FC<FooterProps> = ({ business, onBook, scrollTo, variant = 'standard' }) => {
+  const year = new Date().getFullYear();
+
+  const socialLinks = (
+    <div className="flex items-center gap-4">
+      {business.socials?.instagram && (
+        <a href={business.socials.instagram} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full border flex items-center justify-center transition-all hover:scale-110"
+           style={{ borderColor: 'var(--t-border)', color: 'var(--t-text-primary)' }}>
+          <Instagram size={16} />
+        </a>
+      )}
+      {business.socials?.facebook && (
+        <a href={business.socials.facebook} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full border flex items-center justify-center transition-all hover:scale-110"
+           style={{ borderColor: 'var(--t-border)', color: 'var(--t-text-primary)' }}>
+          <Facebook size={16} />
+        </a>
+      )}
+      {business.socials?.twitter && (
+        <a href={business.socials.twitter} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full border flex items-center justify-center transition-all hover:scale-110"
+           style={{ borderColor: 'var(--t-border)', color: 'var(--t-text-primary)' }}>
+          <Twitter size={16} />
+        </a>
+      )}
+    </div>
+  );
+
+  if (variant === 'ctaHeavy') {
     return (
-      <footer className="py-24 px-6 md:px-12 lg:px-24 bg-[#0B0B0D] border-t border-[#F5F5F7]/10">
-        <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-16 md:gap-24 items-start">
-          <div className="col-span-1 md:col-span-6 space-y-8">
-            <h2 className="text-3xl font-serif text-[#F5F5F7] tracking-tight italic">{business.name}</h2>
-            <div className="flex gap-8 items-center pt-4">
-              {business.socials?.instagram && <a href={business.socials.instagram} className="text-[#A1A1AA] hover:text-[#E8CFC0] transition-colors"><Instagram size={18} /></a>}
-              {business.socials?.facebook && <a href={business.socials.facebook} className="text-[#A1A1AA] hover:text-[#E8CFC0] transition-colors"><Facebook size={18} /></a>}
-              {business.socials?.twitter && <a href={business.socials.twitter} className="text-[#A1A1AA] hover:text-[#E8CFC0] transition-colors"><Twitter size={18} /></a>}
-            </div>
-          </div>
-          
-          <div className="col-span-1 md:col-span-3 space-y-6">
-            <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium italic">Contact</span>
-            <div className="space-y-4 text-[13px] text-[#A1A1AA] font-light">
-              {business.email && <p className="hover:text-[#F5F5F7] transition-colors">{business.email}</p>}
-              {business.phone && <p className="hover:text-[#F5F5F7] transition-colors">{business.phone}</p>}
-              {business.address && <p>{business.address}</p>}
-            </div>
-          </div>
-
-          <div className="col-span-1 md:col-span-3 space-y-6 md:text-right">
-             <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium italic">Platform</span>
-             <p className="text-[10px] text-[#A1A1AA] uppercase tracking-[0.3em]">
-               System by <span className="text-[#F5F5F7]">Bukd</span>
-             </p>
-          </div>
-
-          <div className="col-span-full pt-12 border-t border-[#F5F5F7]/5 flex flex-col md:flex-row justify-between gap-6">
-            <p className="text-[9px] uppercase tracking-[0.4em] text-[#A1A1AA]/40">© 2026 {business.name}. All Rights Reserved.</p>
-            <div className="flex gap-8">
-               <span className="text-[9px] uppercase tracking-[0.4em] text-[#A1A1AA]/40 hover:text-[#E8CFC0] transition-colors cursor-pointer">Privacy</span>
-               <span className="text-[9px] uppercase tracking-[0.4em] text-[#A1A1AA]/40 hover:text-[#E8CFC0] transition-colors cursor-pointer">Terms</span>
-            </div>
-          </div>
+      <footer style={{ backgroundColor: 'var(--t-bg-secondary)', borderTop: '1px solid var(--t-border)' }}>
+        <div className="max-w-4xl mx-auto px-6 py-24 text-center border-b" style={{ borderColor: 'var(--t-border)' }}>
+          <h2 className="text-4xl md:text-6xl font-bold mb-8" style={{ fontFamily: 'var(--t-heading-font)', fontWeight: 'var(--t-heading-weight)', color: 'var(--t-text-primary)' }}>
+            Ready to transform?
+          </h2>
+          <button onClick={onBook} className="px-12 py-5 text-sm font-bold uppercase tracking-widest text-white transition-all hover:scale-105 shadow-2xl"
+                  style={{ backgroundColor: 'var(--t-accent)', borderRadius: 'var(--t-radius)' }}>
+            {business.ctaText || 'Book Your Session'}
+          </button>
         </div>
-      </footer>
-    );
-  }
-
-  if (variant === 'editorial') {
-    return (
-      <footer className="py-12 md:py-20 px-6 bg-white border-t border-text-primary/10">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-20">
-            {/* Brand/Contact - left narrow */}
-            <div className="col-span-1 md:col-span-5 space-y-8">
-              <div className="space-y-4">
-                <h3 className="text-xl md:text-2xl font-light tracking-tight text-text-primary">
-                  {business.name}
-                </h3>
-                <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">
-                  Get in Touch
-                </p>
-              </div>
-
-              {/* Contact details */}
-              <div className="space-y-3 text-sm text-text-secondary font-light">
-                {business.email && (
-                  <p className="flex items-center gap-3">
-                    <Mail size={16} className="text-text-tertiary flex-shrink-0" />
-                    <a href={`mailto:${business.email}`} className="hover:text-text-primary transition-colors break-all">
-                      {business.email}
-                    </a>
-                  </p>
-                )}
-                {business.phone && (
-                  <p className="flex items-center gap-3">
-                    <Phone size={16} className="text-text-tertiary flex-shrink-0" />
-                    <a href={`tel:${business.phone}`} className="hover:text-text-primary transition-colors">
-                      {business.phone}
-                    </a>
-                  </p>
-                )}
-                {business.address && (
-                  <p className="flex items-start gap-3">
-                    <MapPin size={16} className="text-text-tertiary flex-shrink-0 mt-0.5" />
-                    <span>{business.address}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Social links */}
-              <div className="flex gap-4 pt-4">
-                {business.socials?.instagram && (
-                  <a href={business.socials.instagram} target="_blank" rel="noreferrer" className="text-text-tertiary hover:text-text-primary transition-colors">
-                    <Instagram size={18} />
-                  </a>
-                )}
-                {business.socials?.facebook && (
-                  <a href={business.socials.facebook} target="_blank" rel="noreferrer" className="text-text-tertiary hover:text-text-primary transition-colors">
-                    <Facebook size={18} />
-                  </a>
-                )}
-                {business.socials?.twitter && (
-                  <a href={business.socials.twitter} target="_blank" rel="noreferrer" className="text-text-tertiary hover:text-text-primary transition-colors">
-                    <Twitter size={18} />
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Right side - legal/credit */}
-            <div className="col-span-1 md:col-span-7 space-y-6 md:text-right">
-              <p className="text-[10px] text-text-tertiary uppercase tracking-widest">
-                Powered by <span className="font-medium text-text-primary">Bukd</span>
-              </p>
-              <p className="text-[10px] text-text-tertiary">
-                © 2026 {business.name}. All rights reserved.
-              </p>
-            </div>
+        
+        <div className="max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex items-center gap-3">
+            {business.logo ? (
+              <img src={business.logo} alt="Logo" className="h-6 w-auto grayscale opacity-50" />
+            ) : (
+              <span className="text-xl font-bold tracking-tight" style={{ fontFamily: 'var(--t-heading-font)', color: 'var(--t-text-primary)' }}>{business.name}</span>
+            )}
+          </div>
+          {socialLinks}
+          <div className="text-xs font-medium" style={{ color: 'var(--t-text-muted)' }}>
+            © {year} {business.name}. All rights reserved. <br/>
+            <a href="https://bukd.co" target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-1 justify-center md:justify-end mt-2">
+              Powered by Bukd <ArrowUpRight size={10} />
+            </a>
           </div>
         </div>
       </footer>
@@ -127,62 +67,67 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, variant = 'full' }
 
   if (variant === 'minimal') {
     return (
-      <footer className="py-12 px-6 border-t border-border-light text-center">
-        <p className="text-xs text-text-tertiary">© 2026 {business.name}. All rights reserved.</p>
-        <p className="text-xs text-text-tertiary mt-2">Powered by <span className="font-medium" style={{ color: business.primaryColor }}>Bukd</span></p>
-      </footer>
-    );
-  }
-
-  if (variant === 'simple') {
-    return (
-      <footer className="py-16 bg-bg-secondary w-full px-6 border-t border-border-light">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl text-white font-medium italic text-sm shadow-lg flex items-center justify-center" style={{ backgroundColor: business.primaryColor }}>B</div>
-            <span className="text-lg font-medium tracking-tight text-text-primary">{business.name}</span>
+      <footer className="py-16" style={{ backgroundColor: 'var(--t-bg-primary)', borderTop: '1px solid var(--t-border)' }}>
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-12">
+          <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--t-heading-font)', color: 'var(--t-text-primary)' }}>{business.name}</h2>
+          <div className="flex justify-center gap-8 text-sm font-medium" style={{ color: 'var(--t-text-secondary)' }}>
+            <button onClick={() => scrollTo('services')} className="hover:opacity-70 transition-opacity">Services</button>
+            <button onClick={() => scrollTo('about')} className="hover:opacity-70 transition-opacity">About</button>
+            <button onClick={onBook} className="hover:opacity-70 transition-opacity" style={{ color: 'var(--t-accent)' }}>Book Now</button>
           </div>
-          <div className="flex flex-wrap gap-6 text-sm text-text-secondary">
-            {business.email && <span className="flex items-center gap-2"><Mail size={14} /> {business.email}</span>}
-            {business.phone && <span className="flex items-center gap-2"><Phone size={14} /> {business.phone}</span>}
+          <div className="flex justify-center">
+            {socialLinks}
           </div>
-          <p className="text-[10px] text-text-tertiary uppercase tracking-widest">Powered by <span className="font-medium" style={{ color: business.primaryColor }}>Bukd</span></p>
+          <div className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--t-text-muted)' }}>
+            © {year} {business.name} — <a href="https://bukd.co" target="_blank" rel="noreferrer" className="hover:underline">Built on Bukd</a>
+          </div>
         </div>
       </footer>
     );
   }
 
-  // Default: full
+  // standard
   return (
-    <footer className="py-20 bg-bg-secondary w-full px-6 border-t border-border-light">
-      <div className="max-w-6xl mx-auto space-y-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-left">
-          <div className="col-span-1 md:col-span-2 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl text-white font-medium italic text-sm shadow-lg flex items-center justify-center" style={{ backgroundColor: business.primaryColor }}>B</div>
-              <span className="text-xl font-medium tracking-tight text-text-primary">{business.name}</span>
+    <footer className="py-20" style={{ backgroundColor: 'var(--t-bg-secondary)', borderTop: '1px solid var(--t-border)' }}>
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+          <div className="md:col-span-2 space-y-6">
+            <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--t-heading-font)', color: 'var(--t-text-primary)' }}>{business.name}</h2>
+            <p className="text-sm leading-relaxed max-w-sm" style={{ color: 'var(--t-text-secondary)' }}>
+              {business.heroSubtitle || 'Delivering exceptional services to our community with dedication and expertise.'}
+            </p>
+            {socialLinks}
+          </div>
+          
+          <div className="space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--t-text-primary)' }}>Explore</h3>
+            <div className="flex flex-col gap-3 text-sm" style={{ color: 'var(--t-text-secondary)' }}>
+              <button onClick={() => scrollTo('services')} className="text-left hover:opacity-70 w-max transition-opacity">Services</button>
+              <button onClick={() => scrollTo('portfolio')} className="text-left hover:opacity-70 w-max transition-opacity">Portfolio</button>
+              <button onClick={() => scrollTo('about')} className="text-left hover:opacity-70 w-max transition-opacity">About</button>
+              <button onClick={() => scrollTo('reviews')} className="text-left hover:opacity-70 w-max transition-opacity">Reviews</button>
             </div>
-            <p className="text-sm text-text-secondary max-w-sm leading-relaxed opacity-70">A premium service destination. Book your next appointment online in seconds.</p>
           </div>
+          
           <div className="space-y-6">
-            <span className="text-[10px] font-medium text-text-tertiary uppercase tracking-[0.3em]">Contact</span>
-            <ul className="list-none p-0 space-y-3 text-sm text-text-secondary">
-              {business.address && <li className="flex items-center gap-3"><MapPin size={16} className="text-text-tertiary" /> {business.address}</li>}
-              {business.phone && <li className="flex items-center gap-3"><Phone size={16} className="text-text-tertiary" /> {business.phone}</li>}
-              {business.email && <li className="flex items-center gap-3"><Mail size={16} className="text-text-tertiary" /> {business.email}</li>}
-            </ul>
-          </div>
-          <div className="space-y-6">
-            <span className="text-[10px] font-medium text-text-tertiary uppercase tracking-[0.3em]">Platform</span>
-            <p className="text-lg font-medium tracking-tight text-text-primary">Powered by <span className="italic" style={{ color: business.primaryColor }}>Bukd</span></p>
+            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--t-text-primary)' }}>Contact</h3>
+            <div className="flex flex-col gap-4 text-sm" style={{ color: 'var(--t-text-secondary)' }}>
+              {business.address && (
+                <div className="flex items-start gap-3"><MapPin size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--t-accent)' }} /> {business.address}</div>
+              )}
+              {business.email && (
+                <a href={`mailto:${business.email}`} className="flex items-center gap-3 hover:opacity-70 transition-opacity"><Mail size={16} style={{ color: 'var(--t-accent)' }} /> {business.email}</a>
+              )}
+              {business.phone && (
+                <a href={`tel:${business.phone}`} className="flex items-center gap-3 hover:opacity-70 transition-opacity"><Phone size={16} style={{ color: 'var(--t-accent)' }} /> {business.phone}</a>
+              )}
+            </div>
           </div>
         </div>
-        <div className="pt-10 border-t border-border-light flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-[8px] font-medium text-text-tertiary uppercase tracking-[.25em]">© 2026 {business.name}. All rights reserved.</p>
-          <div className="flex gap-8 text-[8px] font-medium text-text-tertiary uppercase tracking-[.25em]">
-            <span className="hover:text-text-primary cursor-pointer transition-all">Privacy</span>
-            <span className="hover:text-text-primary cursor-pointer transition-all">Terms</span>
-          </div>
+        
+        <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4 text-xs" style={{ borderColor: 'var(--t-border)', color: 'var(--t-text-muted)' }}>
+          <p>© {year} {business.name}. All rights reserved.</p>
+          <p>Designed and powered by <a href="https://bukd.co" target="_blank" rel="noreferrer" className="font-bold hover:underline" style={{ color: 'var(--t-text-primary)' }}>Bukd</a></p>
         </div>
       </div>
     </footer>

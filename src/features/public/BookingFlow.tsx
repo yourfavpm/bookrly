@@ -9,7 +9,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import type { Service, AddOn } from '../../store/useAppStore';
+import type { Service, AddOn, StaffMember } from '../../store/useAppStore';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { formatPrice } from '../../utils/formatters';
@@ -23,26 +23,29 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   const isStripeReady = business?.stripeConnected && business?.stripeDetailsSubmitted;
   const [step, setStep] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('booking_success') === 'true' ? 7 : 1;
+    return params.get('booking_success') === 'true' ? 8 : 1;
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [isAnyStaff, setIsAnyStaff] = useState(false);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '', notes: '' });
 
   // 1. Service Selection
-  // 2. Add-ons
-  // 3. Date
-  // 4. Time
-  // 5. Contact
-  // 6. Review
-  // 7. Payment (Success/Finalize)
+  // 2. Staff Selection (NEW)
+  // 3. Add-ons
+  // 4. Date
+  // 5. Time
+  // 6. Contact
+  // 7. Review
+  // 8. Payment (Success/Finalize)
 
-  // Steps are fixed at 7 for the flow logic.
+  const TOTAL_STEPS = 8;
 
-  const nextStep = () => setStep(s => Math.min(s + 1, 7));
+  const nextStep = () => setStep(s => Math.min(s + 1, TOTAL_STEPS));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
   const subtotal = useMemo(() => {
@@ -65,60 +68,67 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     });
   }, []);
 
+  // Get qualified staff for the selected service
+  const qualifiedStaff = useMemo(() => {
+    if (!selectedService || !business) return [];
+    return business.staff.filter(s => s.status === 'active' && s.serviceIds.includes(selectedService.id));
+  }, [selectedService, business]);
+
   const timeSlots = useMemo(() => {
     if (!selectedDate || !selectedService || !business) return [];
     
-    // Parse selected date treating it as local to prevent strict UTC shifts
     const [year, month, day] = selectedDate.split('-');
     const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     const dayOfWeek = dateObj.getDay();
-    
-    const dayHours = business.workingHours.find(h => h.dayOfWeek === dayOfWeek);
-    if (!dayHours || !dayHours.isOpen) return [];
 
-    // Calculate dynamic duration payload
     let totalDurationMinutes = selectedService.duration;
     selectedAddOns.forEach(name => {
       const addon = selectedService.addOns.find((a: AddOn) => a.name === name);
       if (addon) totalDurationMinutes += addon.duration;
     });
 
-    const [startH, startM] = dayHours.startTime.split(':').map(Number);
-    const [endH, endM] = dayHours.endTime.split(':').map(Number);
+    const now = new Date();
+    const isToday = now.getFullYear() === dateObj.getFullYear() && now.getMonth() === dateObj.getMonth() && now.getDate() === dateObj.getDate();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // Use staff-specific availability if a staff member is selected
+    const useStaffHours = selectedStaff && !isAnyStaff;
+    let dayHoursSource: { startTime: string; endTime: string; isOpen: boolean } | undefined;
+
+    if (useStaffHours) {
+      const staffHour = selectedStaff.availability.find(h => h.dayOfWeek === dayOfWeek);
+      dayHoursSource = staffHour ? { startTime: staffHour.startTime, endTime: staffHour.endTime, isOpen: staffHour.isOpen } : undefined;
+    } else {
+      const bizHour = business.workingHours.find(h => h.dayOfWeek === dayOfWeek);
+      dayHoursSource = bizHour ? { startTime: bizHour.startTime, endTime: bizHour.endTime, isOpen: bizHour.isOpen } : undefined;
+    }
+
+    if (!dayHoursSource || !dayHoursSource.isOpen) return [];
+
+    const [startH, startM] = dayHoursSource.startTime.split(':').map(Number);
+    const [endH, endM] = dayHoursSource.endTime.split(':').map(Number);
     const openMinutes = startH * 60 + startM;
     const closeMinutes = endH * 60 + endM;
 
-    // Fast same-day clipping
-    const now = new Date();
-    const isToday = now.getFullYear() === dateObj.getFullYear() && 
-                    now.getMonth() === dateObj.getMonth() && 
-                    now.getDate() === dateObj.getDate();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-    // Pull collision blockers
-    const todaysBookings = business.bookings.filter(
-       b => b.date === selectedDate && b.status !== 'cancelled'
-    );
+    // Filter bookings by staff if specific staff selected
+    const todaysBookings = business.bookings.filter(b => {
+      if (b.date !== selectedDate || b.status === 'cancelled') return false;
+      if (selectedStaff && !isAnyStaff) return b.staffId === selectedStaff.id;
+      return true;
+    });
 
     const slots: string[] = [];
-    
-    // Compute 15-minute structural nodes
     for (let m = openMinutes; m + totalDurationMinutes <= closeMinutes; m += 15) {
        if (isToday && m <= currentMinutes + 30) continue;
-       
        const slotStart = m;
        const slotEnd = m + totalDurationMinutes;
-       
        const isOverlap = todaysBookings.some((booking: any) => {
-          const [bh, bm] = booking.time.split(':').map(Number);
-          const endStr = (booking as any).end_time; // Keep this 'any' for direct DB field if not in interface
+          const timeStr = booking.startTime;
+          const [bh, bm] = timeStr.split(':').map(Number);
+          const endStr = booking.endTime;
           const [eh, em] = endStr ? endStr.split(':').map(Number) : [bh + Math.floor(totalDurationMinutes/60), bm + (totalDurationMinutes%60)];
-          const bStart = bh * 60 + bm;
-          const bEnd = eh * 60 + em;
-          
-          return (slotStart < bEnd) && (slotEnd > bStart);
+          return (slotStart < (eh * 60 + em)) && (slotEnd > (bh * 60 + bm));
        });
-
        if (!isOverlap) {
           const h = Math.floor(m / 60);
           const mins = m % 60;
@@ -127,9 +137,8 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
           slots.push(`${displayH.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')} ${period}`);
        }
     }
-
     return slots;
-  }, [selectedDate, selectedService, selectedAddOns, business]);
+  }, [selectedDate, selectedService, selectedAddOns, business, selectedStaff, isAnyStaff]);
 
   if (!business) return null;
 
@@ -139,7 +148,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
         className="h-full" 
         style={{ backgroundColor: business.primaryColor }}
         initial={false}
-        animate={{ width: `${(step / 7) * 100}%` }}
+        animate={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
         transition={{ duration: 0.5, ease: "circOut" }}
       />
     </div>
@@ -253,8 +262,22 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                    {business.services.map(s => (
                      <button 
                        key={s.id}
-                       onClick={() => { setSelectedService(s); nextStep(); }}
-                       className="w-full p-5 rounded-2xl border border-border-light bg-white hover:border-brand/40 hover:shadow-lg hover:shadow-black/2 transition-all text-left group"
+                        onClick={() => {
+                          setSelectedService(s);
+                          const qualified = business.staff.filter(st => st.status === 'active' && st.serviceIds.includes(s.id));
+                          if (qualified.length === 0) {
+                            setIsAnyStaff(true);
+                            setSelectedStaff(null);
+                            setStep(3);
+                          } else if (qualified.length === 1) {
+                            setSelectedStaff(qualified[0]);
+                            setIsAnyStaff(false);
+                            setStep(3);
+                          } else {
+                            nextStep();
+                          }
+                        }}
+                        className="w-full p-5 rounded-2xl border border-border-light bg-white hover:border-brand/40 hover:shadow-lg hover:shadow-black/2 transition-all text-left group"
                      >
                         <div className="flex justify-between items-start mb-1">
                            <h3 className="font-bold text-text-primary group-hover:text-brand transition-colors">{s.name}</h3>
@@ -271,8 +294,50 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
            )}
 
            {step === 2 && selectedService && (
+             <StepWrapper
+               key="step2"
+               title="Choose your provider"
+               subtitle="Select who you'd like to see, or let us assign someone."
+               onBack={prevStep}
+               showNext={false}
+             >
+                <div className="grid gap-3">
+                   <button
+                     onClick={() => { setIsAnyStaff(true); setSelectedStaff(null); nextStep(); }}
+                     className="w-full p-5 rounded-2xl border border-border-light bg-white hover:border-brand/40 hover:shadow-lg transition-all text-left group"
+                   >
+                      <div className="flex items-center gap-4">
+                         <div className="w-11 h-11 rounded-xl bg-brand/10 flex items-center justify-center text-brand font-bold text-sm">✨</div>
+                         <div>
+                            <h3 className="font-bold text-text-primary group-hover:text-brand transition-colors">Any Available</h3>
+                            <p className="text-[11px] text-text-tertiary">We'll match you with the best available team member</p>
+                         </div>
+                      </div>
+                   </button>
+                   {qualifiedStaff.map(member => (
+                     <button
+                       key={member.id}
+                       onClick={() => { setIsAnyStaff(false); setSelectedStaff(member); nextStep(); }}
+                       className="w-full p-5 rounded-2xl border border-border-light bg-white hover:border-brand/40 hover:shadow-lg transition-all text-left group"
+                     >
+                        <div className="flex items-center gap-4">
+                           <div className="w-11 h-11 rounded-xl bg-brand/10 flex items-center justify-center text-brand font-bold text-sm">
+                             {member.name.charAt(0).toUpperCase()}
+                           </div>
+                           <div>
+                              <h3 className="font-bold text-text-primary group-hover:text-brand transition-colors">{member.name}</h3>
+                              <p className="text-[10px] text-text-tertiary uppercase tracking-widest">{member.role}</p>
+                           </div>
+                        </div>
+                     </button>
+                   ))}
+                </div>
+             </StepWrapper>
+           )}
+
+           {step === 3 && selectedService && (
              <StepWrapper 
-               key="step2" 
+               key="step3" 
                title="Customize your visit" 
                subtitle="Select any add-ons to personalize your experience."
                onNext={nextStep}
@@ -319,9 +384,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              </StepWrapper>
            )}
 
-           {step === 3 && (
+           {step === 4 && (
              <StepWrapper 
-               key="step3" 
+               key="step4" 
                title="Pick a date" 
                subtitle="When would you like to come in?"
                onBack={prevStep}
@@ -348,9 +413,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              </StepWrapper>
            )}
 
-           {step === 4 && (
+           {step === 5 && (
              <StepWrapper 
-               key="step4" 
+               key="step5" 
                title="Select a time" 
                subtitle={`Available times for ${new Date(selectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`}
                onBack={prevStep}
@@ -377,9 +442,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              </StepWrapper>
            )}
 
-           {step === 5 && (
+           {step === 6 && (
              <StepWrapper 
-               key="step5" 
+               key="step6" 
                title="Your details" 
                subtitle="Almost there. Let us know who to expect."
                onNext={nextStep}
@@ -430,9 +495,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              </StepWrapper>
            )}
 
-           {step === 6 && selectedService && (
+           {step === 7 && selectedService && (
              <StepWrapper 
-                key="step6" 
+                key="step7" 
                 title="Review & Confirm" 
                 subtitle="Review your appointment details before proceeding."
                 onBack={prevStep}
@@ -449,17 +514,18 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                           customerPhone: contactInfo.phone,
                           notes: contactInfo.notes,
                           totalPrice: subtotal,
-                          depositDue: totalDue
+                          depositDue: totalDue,
+                          staffId: selectedStaff?.id
                       });
 
-                      if (isStripeReady) {
-                          const checkoutUrl = await createCheckoutSession(booking.id);
-                          if (checkoutUrl) {
-                              window.location.href = checkoutUrl;
-                              return;
-                          }
-                      }
-                      nextStep();
+                       if (isStripeReady && booking) {
+                           const checkoutUrl = await createCheckoutSession(booking.id);
+                           if (checkoutUrl) {
+                               window.location.href = checkoutUrl;
+                               return;
+                           }
+                       }
+                       if (booking) nextStep();
                   } catch (err) {
                       console.error('Booking error:', err);
                   } finally {
@@ -478,7 +544,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                                {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} at {selectedTime}
                             </h4>
                          </div>
-                         <button onClick={() => setStep(3)} className="text-[10px] font-bold text-brand uppercase tracking-widest">Edit</button>
+                         <button onClick={() => setStep(4)} className="text-[10px] font-bold text-brand uppercase tracking-widest">Edit</button>
                       </div>
                       <div className="flex justify-between items-start">
                          <div>
@@ -504,7 +570,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              </StepWrapper>
            )}
 
-           {step === 7 && (
+           {step === 8 && (
              <StepWrapper 
                key="step7" 
                title="You're all set!" 

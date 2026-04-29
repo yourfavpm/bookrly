@@ -51,7 +51,7 @@ const MarqueeColumn: React.FC<{
             key={i} 
             className="w-[280px] md:w-[360px] flex-none group cursor-pointer"
           >
-            <div className="relative aspect-[4/5] overflow-hidden bg-white shadow-sm border border-black/3 transition-all duration-700 group-hover:shadow-2xl group-hover:shadow-black/5">
+            <div className="relative aspect-4/5 overflow-hidden bg-white shadow-sm border border-black/3 transition-all duration-700 group-hover:shadow-2xl group-hover:shadow-black/5">
               <img 
                 src={template.image} 
                 alt={template.name}
@@ -90,7 +90,7 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-black selection:bg-brand/10 selection:text-brand font-sans">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 h-20 bg-[#FAFAF8]/80 backdrop-blur-xl z-50 border-b border-black/[0.03]">
+      <nav className="fixed top-0 left-0 right-0 h-20 bg-[#FAFAF8]/80 backdrop-blur-xl z-50 border-b border-black/3">
         <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <Link to="/" className="flex items-center gap-2">
@@ -170,8 +170,8 @@ export const LandingPage: React.FC = () => {
                 className="relative flex justify-center"
               >
                 {/* Light purple decorative drop */}
-                <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-[320px] h-[320px] lg:w-[420px] lg:h-[420px] rounded-full bg-brand/[0.07] blur-3xl pointer-events-none" />
-                <div className="absolute -right-12 top-1/3 w-[200px] h-[200px] lg:w-[260px] lg:h-[260px] rounded-full bg-brand/[0.05] blur-2xl pointer-events-none" />
+                <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-[320px] h-[320px] lg:w-[420px] lg:h-[420px] rounded-full bg-brand/7 blur-3xl pointer-events-none" />
+                <div className="absolute -right-12 top-1/3 w-[200px] h-[200px] lg:w-[260px] lg:h-[260px] rounded-full bg-brand/5 blur-2xl pointer-events-none" />
 
                 <div className="relative z-10 bg-white/50 backdrop-blur-sm rounded-[32px] lg:rounded-[48px] shadow-2xl shadow-black/5 border border-black/3 overflow-hidden p-1.5 lg:p-2 group max-w-[90%] lg:max-w-[85%]">
                    <img 
@@ -302,8 +302,8 @@ export const LandingPage: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 relative">
                {/* Vertical Dividers (Desktop) */}
-               <div className="absolute inset-y-0 left-1/3 w-px bg-black/[0.03] hidden md:block" />
-               <div className="absolute inset-y-0 left-2/3 w-px bg-black/[0.03] hidden md:block" />
+               <div className="absolute inset-y-0 left-1/3 w-px bg-black/3 hidden md:block" />
+               <div className="absolute inset-y-0 left-2/3 w-px bg-black/3 hidden md:block" />
 
                {/* Column 1: Booking Tools */}
                <motion.div 
@@ -340,7 +340,7 @@ export const LandingPage: React.FC = () => {
                  whileInView={{ opacity: 1, x: 0 }}
                  transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                  viewport={{ once: true }}
-                 className="py-16 md:py-0 border-y border-black/[0.03] md:border-none md:px-12 lg:px-20 group"
+                 className="py-16 md:py-0 border-y border-black/3 md:border-none md:px-12 lg:px-20 group"
                >
                   <div className="space-y-8">
                      <div className="space-y-2">

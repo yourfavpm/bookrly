@@ -1,4 +1,4 @@
-import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, Plus, Palette, Clock, ShieldCheck, Image, MessageSquare, LogOut, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, Globe, Scissors, Calendar, BarChart3, Settings, ExternalLink, Plus, Palette, Clock, ShieldCheck, Image, MessageSquare, LogOut, ChevronLeft, Users, UserPlus } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { calculateDaysRemaining } from '../../lib/dateUtils';
 import { Link, Navigate, useLocation, Outlet } from 'react-router-dom';
@@ -36,6 +36,7 @@ export const DashboardLayout: React.FC = () => {
   const createSubscription = useAppStore((state) => state.createSubscription);
   const updateBusiness = useAppStore((state) => state.updateBusiness);
   const signOut = useAppStore((state) => state.signOut);
+  const staffRole = useAppStore((state) => state.staffRole);
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -57,17 +58,22 @@ export const DashboardLayout: React.FC = () => {
     return <Navigate to="/onboarding" replace />;
   }
 
-  const navItems = [
-    { icon: <LayoutDashboard />, label: 'Overview', to: '/dashboard/overview' },
-    { icon: <Globe />, label: 'Website', to: '/dashboard/website' },
-    { icon: <Palette />, label: 'Templates', to: '/dashboard/templates' },
-    { icon: <Scissors />, label: 'Services', to: '/dashboard/services' },
-    { icon: <Image />, label: 'Portfolio', to: '/dashboard/portfolio' },
-    { icon: <MessageSquare />, label: 'Testimonials', to: '/dashboard/testimonials' },
-    { icon: <Clock />, label: 'Availability', to: '/dashboard/availability' },
-    { icon: <Calendar />, label: 'Bookings', to: '/dashboard/bookings' },
-    { icon: <BarChart3 />, label: 'Analytics', to: '/dashboard/analytics' }
+  const allNavItems = [
+    { icon: <LayoutDashboard />, label: 'Overview', to: '/dashboard/overview', roles: ['owner', 'admin', 'manager', 'staff'] },
+    { icon: <Globe />, label: 'Website', to: '/dashboard/website', roles: ['owner', 'admin'] },
+    { icon: <Scissors />, label: 'Services', to: '/dashboard/services', roles: ['owner', 'admin'] },
+    { icon: <Image />, label: 'Portfolio', to: '/dashboard/portfolio', roles: ['owner', 'admin'] },
+    { icon: <MessageSquare />, label: 'Testimonials', to: '/dashboard/testimonials', roles: ['owner', 'admin'] },
+    { icon: <Clock />, label: 'Availability', to: '/dashboard/availability', roles: ['owner', 'admin', 'manager'] },
+    { icon: <Users />, label: 'Team', to: '/dashboard/team', roles: ['owner', 'admin', 'manager'] },
+    { icon: <UserPlus />, label: 'Clients', to: '/dashboard/clients', roles: ['owner', 'admin', 'manager', 'staff'] },
+    { icon: <Calendar />, label: 'Bookings', to: '/dashboard/bookings', roles: ['owner', 'admin', 'manager', 'staff'] },
+    { icon: <Bell />, label: 'Notifications', to: '/dashboard/settings/notifications', roles: ['owner', 'admin', 'manager'] },
+    { icon: <BarChart3 />, label: 'Analytics', to: '/dashboard/analytics', roles: ['owner', 'admin'] }
   ];
+
+  const currentRole = staffRole || 'owner';
+  const navItems = allNavItems.filter(item => item.roles.includes(currentRole));
 
   const currentPath = location.pathname;
   const isSelected = (to: string) => currentPath === to || (to === '/dashboard/overview' && currentPath === '/dashboard');
@@ -204,13 +210,15 @@ export const DashboardLayout: React.FC = () => {
                         onClick={() => setIsMobileMenuOpen(false)}
                       />
                     ))}
-                    <SidebarItem 
-                      icon={<Settings size={18} strokeWidth={1.5} />} 
-                      label="Settings" 
-                      to="/dashboard/settings" 
-                      active={isSelected('/dashboard/settings')} 
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    />
+                    {(currentRole === 'owner' || currentRole === 'admin') && (
+                      <SidebarItem 
+                        icon={<Settings size={18} strokeWidth={1.5} />} 
+                        label="Settings" 
+                        to="/dashboard/settings" 
+                        active={isSelected('/dashboard/settings')} 
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      />
+                    )}
                  </nav>
               </div>
 
@@ -267,13 +275,15 @@ export const DashboardLayout: React.FC = () => {
             ))}
           </nav>
 
-          <div className="pt-6 border-t border-border-polaris/30 mt-auto">
-             <p className="text-[9px] font-medium text-text-tertiary uppercase tracking-widest mb-4 px-3">Quick Links</p>
-             <Link to="/onboarding" className="flex items-center gap-3 px-3 py-2 text-text-secondary hover:text-text-primary transition-colors font-light text-xs">
-                <Plus size={16} />
-                <span>Business Setup</span>
-             </Link>
-          </div>
+          {(currentRole === 'owner' || currentRole === 'admin') && (
+            <div className="pt-6 border-t border-border-polaris/30 mt-auto">
+               <p className="text-[9px] font-medium text-text-tertiary uppercase tracking-widest mb-4 px-3">Quick Links</p>
+               <Link to="/onboarding" className="flex items-center gap-3 px-3 py-2 text-text-secondary hover:text-text-primary transition-colors font-light text-xs">
+                  <Plus size={16} />
+                  <span>Business Setup</span>
+               </Link>
+            </div>
+          )}
         </aside>
 
         {/* Main Content Area */}
@@ -294,7 +304,7 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Subscription Overlay */}
       {isRestricted && (
-        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-100 bg-white/80 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
           <div className="w-full max-w-sm text-center space-y-8">
             <div className="w-20 h-20 bg-brand/10 rounded-[32px] flex items-center justify-center text-brand mx-auto shadow-xl shadow-brand/5 border border-brand/10">
               <ShieldCheck size={40} />

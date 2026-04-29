@@ -1,213 +1,117 @@
-import { motion } from 'framer-motion';
-import { useAppStore } from '../../../store/useAppStore';
+import React from 'react';
+import { ChevronRight } from 'lucide-react';
 import { formatPrice } from '../../../utils/formatters';
 import type { SectionProps } from '../templates/types';
 
 interface ServicesProps extends SectionProps {
-  variant?: 'grid' | 'list' | 'compact' | 'horizontal' | 'visual-studio-floating' | 'home-services-grid' | 'editorial-grid';
+  variant?: 'card-grid' | 'horizontal' | 'pricing'; // Matching TemplateRenderer
 }
 
-export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, isMobile, isPreview, variant = 'grid' }) => {
-  const { currency } = useAppStore();
+export const ServicesSection: React.FC<ServicesProps> = ({ business, onBook, variant = 'card-grid' }) => {
   const services = business.services || [];
-  
-  if (services.length === 0 && !isPreview) {
-    return null;
-  }
-  if (variant === 'editorial-grid') {
+
+  if (services.length === 0) return null;
+
+  if (variant === 'horizontal') {
     return (
-      <section id="services" className="py-32 px-6 md:px-12 lg:px-24 bg-[#0B0B0D] overflow-hidden">
-        <div className="max-w-[1400px] mx-auto space-y-20">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-[#F5F5F7]/10 pb-12">
-            <div className="space-y-4">
-              <span className="text-[10px] uppercase tracking-[0.4em] text-[#E8CFC0]/60 font-medium italic">Collections</span>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#F5F5F7] leading-none">Curated Offerings</h2>
+      <section id="services" style={{ padding: `var(--t-section-gap, 80px) 0`, backgroundColor: 'var(--t-bg-secondary)' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+            <div className="space-y-3 max-w-xl">
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: 'var(--t-accent)' }}>Menu</p>
+              <h2 className="text-3xl md:text-5xl font-bold" style={{ fontFamily: 'var(--t-heading-font)', fontWeight: 'var(--t-heading-weight)', color: 'var(--t-text-primary)' }}>Our Services</h2>
             </div>
-            <p className="text-sm text-[#A1A1AA] max-w-xs font-light leading-relaxed">
-              Tailored beauty experiences designed for your most significant moments.
-            </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-            {services.map((s, idx) => {
-              const isLarge = idx % 3 === 0;
-              return (
-                <motion.div
-                  key={s.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 1, delay: idx * 0.1 }}
-                  viewport={{ once: true }}
-                  className={`${isLarge ? 'md:col-span-8 aspect-[16/9]' : 'md:col-span-4 aspect-[4/5]'} relative group overflow-hidden cursor-pointer`}
-                  onClick={onBook}
-                >
-                  {/* Subtle Image background or placeholder */}
-                  <div className="absolute inset-0 bg-[#121216]">
-                    <div className="absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-700 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
-                    {/* Placeholder color or pattern if no service image (we don't have service.image yet in the store, but we can assume it might exist) */}
-                    <div className="w-full h-full bg-gradient-to-br from-[#121216] to-[#0B0B0D]" />
+          
+          <div className="space-y-4">
+            {services.map((service, i) => (
+              <div key={service.id || i} className="group flex flex-col md:flex-row justify-between p-6 md:p-8 border transition-all hover:scale-[1.01]"
+                   style={{ borderColor: 'var(--t-border)', backgroundColor: 'var(--t-card-bg)', borderRadius: 'var(--t-radius)' }}>
+                <div className="flex-1 pr-8">
+                  <h3 className="text-lg font-bold group-hover:opacity-80 transition-opacity" style={{ fontFamily: 'var(--t-heading-font)', color: 'var(--t-text-primary)' }}>{service.name}</h3>
+                  <p className="text-sm mt-2 max-w-2xl leading-relaxed" style={{ color: 'var(--t-text-secondary)' }}>{service.description}</p>
+                </div>
+                <div className="flex items-center gap-8 mt-6 md:mt-0 shrink-0">
+                  <div className="text-right">
+                    <p className="text-xl font-bold" style={{ color: 'var(--t-text-primary)' }}>{formatPrice(service.price)}</p>
+                    <p className="text-xs" style={{ color: 'var(--t-text-muted)' }}>{service.duration} mins</p>
                   </div>
-
-                  {/* Content Overlay */}
-                  <div className="absolute inset-0 z-20 p-8 flex flex-col justify-end">
-                    <div className="space-y-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
-                      <span className="text-[9px] uppercase tracking-[0.3em] text-[#E8CFC0]">
-                        {s.duration} minutes
-                      </span>
-                      <h3 className="text-2xl md:text-3xl font-serif text-[#F5F5F7]">{s.name}</h3>
-                      <p className="text-xs text-[#A1A1AA] max-w-xs opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100 font-light">
-                        {s.description}
-                      </p>
-                    </div>
-                    <div className="mt-8 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                      <span className="text-lg font-light text-[#F5F5F7]">{formatPrice(s.price, currency)}</span>
-                      <div className="h-[1px] flex-1 bg-[#F5F5F7]/10" />
-                      <span className="text-[9px] uppercase tracking-[0.2em] text-[#F5F5F7]">Book Now</span>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  <button onClick={onBook} className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+                          style={{ backgroundColor: 'var(--t-bg-secondary)', color: 'var(--t-accent)' }}>
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
     );
   }
 
-  if (variant === 'list') {
+  if (variant === 'pricing') {
     return (
-      <section id="services" className="py-24 px-6 max-w-4xl mx-auto w-full space-y-12">
-        <div className="space-y-3">
-          <span className="text-[10px] font-medium uppercase tracking-[0.3em]" style={{ color: business.primaryColor }}>Services</span>
-          <h2 className="text-3xl font-medium tracking-tight text-text-primary">What We Offer</h2>
-        </div>
-        <div className="space-y-4">
-          {business.services.map(s => (
-            <div key={s.id} className="flex items-center justify-between p-6 rounded-2xl border border-border-light bg-white hover:shadow-md transition-all group">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-text-primary">{s.name}</h3>
-                <p className="text-sm text-text-secondary mt-1 line-clamp-1">{s.description}</p>
-              </div>
-              <div className="flex items-center gap-6 ml-6">
-                <div className="text-right">
-                  <span className="text-lg font-medium" style={{ color: business.primaryColor }}>{formatPrice(s.price, currency)}</span>
-                  <span className="block text-[10px] text-text-tertiary uppercase tracking-widest">{s.duration} min</span>
+      <section id="services" style={{ padding: `var(--t-section-gap, 80px) 0` }}>
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16 space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: 'var(--t-accent)' }}>Pricing</p>
+            <h2 className="text-3xl md:text-5xl font-bold" style={{ fontFamily: 'var(--t-heading-font)', fontWeight: 'var(--t-heading-weight)', color: 'var(--t-text-primary)' }}>Investment</h2>
+          </div>
+          <div className="space-y-6">
+            {services.map((service, i) => (
+              <div key={service.id || i} className="flex items-start justify-between pb-6 border-b group" style={{ borderColor: 'var(--t-border)' }}>
+                <div className="flex-1 pr-6">
+                  <h3 className="text-base font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--t-text-primary)' }}>{service.name}</h3>
+                  <p className="text-sm mt-1" style={{ color: 'var(--t-text-secondary)' }}>{service.description}</p>
                 </div>
-                <button onClick={onBook} className="px-5 py-2.5 rounded-xl text-white text-xs font-medium transition-all hover:scale-105 active:scale-95 border-none cursor-pointer" style={{ backgroundColor: business.primaryColor }}>
-                  Book
+                <div className="text-right shrink-0">
+                  <span className="text-lg font-bold" style={{ color: 'var(--t-text-primary)' }}>{formatPrice(service.price)}</span>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--t-text-muted)' }}>{service.duration} mins</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-12 text-center">
+            <button onClick={onBook} className="px-10 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:scale-105"
+                    style={{ backgroundColor: 'var(--t-accent)', borderRadius: 'var(--t-radius)' }}>
+              Book an Appointment
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // default card grid
+  return (
+    <section id="services" style={{ padding: `var(--t-section-gap, 80px) 0`, backgroundColor: 'var(--t-bg-secondary)' }}>
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-16 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: 'var(--t-accent)' }}>Services</p>
+          <h2 className="text-3xl md:text-5xl font-bold" style={{ fontFamily: 'var(--t-heading-font)', fontWeight: 'var(--t-heading-weight)', color: 'var(--t-text-primary)' }}>What We Offer</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {services.map((service, i) => (
+            <div key={service.id || i} className="flex flex-col p-8 border transition-all hover:scale-[1.02]"
+                 style={{ borderColor: 'var(--t-border)', backgroundColor: 'var(--t-card-bg)', borderRadius: 'var(--t-radius)' }}>
+              <div className="mb-4">
+                <span className="inline-block px-3 py-1 text-[10px] font-bold uppercase tracking-wider mb-4"
+                      style={{ backgroundColor: 'var(--t-bg-secondary)', color: 'var(--t-accent)', borderRadius: 'var(--t-radius)' }}>
+                  {service.duration} mins
+                </span>
+                <h3 className="text-xl font-bold" style={{ fontFamily: 'var(--t-heading-font)', color: 'var(--t-text-primary)' }}>{service.name}</h3>
+              </div>
+              <p className="text-sm leading-relaxed flex-1 mb-8" style={{ color: 'var(--t-text-secondary)' }}>{service.description}</p>
+              <div className="flex items-center justify-between pt-6 border-t" style={{ borderColor: 'var(--t-border)' }}>
+                <span className="text-lg font-bold" style={{ color: 'var(--t-text-primary)' }}>{formatPrice(service.price)}</span>
+                <button onClick={onBook} className="text-sm font-bold transition-opacity hover:opacity-70 flex items-center gap-1"
+                        style={{ color: 'var(--t-accent)' }}>
+                  Book <ChevronRight size={14} />
                 </button>
               </div>
             </div>
           ))}
         </div>
-      </section>
-    );
-  }
-
-  if (variant === 'compact') {
-    return (
-      <section id="services" className="py-24 px-6 max-w-5xl mx-auto w-full space-y-12">
-        <div className="text-center space-y-3">
-          <span className="text-[10px] font-medium uppercase tracking-[0.3em]" style={{ color: business.primaryColor }}>Services</span>
-          <h2 className="text-3xl font-medium tracking-tight text-text-primary">Our Services</h2>
-        </div>
-        <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-4`}>
-          {business.services.map(s => (
-            <div key={s.id} className="p-5 rounded-2xl border border-border-light bg-white hover:shadow-md transition-all flex items-center gap-4 cursor-pointer" onClick={onBook}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${business.primaryColor}10`, color: business.primaryColor }}>
-                <Clock size={18} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm text-text-primary">{s.name}</h3>
-                <span className="text-xs text-text-tertiary">{s.duration} min • {formatPrice(s.price, currency)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  if (variant === 'horizontal') {
-    return (
-      <section id="services" className="py-20 px-6 w-full space-y-12 bg-white">
-        <div className="max-w-7xl mx-auto space-y-2">
-          <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-text-tertiary">Services</span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-text-primary">What We Offer</h2>
-        </div>
-        <div className="max-w-7xl mx-auto">
-          <div className={isMobile ? "space-y-4" : "overflow-x-auto pb-4 -mx-6 px-6"}>
-            <div className={isMobile ? "grid grid-cols-1 gap-4" : "flex gap-5 min-w-min"}>
-              {business.services.map((s, idx) => (
-                <motion.div 
-                  key={s.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: idx * 0.05 }}
-                  viewport={{ once: true }}
-                  className={`${isMobile ? 'w-full' : 'w-72 shrink-0'} p-6 bg-white border border-text-primary/10 rounded-sm hover:border-text-primary/30 transition-all duration-300 group flex flex-col`}
-                >
-                  <h3 className="font-light text-base md:text-lg mb-2 text-text-primary group-hover:text-text-primary transition-colors">{s.name}</h3>
-                  <p className="text-xs md:text-sm text-text-secondary leading-relaxed mb-6 flex-1 font-light">{s.description}</p>
-                  <div className="flex items-end justify-between pt-4 border-t border-text-primary/5">
-                    <div>
-                      <span className="text-xl md:text-2xl font-light tracking-tight text-text-primary">{formatPrice(s.price, currency)}</span>
-                      <span className="block text-[10px] text-text-tertiary uppercase tracking-widest mt-1">{s.duration} min</span>
-                    </div>
-                    <button 
-                      onClick={onBook}
-                      className="px-5 py-2 bg-text-primary text-white text-xs font-medium rounded-sm hover:bg-text-primary/90 transition-colors active:scale-95"
-                    >
-                      Book
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // Default: grid
-  return (
-    <section id="services" className="py-24 px-6 max-w-6xl mx-auto w-full space-y-16 text-center">
-      <div className="space-y-3">
-        <span className="text-[10px] font-medium uppercase tracking-[0.3em]" style={{ color: business.primaryColor }}>The Experience</span>
-        <h2 className="text-3xl md:text-4xl font-medium tracking-tight text-text-primary">Our Signature Services</h2>
-        <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: business.primaryColor }} />
-      </div>
-      <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-3'} gap-8`}>
-        {services.length > 0 ? services.map(s => (
-          <div key={s.id} className="p-8 rounded-3xl border border-border-light bg-white hover:shadow-xl transition-all duration-500 group flex flex-col items-start text-left relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 rounded-bl-[64px] translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-700" style={{ backgroundColor: `${business.primaryColor}08` }} />
-            <div className="flex justify-between items-start w-full mb-8 relative z-10">
-              <div className="w-12 h-12 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-tertiary transition-all duration-500 group-hover:scale-105" style={{ color: business.primaryColor }}>
-                <Clock size={24} />
-              </div>
-              <span className="text-2xl font-medium tracking-tight" style={{ color: business.primaryColor }}>{formatPrice(s.price, currency)}</span>
-            </div>
-            <h3 className="font-medium text-xl mb-3 text-text-primary leading-tight">{s.name}</h3>
-            <p className="text-text-secondary text-sm leading-relaxed mb-8 line-clamp-3 opacity-80">{s.description}</p>
-            <div className="flex items-center gap-4 mt-auto w-full relative z-10">
-              <div className="flex items-center gap-2 text-[10px] font-medium text-text-tertiary uppercase tracking-widest bg-bg-secondary px-4 py-2 rounded-full">
-                <Clock size={12} /> {s.duration} MIN
-              </div>
-              <button onClick={onBook} className="flex-1 py-3 px-6 rounded-xl text-white font-medium text-xs hover:scale-[1.03] active:scale-95 transition-all shadow-lg border-none cursor-pointer" style={{ backgroundColor: business.primaryColor }}>
-                Book
-              </button>
-            </div>
-          </div>
-        )) : (
-          <div className="col-span-full py-12 px-6 rounded-[32px] border-2 border-dashed border-border-light bg-bg-secondary/20 flex flex-col items-center justify-center text-center space-y-4">
-             <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-text-tertiary"><Clock size={24} /></div>
-             <div>
-                <p className="text-sm font-bold text-text-primary">No services added</p>
-                <p className="text-xs text-text-tertiary">Create your first service in the sidebar to show your offerings.</p>
-             </div>
-          </div>
-        )}
       </div>
     </section>
   );

@@ -1,46 +1,53 @@
 import React from 'react';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { useAppStore } from '../../../store/useAppStore';
 import type { SectionProps } from '../templates/types';
 
-interface NavProps extends SectionProps {
-  scrollTo: (id: string) => void;
-  variant?: 'default' | 'minimal' | 'transparent';
-}
+interface NavProps extends SectionProps {}
 
-export const SiteNav: React.FC<NavProps> = ({ business, onBook, scrollTo, isMobile, variant = 'default' }) => {
-  const isTransparent = variant === 'transparent';
-  const isMinimal = variant === 'minimal';
-  
+export const SiteNav: React.FC<NavProps> = ({ business, scrollTo, onBook }) => {
+  const { isCanada } = useAppStore();
+
   return (
-    <nav className={`h-16 px-6 md:px-12 flex items-center justify-between ${isTransparent ? '' : 'border-b border-border-light'} sticky top-0 ${isTransparent ? 'bg-transparent' : 'bg-white/95 backdrop-blur-md'} z-40`}>
-      <div className={`flex items-center gap-2 ${isMobile ? 'scale-90 origin-left' : ''}`}>
+    <nav className="h-20 px-8 flex items-center justify-between sticky top-0 z-40 transition-colors"
+         style={{ backgroundColor: 'var(--t-bg-primary)', borderBottom: '1px solid var(--t-border)' }}>
+      <div className="flex items-center gap-3">
         {business.logo ? (
-          <img src={business.logo} alt="Logo" className="h-6 w-auto" />
+          <img src={business.logo} alt="Logo" className="h-8 w-auto" />
         ) : (
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-medium italic text-sm" style={{ backgroundColor: business.primaryColor }}>B</div>
+          <div className="w-8 h-8 rounded flex items-center justify-center font-bold text-white text-sm" 
+               style={{ backgroundColor: 'var(--t-accent)', borderRadius: 'var(--t-radius)' }}>
+            {business.name.charAt(0)}
+          </div>
         )}
-        <span className={`text-lg font-medium tracking-tight ${isTransparent ? 'text-white' : 'text-text-primary'}`}>{business.name || 'Your Business'}</span>
+        <span className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--t-heading-font)', color: 'var(--t-text-primary)' }}>
+          {business.name || 'Your Business'}
+        </span>
+        {isCanada && (
+          <div className="flex items-center gap-1.5 px-2 py-1 ml-2 border" 
+               style={{ backgroundColor: 'var(--t-bg-secondary)', borderColor: 'var(--t-border)', borderRadius: 'var(--t-radius)' }}>
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--t-text-primary)' }}>Canada First</span>
+          </div>
+        )}
       </div>
-      {!isMinimal && (
-        <div className={`${isMobile ? 'hidden' : 'hidden md:flex'} items-center gap-8`}>
-          <button onClick={() => scrollTo('services')} className={`text-xs font-medium ${isTransparent ? 'text-white/80 hover:text-white' : 'text-text-secondary hover:text-brand'} transition-colors bg-transparent border-none cursor-pointer`}>Services</button>
-          <button onClick={() => scrollTo('about')} className={`text-xs font-medium ${isTransparent ? 'text-white/80 hover:text-white' : 'text-text-secondary hover:text-brand'} transition-colors bg-transparent border-none cursor-pointer`}>About</button>
-          <button
-            onClick={onBook}
-            className="px-6 py-2.5 rounded-xl text-white text-xs font-medium shadow-lg transition-all hover:scale-[1.03] active:scale-95 border-none cursor-pointer"
-            style={{ backgroundColor: business.primaryColor }}
+      <div className="hidden md:flex items-center gap-8">
+        {['services', 'about', 'reviews'].map(item => (
+          <button 
+            key={item}
+            onClick={() => scrollTo(item)}
+            className="text-sm font-medium transition-colors hover:opacity-70 capitalize"
+            style={{ color: 'var(--t-text-secondary)' }}
           >
-            Book Now
+            {item}
           </button>
-        </div>
-      )}
-      <button
-        onClick={onBook}
-        className={`${isMobile ? 'block' : 'md:hidden'} p-2 rounded-xl text-white border-none cursor-pointer`}
-        style={{ backgroundColor: business.primaryColor }}
-      >
-        <CalendarIcon size={18} />
-      </button>
+        ))}
+        <button 
+          onClick={onBook}
+          className="px-6 py-2.5 text-sm font-bold shadow-lg transition-transform hover:scale-105 active:scale-95 text-white"
+          style={{ backgroundColor: 'var(--t-accent)', borderRadius: 'var(--t-radius)' }}
+        >
+          {business.ctaText || 'Book Now'}
+        </button>
+      </div>
     </nav>
   );
 };

@@ -1,4 +1,5 @@
-import { Star, Clock, MapPin, Phone, Instagram, Facebook, Globe, ShieldCheck, ChevronRight, Image as ImageIcon, Map } from 'lucide-react';
+import { Star, Clock, MapPin, Phone, Instagram, Facebook, Globe, ShieldCheck, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { useAppStore } from '../../store/useAppStore';
 import { formatPrice } from '../../utils/formatters';
 
 export const PublicPreview: React.FC = () => {
@@ -72,7 +73,7 @@ export const PublicPreview: React.FC = () => {
             <div className="w-12 h-1 bg-brand mx-auto rounded-full" style={{ backgroundColor: business.primaryColor }} />
          </div>
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {business.services.length > 0 ? business.services.map(s => (
+            {business.services.length > 0 ? business.services.map((s: any) => (
                <div key={s.id} className="p-8 rounded-[32px] border border-border-light bg-white hover:shadow-2xl hover:border-brand/10 transition-all duration-500 group cursor-pointer flex flex-col">
                   <div className="flex justify-between items-start mb-6">
                     <h3 className="font-bold text-xl group-hover:text-brand transition-colors">{s.name}</h3>
@@ -108,7 +109,7 @@ export const PublicPreview: React.FC = () => {
             </div>
             {business.reviews.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {business.reviews.map(r => (
+                {business.reviews.map((r: any) => (
                   <div key={r.id} className="p-8 rounded-3xl bg-white border border-border-light shadow-sm space-y-6">
                     <div className="flex gap-1 text-amber-400">
                       {[1,2,3,4,5].map(s => <Star key={s} size={16} className={s <= r.rating ? 'fill-current' : 'text-border-default'} />)}
@@ -140,7 +141,7 @@ export const PublicPreview: React.FC = () => {
             </div>
             {business.proofOfWork.length > 0 ? (
               <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
-                {business.proofOfWork.map(p => (
+                {business.proofOfWork.map((p: any) => (
                   <div key={p.id} className="break-inside-avoid rounded-3xl overflow-hidden border border-border-light bg-white group cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
                     <div className="relative">
                       {p.image_url ? (

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { Globe, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
-import { getTemplateComponent } from './templates/templateRegistry';
+import { getTemplate } from './templates/templateRegistry';
 import { BookingModal } from './sections/BookingModal';
 import { getSampleBusiness } from './templates/sampleData';
+import { TemplateRenderer } from './templates/TemplateRenderer';
 
 interface PublicWebsiteProps {
   forcedView?: 'desktop' | 'mobile';
@@ -37,17 +38,18 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
 
   const layoutElement = useMemo(() => {
     if (!business) return null;
-    const component = getTemplateComponent(business.templateKey || (demoTemplateKey as string) || 'clean_classic');
-    return React.createElement(component, {
-      business: business as any,
-      onBook: () => setIsBooking(true),
-      isMobile,
-      isPreview: isPreview || isDemo,
-      scrollTo: (id: string) => {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }
-    });
+    const templateKey = (demoTemplateKey as string) || business.templateKey || 'beauty_editorial_luxe';
+    const template = getTemplate(templateKey);
+    
+    return (
+      <TemplateRenderer
+        template={template}
+        business={business as any}
+        onBook={() => setIsBooking(true)}
+        isMobile={isMobile}
+        isPreview={isPreview || isDemo}
+      />
+    );
   }, [business, isMobile, isPreview, isDemo, demoTemplateKey]);
 
   useEffect(() => {
@@ -140,8 +142,8 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
         </div>
       )}
 
-      {/* Demo Header */}
-      {isDemo && (
+      {/* Demo Header - Only show on standalone demo page, not in-editor preview */}
+      {isDemo && !isPreview && (
         <div className="bg-brand text-white px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-xl overflow-hidden">
           <div className="absolute inset-0 bg-white/10 -skew-x-12 translate-x-1/2" />
           <div className="flex items-center gap-4 relative z-10">

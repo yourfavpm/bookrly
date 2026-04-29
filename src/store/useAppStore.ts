@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
-import type { User } from '@supabase/supabase-js';
+import type { User, AuthError } from '@supabase/supabase-js';
+import { calculateDashboardStats, type DashboardStats } from '../lib/analyticsUtils';
 
 export interface AddOn {
   id: string;
@@ -35,22 +36,25 @@ export interface WorkingHour {
   isOpen: boolean;
 }
 
-interface Booking {
+export interface Booking {
   id: string;
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
   serviceId: string;
+  staffId?: string;
+  client_id?: string | null;
   date: string;
-  time: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  startTime: string;
+  endTime: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
   paymentStatus: 'paid' | 'pending' | 'partially_paid' | 'failed' | 'refunded';
+  paymentMethod: 'CARD' | 'CASH' | 'GIFT_CARD' | 'PACKAGE' | 'UNPAID';
   totalAmount: number;
   paidAmount: number;
   addOns: string[];
   createdAt: string;
   notes?: string;
-  end_time?: string;
 }
 
 interface Review {
@@ -67,6 +71,88 @@ interface ProofItem {
   title?: string;
   category?: string;
   created_at: string;
+}
+
+export interface StaffAvailability {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isOpen: boolean;
+}
+
+export interface StaffMember {
+  id: string;
+  businessId: string;
+  userId: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: 'admin' | 'manager' | 'staff';
+  status: 'invited' | 'active' | 'inactive';
+  inviteToken: string | null;
+  avatarUrl: string | null;
+  availability: StaffAvailability[];
+  serviceIds: string[];
+  createdAt: string;
+}
+
+export interface ClientNote {
+  id: string;
+  clientId: string;
+  staffId?: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface Client {
+  id: string;
+  businessId: string;
+  name: string;
+  phone: string;
+  email?: string;
+  joinDate: string;
+  tags: string[];
+  isDeleted: boolean;
+  createdAt: string;
+  notes: ClientNote[];
+  totalVisits?: number;
+  lifetimeSpend?: number;
+  lastVisit?: string;
+}
+
+export interface ScheduledMessage {
+  id: string;
+  bookingId: string;
+  clientId: string;
+  businessId: string;
+  type: 'CONFIRMATION' | 'REMINDER' | 'FOLLOWUP';
+  channel: 'SMS' | 'EMAIL';
+  scheduledFor: string;
+  sentAt: string | null;
+  status: 'QUEUED' | 'SENT' | 'DELIVERED' | 'OPENED' | 'FAILED' | 'SKIPPED';
+  failureReason: string | null;
+  templateSnapshot: string | null;
+  twilioSid?: string;
+  sendgridId?: string;
+}
+
+export interface ProviderNotificationSettings {
+  businessId: string;
+  confirmationEnabled: boolean;
+  reminderEnabled: boolean;
+  followup_enabled: boolean; // Using underscore for DB consistency if needed, but let's camelCase here
+  followupEnabled: boolean;
+  reminderLeadTimeHours: number;
+  smsConfirmTemplate: string | null;
+  emailConfirmTemplate: string | null;
+  smsReminderTemplate: string | null;
+  emailReminderTemplate: string | null;
+  emailFollowupTemplate: string | null;
+}
+
+export interface SMSUsage {
+  count: number;
+  limit: number;
 }
 
 interface BusinessState {
@@ -101,8 +187,13 @@ interface BusinessState {
   workingHours: WorkingHour[];
   services: Service[];
   bookings: Booking[];
-  stripeConnected: boolean;
+  staff: StaffMember[];
+  clients: Client[];
+  notificationSettings?: ProviderNotificationSettings;
+  smsUsage?: SMSUsage;
+  scheduledMessages?: ScheduledMessage[];
   stripeAccountId: string | null;
+  stripeConnected: boolean;
   stripeOnboardingStatus: 'not_started' | 'pending' | 'complete';
   stripeChargesEnabled: boolean;
   stripePayouts_enabled: boolean;
@@ -124,6 +215,8 @@ interface AppState {
   onboardingStep: number;
   isCanada: boolean;
   currency: 'USD' | 'CAD';
+  staffRole: 'admin' | 'manager' | 'staff' | 'owner' | null;
+  staffId: string | null;
   
   // Actions
   setUser: (user: User | null) => void;
@@ -146,6 +239,14 @@ interface AppState {
   updateReview: (id: string, updates: Partial<Review>) => Promise<void>;
   updateProofItem: (id: string, updates: Partial<ProofItem>) => Promise<void>;
   detectLocation: () => Promise<void>;
+  // Staff management
+  fetchStaff: () => Promise<void>;
+  addStaff: (data: { name: string; email: string; phone?: string; role: 'admin' | 'manager' | 'staff'; serviceIds: string[] }) => Promise<StaffMember | null>;
+  updateStaff: (id: string, updates: Partial<StaffMember>) => Promise<void>;
+  removeStaff: (id: string) => Promise<void>;
+  updateStaffAvailability: (staffId: string, hours: StaffAvailability[]) => Promise<void>;
+  assignServicesToStaff: (staffId: string, serviceIds: string[]) => Promise<void>;
+  acceptStaffInvite: (token: string) => Promise<StaffMember | null>;
   createBooking: (data: {
     serviceId: string;
     addOnIds: string[];
@@ -157,16 +258,28 @@ interface AppState {
     notes?: string;
     totalPrice: number;
     depositDue: number;
-  }) => Promise<Booking>;
+    staffId?: string;
+  }) => Promise<{ id: string } | null>;
   createCheckoutSession: (bookingId: string) => Promise<string | null>;
   setupStripeConnect: () => Promise<string | null>;
   refreshStripeStatus: () => Promise<void>;
   refundBooking: (bookingId: string) => Promise<void>;
   createSubscription: () => Promise<string | null>;
   openBillingPortal: () => Promise<string | null>;
-  updatePassword: (password: string) => Promise<{ error: any }>;
+  updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
   uploadLogo: (file: File) => Promise<string | null>;
   updateWorkingHours: (hours: WorkingHour[]) => Promise<void>;
+  // CRM Actions
+  fetchClients: () => Promise<void>;
+  updateClient: (id: string, updates: Partial<Client>) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+  addClientNote: (clientId: string, text: string) => Promise<void>;
+  updateClientNote: (id: string, text: string) => Promise<void>;
+  deleteClientNote: (id: string) => Promise<void>;
+  // Notification Actions
+  updateNotificationSettings: (updates: Partial<ProviderNotificationSettings>) => Promise<void>;
+  scheduleMessages: (bookingId: string) => Promise<void>;
+  getDashboardStats: (period?: string, compare?: boolean, staffId?: string) => DashboardStats | null;
 }
 
 const generateSlug = (name: string): string => {
@@ -192,8 +305,10 @@ export const useAppStore = create<AppState>()(
   loading: true,
   error: null,
   onboardingStep: 1,
-  isCanada: false,
-  currency: 'USD',
+  isCanada: true,
+  currency: 'CAD',
+  staffRole: null,
+  staffId: null,
   
   setUser: (user) => set({ user }),
   setLoading: (loading) => set({ loading }),
@@ -216,208 +331,197 @@ export const useAppStore = create<AppState>()(
 
     set({ loading: true, error: null });
     try {
-      // 1. Fetch Business Profile
-      const { data: business, error: bError } = await supabase
+      // 1. Fetch Business
+      const bQuery = supabase
         .from('businesses')
         .select('*')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (bError && bError.code !== 'PGRST116') throw bError;
+        .eq('owner_id', user.id);
       
-      // If no business exists, create one for this new user
-      if (!business) {
-        const now = new Date();
-        const trialEndDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-
-        const { data: newBusiness, error: createError } = await supabase
-          .from('businesses')
-          .insert([{
-            owner_id: user.id,
-            name: '',
-            email: '',
-            category: '',
-            primary_color: '#111111',
-            template_key: 'editorial_luxe',
-            subscription_status: 'trialing',
-            trial_start_date: now.toISOString(),
-            trial_end_date: trialEndDate.toISOString(),
-            plan_type: 'pro'
-          }])
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        if (!newBusiness) throw new Error('Failed to create business');
-        
-        // Set empty business with ID
-        set({
-          business: {
-            ...newBusiness,
-            subdomain: '',
-            slug: '',
-            primaryColor: '#111111',
-            coverImage: null,
-            logo: null,
-            socials: { instagram: '', facebook: '', twitter: '' },
-            isPublished: false,
-            customDomain: null,
-            heroTitle: '',
-            heroSubtitle: '',
-            ctaText: 'Book Now',
-            secondaryCtaText: '',
-            aboutTitle: '',
-            aboutDescription: '',
-            aboutImage: null,
-            trustSection: 'none',
-            stripeAccountId: null,
-            stripeConnected: false,
-            stripeOnboardingStatus: 'not_started',
-            stripeChargesEnabled: false,
-            stripePayouts_enabled: false,
-            stripeDetailsSubmitted: false,
-            templateKey: 'editorial_luxe',
-            stripeCustomerId: null,
-            stripeSubscriptionId: null,
-            subscriptionStatus: 'trialing',
-            trialStartDate: newBusiness.trial_start_date,
-            trialEndDate: newBusiness.trial_end_date,
-            planType: 'pro',
-            services: [],
-            workingHours: [],
-            bookings: [],
-            reviews: [],
-            proofOfWork: []
-          },
-          loading: false
-        });
+      const { data: businessRes, error: bError } = await bQuery.single();
+      
+      if (bError) {
+        if (bError.code === 'PGRST116') {
+           // No business found, check staff members
+           const { data: staffMember } = await supabase
+             .from('staff_members')
+             .select('*, businesses(*)')
+             .eq('user_id', user.id)
+             .maybeSingle();
+           
+           if (staffMember?.businesses) {
+             set({ staffRole: staffMember.role, staffId: staffMember.id });
+             return get().fetchBusiness(0); 
+           }
+           
+           // If truly no business, create one for owner
+           const now = new Date();
+           const trialEndDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+           const { data: newBusiness, error: createError } = await supabase
+             .from('businesses')
+             .insert([{
+               owner_id: user.id,
+               name: '',
+               email: user.email || '',
+               category: '',
+               primary_color: '#6B21A8',
+               template_key: 'editorial_luxe',
+               subscription_status: 'trialing',
+               trial_start_date: now.toISOString(),
+               trial_end_date: trialEndDate.toISOString(),
+               plan_type: 'pro'
+             }])
+             .select()
+             .single();
+           if (!createError && newBusiness) {
+             return get().fetchBusiness(0);
+           }
+        }
+        set({ error: bError.message, loading: false });
         return;
       }
 
-      // 2. Fetch Services & Addons
-      const { data: services, error: sError } = await supabase
-        .from('services')
-        .select('*, addons(*)')
-        .eq('business_id', business.id);
-      
-      if (sError) throw sError;
+      const b = businessRes;
 
-      // 3. Fetch Availability
-      const { data: availability, error: aError } = await supabase
-        .from('availability')
-        .select('*')
-        .eq('business_id', business.id);
-      
-      if (aError) throw aError;
+      // Parallel fetch for all business data
+      const [
+        { data: availability },
+        { data: services },
+        { data: bookings },
+        { data: staff },
+        { data: reviews },
+        { data: proof_items },
+        { data: clientData },
+        { data: notifSettings },
+        { data: smsUsageData },
+        { data: scheduledMessages }
+      ] = await Promise.all([
+        supabase.from('availability').select('*').eq('business_id', b.id),
+        supabase.from('services').select('*, addons(*)').eq('business_id', b.id).eq('active', true),
+        supabase.from('bookings').select('*, booking_addons(*)').eq('business_id', b.id),
+        supabase.from('staff_members').select('*').eq('business_id', b.id),
+        supabase.from('reviews').select('*').eq('business_id', b.id),
+        supabase.from('proof_of_work').select('*').eq('business_id', b.id),
+        supabase.from('clients').select('*, client_notes(*)').eq('business_id', b.id).eq('is_deleted', false),
+        supabase.from('provider_notification_settings').select('*').eq('business_id', b.id).maybeSingle(),
+        supabase.from('business_sms_usage').select('*').eq('business_id', b.id).eq('month_year', new Date().toISOString().substring(0, 7)).maybeSingle(),
+        supabase.from('scheduled_messages').select('*').eq('business_id', b.id).order('scheduled_for', { ascending: false }).limit(100)
+      ]);
 
-      // 4. Fetch Bookings
-      const { data: bookings, error: boError } = await supabase
-        .from('bookings')
-        .select('*, booking_addons(*)')
-        .eq('business_id', business.id);
-      
-      if (boError) throw boError;
-
-      // 5. Fetch Reviews
-      const { data: reviews, error: rError } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('business_id', business.id);
-      
-      if (rError) throw rError;
-
-      // 6. Fetch Proof Items
-      const { data: proof_items, error: pError } = await supabase
-        .from('proof_items')
-        .select('*')
-        .eq('business_id', business.id);
-      
-      if (pError) throw pError;
-
-      const mappedServices = (services || []).map((s: any) => ({
-        ...s,
-        bookingFeeEnabled: s.booking_fee_enabled,
-        bookingFeeAmount: s.booking_fee_amount,
-        addOns: s.addons || []
+      const mappedBookings: Booking[] = (bookings || []).map((bk) => ({
+        id: bk.id,
+        customerName: bk.customer_name,
+        customerEmail: bk.customer_email,
+        customerPhone: bk.customer_phone,
+        serviceId: bk.service_id,
+        staffId: bk.staff_id,
+        client_id: bk.client_id,
+        date: bk.date,
+        startTime: bk.start_time,
+        endTime: bk.end_time,
+        status: bk.status,
+        paymentStatus: bk.payment_status || 'pending',
+        paymentMethod: bk.payment_method || 'UNPAID',
+        totalAmount: bk.total_amount,
+        paidAmount: bk.paid_amount || 0,
+        addOns: (bk.booking_addons || []).map((a: { addon_id: string }) => a.addon_id),
+        createdAt: bk.created_at,
+        notes: bk.notes
       }));
 
-      const mappedBookings = (bookings || []).map((b: any) => ({
-        ...b,
-        customerName: b.customer_name,
-        customerEmail: b.customer_email,
-        customerPhone: b.customer_phone,
-        date: b.date,
-        time: b.start_time,
-        totalAmount: b.total_amount,
-        paidAmount: b.paid_amount || 0,
-        paymentStatus: b.payment_status || 'pending'
+      const mappedClients: Client[] = (clientData || []).map((c: Record<string, unknown>) => ({
+         id: c.id as string,
+         businessId: c.business_id as string,
+         name: c.name as string,
+         phone: (c.phone as string) || '',
+         email: (c.email as string) || '',
+         joinDate: c.join_date as string,
+         tags: (c.tags || []) as string[],
+         isDeleted: c.is_deleted as boolean,
+         createdAt: c.created_at as string,
+         notes: ((c.client_notes || []) as Record<string, unknown>[]).map((n) => ({
+           id: n.id as string,
+           clientId: n.client_id as string,
+           staffId: n.staff_id as string,
+           text: n.text as string,
+           createdAt: n.created_at as string
+         }))
       }));
-
-      // Auto-generate subdomain if missing
-      let businessSubdomain = business.subdomain;
-      if (!businessSubdomain && business.name) {
-        businessSubdomain = generateSubdomain(business.name, business.id);
-        // Save it to the database (non-blocking)
-        void supabase
-          .from('businesses')
-          .update({ subdomain: businessSubdomain })
-          .eq('id', business.id);
-      }
-
-      // Auto-generate slug if missing
-      let businessSlug = business.slug || (business.name ? generateSlug(business.name) : '');
-      if (!business.slug && business.name) {
-        // Save it to the database (non-blocking)
-        void supabase
-          .from('businesses')
-          .update({ slug: businessSlug })
-          .eq('id', business.id);
-      }
 
       set({ 
         business: {
-          ...business,
-          subdomain: businessSubdomain,
-          primaryColor: business.primary_color || '#111111',
-          coverImage: business.cover_image || null,
-          logo: business.logo || null,
-          socials: business.socials || { instagram: '', facebook: '', twitter: '' },
-          isPublished: business.is_published,
-          slug: businessSlug,
-          customDomain: business.custom_domain || null,
-          heroTitle: business.hero_title || '',
-          heroSubtitle: business.hero_subtitle || '',
-          ctaText: business.cta_text || '',
-          secondaryCtaText: business.secondary_cta_text || '',
-          aboutTitle: business.about_title || '',
-          aboutDescription: business.about_description || '',
-          aboutImage: business.about_image || null,
-          trustSection: business.trust_section || 'none',
-          stripeAccountId: business.stripe_account_id,
-          stripeConnected: business.stripe_enabled || false,
-          stripeOnboardingStatus: business.stripe_onboarding_status || 'not_started',
-          stripeChargesEnabled: business.stripe_charges_enabled || false,
-          stripePayouts_enabled: business.stripe_payouts_enabled || false,
-          stripeDetailsSubmitted: business.stripe_details_submitted || false,
-          templateKey: business.template_key || 'editorial_luxe',
-          stripeCustomerId: business.stripe_customer_id || null,
-          stripeSubscriptionId: business.stripe_subscription_id || null,
-          subscriptionStatus: business.subscription_status || 'trialing',
-          trialStartDate: business.trial_start_date || null,
-          trialEndDate: business.trial_end_date || null,
-          planType: business.plan_type || 'pro',
-          services: mappedServices,
-          workingHours: (availability || []).map((h: WorkingHour) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
+          ...b,
+          logo: b.logo_url,
+          coverImage: b.cover_image,
+          primaryColor: b.primary_color || '#6B21A8',
+          address: b.address || '',
+          socials: b.socials || { instagram: '', facebook: '', twitter: '' },
+          isPublished: b.is_published || false,
+          slug: b.slug || '',
+          subdomain: b.subdomain || '',
+          customDomain: b.custom_domain || null,
+          heroTitle: b.hero_title || '',
+          heroSubtitle: b.hero_subtitle || '',
+          ctaText: b.cta_text || '',
+          secondaryCtaText: b.secondary_cta_text || '',
+          aboutTitle: b.about_title || '',
+          aboutDescription: b.about_description || '',
+          aboutImage: b.about_image || null,
+          trustSection: b.trust_section || 'none',
+          stripeAccountId: b.stripe_account_id,
+          stripeConnected: b.stripe_enabled || false,
+          stripeOnboardingStatus: b.stripe_onboarding_status || 'not_started',
+          stripeChargesEnabled: b.stripe_charges_enabled || false,
+          stripePayouts_enabled: b.stripe_payouts_enabled || false,
+          stripeDetailsSubmitted: b.stripe_details_submitted || false,
+          templateKey: b.template_key || 'editorial_luxe',
+          stripeCustomerId: b.stripe_customer_id || null,
+          stripeSubscriptionId: b.stripe_subscription_id || null,
+          subscriptionStatus: b.subscription_status || 'trialing',
+          trialStartDate: b.trial_start_date || null,
+          trialEndDate: b.trial_end_date || null,
+          planType: b.plan_type || 'pro',
+          services: (services || []).map((s: Record<string, unknown>) => ({ ...s, bookingFeeEnabled: s.booking_fee_enabled, bookingFeeAmount: s.booking_fee_amount, addOns: s.addons || [] } as unknown as Service)),
+          workingHours: (availability || []).map((h: Record<string, unknown>) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open } as unknown as WorkingHour)),
           bookings: mappedBookings,
+          staff: (staff || []).map((s: Record<string, unknown>) => ({ ...s, inviteToken: s.invite_token, avatarUrl: s.avatar_url, serviceIds: s.service_ids || [] } as unknown as StaffMember)),
+          clients: mappedClients,
+          notificationSettings: notifSettings ? {
+             businessId: notifSettings.business_id,
+             confirmationEnabled: notifSettings.confirmation_enabled,
+             reminderEnabled: notifSettings.reminder_enabled,
+             followupEnabled: notifSettings.followup_enabled,
+             reminderLeadTimeHours: notifSettings.reminder_lead_time_hours,
+             smsConfirmTemplate: notifSettings.sms_confirm_template,
+             emailConfirmTemplate: notifSettings.email_confirm_template,
+             smsReminderTemplate: notifSettings.sms_reminder_template,
+             emailReminderTemplate: notifSettings.email_reminder_template,
+             emailFollowupTemplate: notifSettings.email_followup_template
+          } : undefined,
+          smsUsage: {
+             count: smsUsageData?.count || 0,
+             limit: b.plan_type === 'starter' ? 100 : 1000000
+          },
+          scheduledMessages: (scheduledMessages || []).map((m: any) => ({
+             ...m,
+             bookingId: m.booking_id,
+             clientId: m.client_id,
+             businessId: m.business_id,
+             scheduledFor: m.scheduled_for,
+             sentAt: m.sent_at,
+             failureReason: m.failure_reason,
+             templateSnapshot: m.template_snapshot,
+             twilioSid: m.twilio_sid,
+             sendgridId: m.sendgrid_id
+          })),
           reviews: reviews || [],
           proofOfWork: proof_items || []
         } 
       });
-    } catch (err: any) {
-      console.error('Fetch business error:', err);
-      set({ error: err.message });
+    } catch (err) {
+      const error = err as Error;
+      console.error('Fetch business error:', error);
+      set({ error: error.message });
       
-      // Auto-retry once after 2 seconds on network failure
       const count = retryCount || 0;
       if (count < 1) {
         setTimeout(() => get().fetchBusiness(count + 1), 2000);
@@ -437,17 +541,17 @@ export const useAppStore = create<AppState>()(
     }));
 
     // 2. Debounce the DB persist
-    if ((window as any).__bukd_save_timer) {
-      clearTimeout((window as any).__bukd_save_timer);
+    if ((window as unknown as { __bukd_save_timer: ReturnType<typeof setTimeout> }).__bukd_save_timer) {
+      clearTimeout((window as unknown as { __bukd_save_timer: ReturnType<typeof setTimeout> }).__bukd_save_timer);
     }
 
-    (window as any).__bukd_save_timer = setTimeout(async () => {
+    (window as unknown as { __bukd_save_timer: ReturnType<typeof setTimeout> }).__bukd_save_timer = setTimeout(async () => {
       const latestBusiness = get().business;
       if (!latestBusiness) return;
 
       try {
         // Map frontend camelCase to Postgres snake_case
-        const dbUpdates: any = {};
+        const dbUpdates: Record<string, unknown> = {};
         
         // Only persist the fields that were in the original update
         if ('name' in updates) dbUpdates.name = updates.name;
@@ -483,7 +587,7 @@ export const useAppStore = create<AppState>()(
           const { error: aError } = await supabase
             .from('availability')
             .insert(
-              updates.workingHours.map((h: any) => ({
+              updates.workingHours.map((h) => ({
                 business_id: latestBusiness.id,
                 day_of_week: h.dayOfWeek,
                 start_time: h.startTime,
@@ -508,8 +612,8 @@ export const useAppStore = create<AppState>()(
             }
           }
         }
-      } catch (err: any) {
-        console.error('Save error:', err.message);
+      } catch (err) {
+        console.error('Save error:', (err as Error).message);
       }
     }, 800);
   },
@@ -616,7 +720,7 @@ export const useAppStore = create<AppState>()(
       let newAddOns: AddOn[] = [];
       if (service.addOns && service.addOns.length > 0) {
         const { data: aData, error: aError } = await supabase.from('addons').insert(
-          service.addOns.map((a: any) => ({
+          service.addOns.map((a) => ({
             service_id: sData.id,
             name: a.name,
             price: a.price,
@@ -643,8 +747,8 @@ export const useAppStore = create<AppState>()(
           services: [...(business.services || []), newService] 
         } 
       });
-    } catch (err: any) {
-      set({ error: err.message });
+    } catch (err) {
+      set({ error: (err as Error).message });
     }
   },
 
@@ -656,11 +760,11 @@ export const useAppStore = create<AppState>()(
       } : null
     }));
 
-    if ((window as any)[`__bukd_timer_svc_${id}`]) {
-      clearTimeout((window as any)[`__bukd_timer_svc_${id}`]);
+    if ((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_svc_${id}`]) {
+      clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_svc_${id}`]);
     }
 
-    (window as any)[`__bukd_timer_svc_${id}`] = setTimeout(async () => {
+    (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_svc_${id}`] = setTimeout(async () => {
       try {
         await supabase.from('services').update({
           name: service.name,
@@ -675,7 +779,7 @@ export const useAppStore = create<AppState>()(
         await supabase.from('addons').delete().eq('service_id', id);
         if ((service.addOns?.length ?? 0) > 0) {
           await supabase.from('addons').insert(
-            (service.addOns ?? []).map((a: any) => ({
+            (service.addOns ?? []).map((a) => ({
               service_id: id,
               name: a.name,
               price: a.price,
@@ -719,24 +823,25 @@ export const useAppStore = create<AppState>()(
         throw new Error('Business not found');
       }
 
-      const [servicesRes, availabilityRes, reviewsRes, proofRes, bookingsRes] = await Promise.all([
+      const [servicesRes, availabilityRes, reviewsRes, proofRes, bookingsRes, staffRes] = await Promise.all([
         supabase.from('services').select('*, addons(*)').eq('business_id', business.id).eq('active', true),
         supabase.from('availability').select('*').eq('business_id', business.id),
         supabase.from('reviews').select('*').eq('business_id', business.id),
         supabase.from('proof_items').select('*').eq('business_id', business.id),
-        supabase.from('bookings').select('*').eq('business_id', business.id)
+        supabase.from('bookings').select('*').eq('business_id', business.id),
+        supabase.from('staff_members').select('*, staff_availability(*), staff_services(*)').eq('business_id', business.id).eq('status', 'active')
       ]);
 
       if (servicesRes.error) throw servicesRes.error;
 
-      const mappedServices = (servicesRes.data || []).map((s: any) => ({
+      const mappedServices = (servicesRes.data || []).map((s) => ({
         ...s,
         bookingFeeEnabled: s.booking_fee_enabled,
         bookingFeeAmount: s.booking_fee_amount,
         addOns: s.addons || []
       }));
 
-      const mappedBookings = (bookingsRes.data || []).map((b: any) => ({
+      const mappedBookings = (bookingsRes.data || []).map((b) => ({
         ...b,
         customerName: b.customer_name,
         customerEmail: b.customer_email,
@@ -760,7 +865,7 @@ export const useAppStore = create<AppState>()(
       }
 
       // Auto-generate slug if missing
-      let businessSlug = business.slug || (business.name ? generateSlug(business.name) : '');
+      const businessSlug = business.slug || (business.name ? generateSlug(business.name) : '');
       if (!business.slug && business.name) {
         // Save it to the database (non-blocking)
         void supabase
@@ -787,14 +892,35 @@ export const useAppStore = create<AppState>()(
           stripeEnabled: business.stripe_enabled,
           templateKey: business.template_key || 'editorial_luxe',
           services: mappedServices,
-          workingHours: (availabilityRes.data || []).map((h: any) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
+          workingHours: (availabilityRes.data || []).map((h) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
           bookings: mappedBookings,
+          staff: (staffRes.data || []).map((s: Record<string, unknown>) => ({
+            id: s.id as string,
+            businessId: s.business_id as string,
+            userId: s.user_id as string | null,
+            name: s.name as string,
+            email: s.email as string,
+            phone: s.phone as string | null,
+            role: s.role as 'admin' | 'manager' | 'staff',
+            status: s.status as 'invited' | 'active' | 'inactive',
+            inviteToken: null,
+            avatarUrl: s.avatar_url as string | null,
+            createdAt: s.created_at as string,
+            availability: ((s.staff_availability as Record<string, unknown>[]) || []).map((a: Record<string, unknown>) => ({
+              dayOfWeek: a.day_of_week as number,
+              startTime: a.start_time as string,
+              endTime: a.end_time as string,
+              isOpen: a.is_open as boolean
+            })),
+            serviceIds: ((s.staff_services as Record<string, unknown>[]) || []).map((ss: Record<string, unknown>) => ss.service_id as string)
+          })),
+          clients: [],
           reviews: reviewsRes.data || [],
           proofOfWork: proofRes.data || []
         } 
       });
-    } catch (err: any) {
-      set({ error: err.message });
+    } catch (err) {
+      set({ error: (err as Error).message });
       } finally {
         set({ loading: false });
       }
@@ -818,9 +944,326 @@ export const useAppStore = create<AppState>()(
       }
     },
 
-    createBooking: async (data: any) => {
+    // ==========================================
+    // STAFF MANAGEMENT ACTIONS
+    // ==========================================
+
+    fetchStaff: async () => {
+      const { business } = get();
+      if (!business) return;
+
+      const { data: staffData } = await supabase
+        .from('staff_members')
+        .select('*, staff_availability(*), staff_services(*)')
+        .eq('business_id', business.id);
+
+      const mappedStaff: StaffMember[] = (staffData || []).map((s: Record<string, unknown>) => ({
+        id: s.id as string,
+        businessId: s.business_id as string,
+        userId: s.user_id as string | null,
+        name: s.name as string,
+        email: s.email as string,
+        phone: s.phone as string | null,
+        role: s.role as 'admin' | 'manager' | 'staff',
+        status: s.status as 'invited' | 'active' | 'inactive',
+        inviteToken: s.invite_token as string | null,
+        avatarUrl: s.avatar_url as string | null,
+        createdAt: s.created_at as string,
+        availability: ((s.staff_availability as Record<string, unknown>[]) || []).map((a: Record<string, unknown>) => ({
+          dayOfWeek: a.day_of_week as number,
+          startTime: a.start_time as string,
+          endTime: a.end_time as string,
+          isOpen: a.is_open as boolean
+        })),
+        serviceIds: ((s.staff_services as Record<string, unknown>[]) || []).map((ss: Record<string, unknown>) => ss.service_id as string)
+      }));
+
+      set({ business: { ...business, staff: mappedStaff } });
+    },
+
+    addStaff: async (data) => {
+      const { business } = get();
+      if (!business) return null;
+
+      try {
+        const { data: newStaff, error } = await supabase
+          .from('staff_members')
+          .insert([{
+            business_id: business.id,
+            name: data.name,
+            email: data.email,
+            phone: data.phone || null,
+            role: data.role
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Assign services
+        if (data.serviceIds.length > 0) {
+          await supabase.from('staff_services').insert(
+            data.serviceIds.map(serviceId => ({
+              staff_id: newStaff.id,
+              service_id: serviceId
+            }))
+          );
+        }
+
+        const staffMember: StaffMember = {
+          id: newStaff.id,
+          businessId: newStaff.business_id,
+          userId: newStaff.user_id,
+          name: newStaff.name,
+          email: newStaff.email,
+          phone: newStaff.phone,
+          role: newStaff.role,
+          status: newStaff.status,
+          inviteToken: newStaff.invite_token,
+          avatarUrl: newStaff.avatar_url,
+          createdAt: newStaff.created_at,
+          availability: [],
+          serviceIds: data.serviceIds
+        };
+
+        set({ business: { ...business, staff: [...business.staff, staffMember] } });
+        return staffMember;
+      } catch (err) {
+        set({ error: (err as Error).message });
+        return null;
+      }
+    },
+
+    updateStaff: async (id, updates) => {
+      const { business } = get();
+      if (!business) return;
+
+      // Optimistic update
+      set({
+        business: {
+          ...business,
+          staff: business.staff.map(s => s.id === id ? { ...s, ...updates } : s)
+        }
+      });
+
+      try {
+        const dbUpdates: Record<string, unknown> = {};
+        if ('name' in updates) dbUpdates.name = updates.name;
+        if ('email' in updates) dbUpdates.email = updates.email;
+        if ('phone' in updates) dbUpdates.phone = updates.phone;
+        if ('role' in updates) dbUpdates.role = updates.role;
+        if ('status' in updates) dbUpdates.status = updates.status;
+
+        if (Object.keys(dbUpdates).length > 0) {
+          const { error } = await supabase
+            .from('staff_members')
+            .update(dbUpdates)
+            .eq('id', id);
+          if (error) throw error;
+        }
+      } catch (err) {
+        set({ error: (err as Error).message });
+        get().fetchStaff();
+      }
+    },
+
+    removeStaff: async (id) => {
+      const { business } = get();
+      if (!business) return;
+
+      // Optimistic removal
+      set({
+        business: {
+          ...business,
+          staff: business.staff.filter(s => s.id !== id)
+        }
+      });
+
+      const { error } = await supabase.from('staff_members').delete().eq('id', id);
+      if (error) {
+        set({ error: error.message });
+        get().fetchStaff();
+      }
+    },
+
+    updateStaffAvailability: async (staffId, hours) => {
+      const { business } = get();
+      if (!business) return;
+
+      // Optimistic update
+      set({
+        business: {
+          ...business,
+          staff: business.staff.map(s => s.id === staffId ? { ...s, availability: hours } : s)
+        }
+      });
+
+      try {
+        // Delete existing, re-insert
+        await supabase.from('staff_availability').delete().eq('staff_id', staffId);
+
+        const openHours = hours.filter(h => h.isOpen);
+        if (openHours.length > 0) {
+          const { error } = await supabase.from('staff_availability').insert(
+            openHours.map(h => ({
+              staff_id: staffId,
+              day_of_week: h.dayOfWeek,
+              start_time: h.startTime,
+              end_time: h.endTime,
+              is_open: h.isOpen
+            }))
+          );
+          if (error) throw error;
+        }
+      } catch (err) {
+        set({ error: (err as Error).message });
+        get().fetchStaff();
+      }
+    },
+
+    assignServicesToStaff: async (staffId, serviceIds) => {
+      const { business } = get();
+      if (!business) return;
+
+      // Optimistic update
+      set({
+        business: {
+          ...business,
+          staff: business.staff.map(s => s.id === staffId ? { ...s, serviceIds } : s)
+        }
+      });
+
+      try {
+        // Delete existing, re-insert
+        await supabase.from('staff_services').delete().eq('staff_id', staffId);
+
+        if (serviceIds.length > 0) {
+          const { error } = await supabase.from('staff_services').insert(
+            serviceIds.map(serviceId => ({
+              staff_id: staffId,
+              service_id: serviceId
+            }))
+          );
+          if (error) throw error;
+        }
+      } catch (err) {
+        set({ error: (err as Error).message });
+        get().fetchStaff();
+      }
+    },
+
+    acceptStaffInvite: async (token: string) => {
+      const { user } = get();
+      if (!user) return null;
+
+      try {
+        // Find staff member by invite token
+        const { data: staffRecord, error: findError } = await supabase
+          .from('staff_members')
+          .select('*')
+          .eq('invite_token', token)
+          .single();
+
+        if (findError || !staffRecord) throw new Error('Invalid or expired invite link');
+
+        // Link user and activate
+        const { error: updateError } = await supabase
+          .from('staff_members')
+          .update({
+            user_id: user.id,
+            status: 'active',
+            invite_token: null
+          })
+          .eq('id', staffRecord.id);
+
+        if (updateError) throw updateError;
+
+        const staffMember: StaffMember = {
+          id: staffRecord.id,
+          businessId: staffRecord.business_id,
+          userId: user.id,
+          name: staffRecord.name,
+          email: staffRecord.email,
+          phone: staffRecord.phone,
+          role: staffRecord.role,
+          status: 'active',
+          inviteToken: null,
+          avatarUrl: staffRecord.avatar_url,
+          createdAt: staffRecord.created_at,
+          availability: [],
+          serviceIds: []
+        };
+
+        set({ staffRole: staffRecord.role, staffId: staffRecord.id });
+        return staffMember;
+      } catch (err) {
+        set({ error: (err as Error).message });
+        return null;
+      }
+    },
+
+    createBooking: async (data: {
+      serviceId: string;
+      addOnIds: string[];
+      date: string;
+      time: string;
+      customerName: string;
+      customerEmail: string;
+      customerPhone?: string;
+      notes?: string;
+      totalPrice: number;
+      depositDue: number;
+      staffId?: string;
+    }) => {
     const { business } = get();
     if (!business) throw new Error('Business not found');
+
+    // 1. Auto-CRM Logic: Match/Create Client
+    let clientId = null;
+    if (data.customerPhone) {
+      try {
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('business_id', business.id)
+          .eq('phone', data.customerPhone)
+          .eq('is_deleted', false)
+          .maybeSingle();
+
+        if (existingClient) {
+          clientId = existingClient.id;
+          // Update name/email to most recent
+          await supabase
+            .from('clients')
+            .update({ 
+              name: data.customerName, 
+              email: data.customerEmail,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', clientId);
+        } else {
+          // Create new client record
+          const { data: newClient, error: cError } = await supabase
+            .from('clients')
+            .insert([{
+              business_id: business.id,
+              name: data.customerName,
+              phone: data.customerPhone,
+              email: data.customerEmail,
+              join_date: new Date().toISOString()
+            }])
+            .select()
+            .single();
+          
+          if (!cError && newClient) {
+            clientId = newClient.id;
+          }
+        }
+      } catch (crmErr) {
+        console.warn('Auto-CRM match failed:', crmErr);
+        // Continue booking even if CRM fails
+      }
+    }
 
     const service = business.services.find(s => s.id === data.serviceId);
     if (!service) throw new Error('Service not found');
@@ -852,7 +1295,7 @@ export const useAppStore = create<AppState>()(
     let totalDuration = service.duration;
     if (data.addOnIds && data.addOnIds.length > 0) {
       data.addOnIds.forEach((id: string) => {
-        const addon = service.addOns.find((a: any) => a.id === id);
+        const addon = service.addOns.find((a) => a.id === id);
         if (addon) totalDuration += addon.duration;
       });
     }
@@ -867,6 +1310,7 @@ export const useAppStore = create<AppState>()(
       .insert([{
         business_id: business.id,
         service_id: data.serviceId,
+        staff_id: data.staffId || null,
         customer_name: data.customerName,
         customer_email: data.customerEmail,
         customer_phone: data.customerPhone,
@@ -877,7 +1321,8 @@ export const useAppStore = create<AppState>()(
         paid_amount: data.depositDue || 0,
         payment_status: data.depositDue > 0 ? 'pending' : 'paid',
         status: data.depositDue > 0 ? 'pending' : 'confirmed',
-        notes: data.notes
+        notes: data.notes,
+        client_id: clientId
       }])
       .select()
       .single();
@@ -893,8 +1338,117 @@ export const useAppStore = create<AppState>()(
       );
     }
 
+    // Schedule reminders
+    await get().scheduleMessages(bData.id);
+
     return bData;
   },
+
+  // ==========================================
+  // CRM ACTIONS
+  // ==========================================
+
+  fetchClients: async () => {
+    const { business } = get();
+    if (!business) return;
+
+    const { data: clientData, error } = await supabase
+      .from('clients')
+      .select('*, client_notes(*)')
+      .eq('business_id', business.id)
+      .eq('is_deleted', false);
+
+    if (error) {
+      set({ error: error.message });
+      return;
+    }
+
+    const mappedClients: Client[] = (clientData || []).map((c: any) => ({
+      id: c.id,
+      businessId: c.business_id,
+      name: c.name,
+      phone: c.phone,
+      email: c.email,
+      joinDate: c.join_date,
+      tags: c.tags || [],
+      isDeleted: c.is_deleted,
+      createdAt: c.created_at,
+      notes: (c.client_notes || []).map((n: any) => ({
+        id: n.id,
+        clientId: n.client_id,
+        staffId: n.staff_id,
+        text: n.text,
+        createdAt: n.created_at
+      }))
+    }));
+
+    set({ business: { ...business, clients: mappedClients } });
+  },
+
+  updateClient: async (id, updates) => {
+    const { business } = get();
+    if (!business) return;
+
+    const { error } = await supabase
+      .from('clients')
+      .update({
+        name: updates.name,
+        email: updates.email,
+        phone: updates.phone,
+        tags: updates.tags,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (!error) get().fetchClients();
+  },
+
+  deleteClient: async (id) => {
+    const { business } = get();
+    if (!business) return;
+
+    // Soft delete
+    const { error } = await supabase
+      .from('clients')
+      .update({ is_deleted: true, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (!error) get().fetchClients();
+  },
+
+  addClientNote: async (clientId, text) => {
+    const { business, staffId } = get();
+    if (!business) return;
+
+    const { error } = await supabase
+      .from('client_notes')
+      .insert([{
+        client_id: clientId,
+        text,
+        staff_id: staffId || null
+      }]);
+
+    if (!error) get().fetchClients();
+  },
+
+  updateClientNote: async (id, text) => {
+    const { error } = await supabase
+      .from('client_notes')
+      .update({ text, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (!error) get().fetchClients();
+  },
+
+  deleteClientNote: async (id) => {
+    const { error } = await supabase
+      .from('client_notes')
+      .delete()
+      .eq('id', id);
+
+    if (!error) get().fetchClients();
+  },
+
 
   createCheckoutSession: async (bookingId: string) => {
     const { business } = get();
@@ -920,7 +1474,16 @@ export const useAppStore = create<AppState>()(
 
   updateBookingStatus: async (id, status) => {
     const { error } = await supabase.from('bookings').update({ status }).eq('id', id);
-    if (!error) get().fetchBusiness();
+    if (!error) {
+      if (status === 'cancelled') {
+        await supabase
+          .from('scheduled_messages')
+          .update({ status: 'SKIPPED', failure_reason: 'Booking cancelled' })
+          .eq('booking_id', id)
+          .eq('status', 'QUEUED');
+      }
+      get().fetchBusiness();
+    }
   },
 
   refundBooking: async (bookingId: string) => {
@@ -941,8 +1504,8 @@ export const useAppStore = create<AppState>()(
           )
         } : null
       }));
-    } catch (err: any) {
-      set({ error: err.message });
+    } catch (err) {
+      set({ error: (err as Error).message });
       throw err;
     }
   },
@@ -955,11 +1518,11 @@ export const useAppStore = create<AppState>()(
       } : null
     }));
 
-    if ((window as any)[`__bukd_timer_rev_${id}`]) {
-      clearTimeout((window as any)[`__bukd_timer_rev_${id}`]);
+    if ((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_rev_${id}`]) {
+      clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_rev_${id}`]);
     }
 
-    (window as any)[`__bukd_timer_rev_${id}`] = setTimeout(async () => {
+    (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_rev_${id}`] = setTimeout(async () => {
       await supabase.from('reviews').update(updates).eq('id', id);
     }, 800);
   },
@@ -972,11 +1535,11 @@ export const useAppStore = create<AppState>()(
       } : null
     }));
 
-    if ((window as any)[`__bukd_timer_proof_${id}`]) {
-      clearTimeout((window as any)[`__bukd_timer_proof_${id}`]);
+    if ((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_proof_${id}`]) {
+      clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_proof_${id}`]);
     }
 
-    (window as any)[`__bukd_timer_proof_${id}`] = setTimeout(async () => {
+    (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_proof_${id}`] = setTimeout(async () => {
       await supabase.from('proof_items').update(updates).eq('id', id);
     }, 800);
   },
@@ -990,8 +1553,8 @@ export const useAppStore = create<AppState>()(
 
       if (error) throw error;
       return data.url;
-    } catch (err: any) {
-      set({ error: err.message });
+    } catch (err) {
+      set({ error: (err as Error).message });
       return null;
     } finally {
       set({ loading: false });
@@ -1020,8 +1583,8 @@ export const useAppStore = create<AppState>()(
           stripeConnected: data.stripe_enabled
         } : null
       }));
-    } catch (err: any) {
-      console.error('Refresh Stripe status error:', err.message);
+    } catch (err) {
+      console.error('Refresh Stripe status error:', (err as Error).message);
     }
   },
 
@@ -1034,8 +1597,8 @@ export const useAppStore = create<AppState>()(
 
       if (error) throw error;
       return data.url;
-    } catch (err: any) {
-      set({ error: err.message });
+    } catch (err) {
+      set({ error: (err as Error).message });
       return null;
     } finally {
       set({ loading: false });
@@ -1051,8 +1614,8 @@ export const useAppStore = create<AppState>()(
 
       if (error) throw error;
       return data.url;
-    } catch (err: any) {
-      set({ error: err.message });
+    } catch (err) {
+      set({ error: (err as Error).message });
       return null;
     } finally {
       set({ loading: false });
@@ -1085,8 +1648,8 @@ export const useAppStore = create<AppState>()(
 
       await get().updateBusiness({ logo: publicUrl });
       return publicUrl;
-    } catch (err: any) {
-      console.error('Logo upload error:', err.message);
+    } catch (err) {
+      console.error('Logo upload error:', (err as Error).message);
       return null;
     }
   },
@@ -1123,11 +1686,219 @@ export const useAppStore = create<AppState>()(
 
       if (iError) throw iError;
       
-    } catch (err: any) {
-      set({ error: err.message });
+    } catch (err) {
+      set({ error: (err as Error).message });
       // Revert if failed
       get().fetchBusiness(0);
     }
+  },
+
+  updateNotificationSettings: async (updates: Partial<ProviderNotificationSettings>) => {
+    const { business } = get();
+    if (!business) return;
+
+    try {
+      const dbUpdates: any = {};
+      if ('confirmationEnabled' in updates) dbUpdates.confirmation_enabled = updates.confirmationEnabled;
+      if ('reminderEnabled' in updates) dbUpdates.reminder_enabled = updates.reminderEnabled;
+      if ('followupEnabled' in updates) dbUpdates.followup_enabled = updates.followupEnabled;
+      if ('reminderLeadTimeHours' in updates) dbUpdates.reminder_lead_time_hours = updates.reminderLeadTimeHours;
+      if ('smsConfirmTemplate' in updates) dbUpdates.sms_confirm_template = updates.smsConfirmTemplate;
+      if ('emailConfirmTemplate' in updates) dbUpdates.email_confirm_template = updates.emailConfirmTemplate;
+      if ('smsReminderTemplate' in updates) dbUpdates.sms_reminder_template = updates.smsReminderTemplate;
+      if ('emailReminderTemplate' in updates) dbUpdates.email_reminder_template = updates.emailReminderTemplate;
+      if ('emailFollowupTemplate' in updates) dbUpdates.email_followup_template = updates.emailFollowupTemplate;
+
+      const { error } = await supabase
+        .from('provider_notification_settings')
+        .upsert({
+          business_id: business.id,
+          ...dbUpdates,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      
+      // Refresh business data to get updated settings
+      await get().fetchBusiness(0);
+    } catch (err) {
+      console.error('Update settings error:', err);
+      set({ error: (err as Error).message });
+    }
+  },
+
+  scheduleMessages: async (bookingId: string) => {
+    const { business } = get();
+    if (!business) return;
+
+    const booking = business.bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    const settings = business.notificationSettings;
+    const clientId = booking.client_id;
+    if (!clientId) return;
+
+    const service = business.services.find(s => s.id === booking.serviceId);
+    const provider = business.staff.find(s => s.id === booking.staffId);
+
+    // Check if client opted out
+    const { data: pref } = await supabase
+      .from('client_notification_preferences')
+      .select('*')
+      .eq('client_id', clientId)
+      .eq('business_id', business.id)
+      .maybeSingle();
+
+    const render = (template: string | null, type: 'SMS' | 'EMAIL') => {
+      if (!template) {
+        // Fallback defaults if no template saved
+        if (type === 'SMS') {
+          template = "Hi {client_name}, your {service} with {provider_name} is confirmed for {date} at {time}. Need to cancel? {cancel_link} — {business_name}";
+        } else {
+          template = "Hi {client_name},\n\nYour booking for {service} is confirmed for {date} at {time}.\n\nLocation: {business_name}\n\nWe look forward to seeing you!";
+        }
+      }
+
+      let text = template
+        .replace(/{client_name}/g, booking.customerName)
+        .replace(/{service}/g, service?.name || 'Service')
+        .replace(/{date}/g, new Date(booking.date).toLocaleDateString())
+        .replace(/{time}/g, booking.startTime)
+        .replace(/{provider_name}/g, provider?.name || business.name)
+        .replace(/{business_name}/g, business.name)
+        .replace(/{cancel_link}/g, `bukd.co/c/${booking.id}`)
+        .replace(/{booking_link}/g, `bukd.co/p/${business.subdomain}`)
+        .replace(/{review_link}/g, `bukd.co/r/${booking.id}`);
+
+      // Append Opt-out
+      if (type === 'SMS') {
+        text += " \nReply STOP to unsubscribe";
+      } else {
+        text += `\n\n---\nManage your preferences: bukd.co/unsubscribe/${business.id}?clientId=${clientId}`;
+      }
+
+      return text;
+    };
+
+    const messages = [];
+
+    // 1. Confirmation
+    if (!settings || settings.confirmationEnabled) {
+      if (!pref?.sms_opt_out && (booking.customerPhone || '')) {
+        messages.push({
+          booking_id: bookingId,
+          client_id: clientId,
+          business_id: business.id,
+          type: 'CONFIRMATION',
+          channel: 'SMS',
+          scheduled_for: new Date(Date.now() + 30000).toISOString(),
+          status: 'QUEUED',
+          template_snapshot: render(settings?.smsConfirmTemplate || null, 'SMS')
+        });
+      }
+      if (!pref?.email_opt_out && (booking.customerEmail || '')) {
+        messages.push({
+          booking_id: bookingId,
+          client_id: clientId,
+          business_id: business.id,
+          type: 'CONFIRMATION',
+          channel: 'EMAIL',
+          scheduled_for: new Date(Date.now() + 30000).toISOString(),
+          status: 'QUEUED',
+          template_snapshot: render(settings?.emailConfirmTemplate || null, 'EMAIL')
+        });
+      }
+    }
+
+    // 2. Reminder
+    if (settings?.reminderEnabled) {
+      const appointmentTime = new Date(`${booking.date} ${booking.startTime}`).getTime();
+      const leadTimeMs = (settings.reminderLeadTimeHours || 24) * 60 * 60 * 1000;
+      const scheduledTime = new Date(appointmentTime - leadTimeMs);
+      const tooClose = (appointmentTime - Date.now()) <= leadTimeMs;
+
+      if (!pref?.sms_opt_out && (booking.customerPhone || '')) {
+        messages.push({
+          booking_id: bookingId,
+          client_id: clientId,
+          business_id: business.id,
+          type: 'REMINDER',
+          channel: 'SMS',
+          scheduled_for: scheduledTime.toISOString(),
+          status: tooClose ? 'SKIPPED' : 'QUEUED',
+          failure_reason: tooClose ? 'Booked too close to appointment time' : null,
+          template_snapshot: tooClose ? null : render(settings?.smsReminderTemplate || null, 'SMS')
+        });
+      }
+      if (!pref?.email_opt_out && (booking.customerEmail || '')) {
+        messages.push({
+          booking_id: bookingId,
+          client_id: clientId,
+          business_id: business.id,
+          type: 'REMINDER',
+          channel: 'EMAIL',
+          scheduled_for: scheduledTime.toISOString(),
+          status: tooClose ? 'SKIPPED' : 'QUEUED',
+          failure_reason: tooClose ? 'Booked too close to appointment time' : null,
+          template_snapshot: tooClose ? null : render(settings?.emailReminderTemplate || null, 'EMAIL')
+        });
+      }
+    }
+
+    // 3. Followup
+    if (settings?.followupEnabled) {
+      const endTime = new Date(`${booking.date} ${booking.endTime}`).getTime();
+      messages.push({
+        booking_id: bookingId,
+        client_id: clientId,
+        business_id: business.id,
+        type: 'FOLLOWUP',
+        channel: 'EMAIL',
+        scheduled_for: new Date(endTime + 2 * 60 * 60 * 1000).toISOString(),
+        status: 'QUEUED',
+        template_snapshot: render(settings?.emailFollowupTemplate || null, 'EMAIL')
+      });
+    }
+
+    if (messages.length > 0) {
+      await supabase.from('scheduled_messages').insert(messages);
+      get().fetchBusiness(0);
+    }
+  },
+
+  getDashboardStats: (period = 'last30', compare = false, staffId?: string) => {
+    const { business } = get();
+    if (!business) return null;
+
+    // Use a simple local variable for caching since we don't want it persisted
+    const CACHE_KEY = `${business.id}_${period}_${compare}_${staffId || 'all'}`;
+    const now = Date.now();
+    
+    // Check global cache window object to avoid persistence issues
+    if (!window.__bukd_dash_cache) {
+      window.__bukd_dash_cache = {};
+    }
+    
+    const cache = window.__bukd_dash_cache[CACHE_KEY];
+    if (cache && (now - cache.timestamp < 5 * 60 * 1000)) {
+      return cache.data;
+    }
+
+    const stats = calculateDashboardStats(
+      business.bookings,
+      business.services,
+      business.workingHours,
+      period,
+      compare,
+      staffId
+    );
+
+    window.__bukd_dash_cache[CACHE_KEY] = {
+      data: stats,
+      timestamp: now
+    };
+
+    return stats;
   }
 }), {
   name: 'bukd-storage',
@@ -1136,3 +1907,6 @@ export const useAppStore = create<AppState>()(
     onboardingStep: state.onboardingStep,
   }),
 }));
+
+
+
