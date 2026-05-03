@@ -267,7 +267,7 @@ export const OnboardingFlow: React.FC = () => {
 
       <header className="fixed top-0 left-0 w-full h-20 flex items-center justify-between px-8 z-50">
          <div className="flex items-center">
-            <img src="/images/logomain.png" alt="Skeduley Logo" className="h-6 w-auto" />
+            <img src="/images/logomain.png" alt="Skeduley Logo" className="h-[72px] w-auto" />
          </div>
          <button onClick={() => navigate('/dashboard')} className="text-[10px] font-normal text-text-tertiary uppercase tracking-widest hover:text-text-primary transition-colors">Exit</button>
       </header>

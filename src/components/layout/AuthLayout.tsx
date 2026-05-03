@@ -9,7 +9,7 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         <div className="absolute inset-0 bg-linear-to-br from-brand/5 via-transparent to-transparent opacity-40" />
         <div className="relative z-10 max-w-sm space-y-10">
            <div className="flex items-center">
-              <img src="/images/logomain.png" alt="Skeduley Logo" className="h-10 w-auto" />
+              <img src="/images/logomain.png" alt="Skeduley Logo" className="h-[120px] w-auto" />
            </div>
            
            <div className="space-y-6">
@@ -32,7 +32,7 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
       <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 lg:p-20 relative bg-white">
         {/* Mobile Logo */}
         <div className="lg:hidden absolute top-12 left-1/2 -translate-x-1/2 flex justify-center">
-            <img src="/images/logomain.png" alt="Skeduley Logo" className="h-10 w-auto" />
+            <img src="/images/logomain.png" alt="Skeduley Logo" className="h-[120px] w-auto" />
         </div>
 
         <motion.div 

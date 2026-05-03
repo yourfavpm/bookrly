@@ -95,7 +95,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <Link to="/" className="flex items-center">
-              <img src="/images/logomain.png" alt="Skeduley Logo" className="h-9 w-auto" />
+              <img src="/images/logomain.png" alt="Skeduley Logo" className="h-[108px] w-auto" />
             </Link>
           </div>
 
@@ -709,7 +709,7 @@ export const LandingPage: React.FC = () => {
             {/* Brand Column */}
             <div className="col-span-2 md:col-span-1 space-y-5">
               <Link to="/" className="flex items-center">
-                <img src="/images/logomain.png" alt="Skeduley Logo" className="h-8 w-auto filter brightness-0 invert" />
+                <img src="/images/logomain.png" alt="Skeduley Logo" className="h-[96px] w-auto filter brightness-0 invert" />
               </Link>
               <p className="text-sm text-white/40 font-medium leading-relaxed max-w-xs">
                 The easiest way to launch a booking website and accept payments for your service business.
