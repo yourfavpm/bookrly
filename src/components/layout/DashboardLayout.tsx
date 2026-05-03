@@ -111,7 +111,7 @@ export const DashboardLayout: React.FC = () => {
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic text-sm">B</div>
+            <img src="/images/logomain.png" alt="Skeduley Logo" className="h-8 lg:h-9 w-auto filter brightness-0 invert" />
             <div className="flex flex-col lg:flex-row lg:items-center gap-0 lg:gap-2">
                {/* Show Business Name on Desktop, Page Title on Mobile */}
                <span className="text-sm font-semibold text-white tracking-tight hidden lg:block">
@@ -200,9 +200,8 @@ export const DashboardLayout: React.FC = () => {
               className="fixed inset-y-0 left-0 w-[280px] bg-white z-70 lg:hidden flex flex-col shadow-2xl"
             >
               <div className="p-6 border-b border-black/5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                   <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic text-sm">B</div>
-                   <span className="font-bold tracking-tight">Skeduley Console</span>
+                <div className="flex items-center">
+                   <img src="/images/logomain.png" alt="Skeduley Console" className="h-8 w-auto" />
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-black/20 hover:text-black/40"><ChevronLeft size={20} /></button>
               </div>

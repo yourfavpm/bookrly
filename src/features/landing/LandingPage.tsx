@@ -94,11 +94,8 @@ export const LandingPage: React.FC = () => {
       <nav className="fixed top-0 left-0 right-0 h-20 bg-[#FAFAF8]/80 backdrop-blur-xl z-50 border-b border-black/3">
         <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
           <div className="flex items-center gap-12">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-brand/20">
-                <div className="w-3.5 h-3.5 bg-white rounded-[2px]" />
-              </div>
-              <span className="text-xl font-bold tracking-tight text-black">Skeduley</span>
+            <Link to="/" className="flex items-center">
+              <img src="/images/logomain.png" alt="Skeduley Logo" className="h-9 w-auto" />
             </Link>
           </div>
 
@@ -711,11 +708,8 @@ export const LandingPage: React.FC = () => {
           <div className="py-16 grid grid-cols-2 md:grid-cols-4 gap-12">
             {/* Brand Column */}
             <div className="col-span-2 md:col-span-1 space-y-5">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-brand rounded-xl flex items-center justify-center">
-                  <div className="w-3 h-3 bg-white rounded-sm" />
-                </div>
-                <span className="text-lg font-bold tracking-tight">Skeduley</span>
+              <Link to="/" className="flex items-center">
+                <img src="/images/logomain.png" alt="Skeduley Logo" className="h-8 w-auto filter brightness-0 invert" />
               </Link>
               <p className="text-sm text-white/40 font-medium leading-relaxed max-w-xs">
                 The easiest way to launch a booking website and accept payments for your service business.
