@@ -180,7 +180,7 @@ export const NotificationSettings: React.FC = () => {
                               .replace(/{date}/g, 'Monday, Apr 24')
                               .replace(/{time}/g, '10:00 AM')
                               .replace(/{provider_name}/g, 'Jane')
-                              .replace(/{business_name}/g, business?.name || 'Bukd Salon')
+                              .replace(/{business_name}/g, business?.name || 'Skeduley Salon')
                               .replace(/{cancel_link}/g, `${getBaseDomain()}/c/abc123`)
                               .replace(/{review_link}/g, `${getBaseDomain()}/r/abc123`)
                             }

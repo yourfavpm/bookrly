@@ -28,7 +28,7 @@ export const InstallAppPrompt = () => {
       setIsInstallable(true);
       
       // Auto-show after a short delay if not dismissed recently
-      const dismissed = localStorage.getItem('getbukd_install_dismissed');
+      const dismissed = localStorage.getItem('skeduley_install_dismissed');
       if (!dismissed) {
         setTimeout(() => setShowPrompt(true), 3000);
       }
@@ -38,7 +38,7 @@ export const InstallAppPrompt = () => {
 
     // For iOS, show after a delay if not dismissed
     if (isIosDevice) {
-      const dismissed = localStorage.getItem('getbukd_install_dismissed');
+      const dismissed = localStorage.getItem('skeduley_install_dismissed');
       if (!dismissed) {
         setTimeout(() => setShowPrompt(true), 3000);
       }
@@ -61,7 +61,7 @@ export const InstallAppPrompt = () => {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem('getbukd_install_dismissed', 'true');
+    localStorage.setItem('skeduley_install_dismissed', 'true');
   };
 
   if (isStandalone || !showPrompt) return null;
@@ -95,8 +95,8 @@ export const InstallAppPrompt = () => {
             </h3>
             <p className="text-[11px] text-text-secondary leading-relaxed mb-3">
               {isIOS 
-                ? "Install GetBukd for the best dashboard experience and instant access."
-                : "Install GetBukd for the best dashboard experience and instant access."}
+                ? "Install Skeduley for the best dashboard experience and instant access."
+                : "Install Skeduley for the best dashboard experience and instant access."}
             </p>
             
             {!isIOS ? (

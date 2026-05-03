@@ -10,12 +10,12 @@ export const getBaseDomain = () => {
     return host;
   }
   
-  // For production, we want the root domain (e.g., bukd.co or opsly.com)
-  // Even if we're on a subdomain like app.bukd.co
+  // For production, we want the root domain (e.g., skeduley.co or opsly.com)
+  // Even if we're on a subdomain like app.skeduley.co
   const parts = host.split('.');
   if (parts.length > 2) {
     // Check for common TLDs like .co.uk if necessary, 
-    // but for bukd.co / bukd.com, taking the last two is enough
+    // but for skeduley.co / skeduley.com, taking the last two is enough
     return parts.slice(-2).join('.');
   }
   

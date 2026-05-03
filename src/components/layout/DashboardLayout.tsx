@@ -202,7 +202,7 @@ export const DashboardLayout: React.FC = () => {
               <div className="p-6 border-b border-black/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                    <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic text-sm">B</div>
-                   <span className="font-bold tracking-tight">Bukd Console</span>
+                   <span className="font-bold tracking-tight">Skeduley Console</span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-black/20 hover:text-black/40"><ChevronLeft size={20} /></button>
               </div>

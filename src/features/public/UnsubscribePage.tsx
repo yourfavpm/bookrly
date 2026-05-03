@@ -141,7 +141,7 @@ export const UnsubscribePage: React.FC = () => {
 
            <div className="pt-8 border-t border-border-polaris text-center">
               <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-medium">
-                 Powered by <span className="text-brand font-bold">Bukd</span>
+                 Powered by <span className="text-brand font-bold">Skeduley</span>
               </p>
            </div>
         </Card>

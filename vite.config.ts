@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'GetBukd',
-        short_name: 'GetBukd',
+        name: 'Skeduley',
+        short_name: 'Skeduley',
         description: 'Launch your booking website in minutes.',
         theme_color: '#863bff',
         background_color: '#ffffff',

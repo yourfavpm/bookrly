@@ -39,7 +39,7 @@ export const PRICING_TIERS: PricingTier[] = [
     transactionFee: '2.5%',
     features: [
       '1 provider profile',
-      'Booking website on bukd.co subdomain',
+      'Booking website on skeduley.co subdomain',
       'Unlimited services listed',
       'Basic booking calendar',
       'Online payments (2.5% fee)',

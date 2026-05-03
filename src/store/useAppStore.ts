@@ -631,8 +631,8 @@ export const useAppStore = create<AppState>()(
 
     // Handle immediate save
     if (immediate) {
-      if ((window as any).__bukd_save_timer) {
-        clearTimeout((window as any).__bukd_save_timer);
+      if ((window as any).__skeduley_save_timer) {
+        clearTimeout((window as any).__skeduley_save_timer);
       }
       try {
         const { error } = await supabase.from('businesses').update(dbUpdates).eq('id', business.id);
@@ -645,11 +645,11 @@ export const useAppStore = create<AppState>()(
     }
 
     // Debounce the DB persist
-    if ((window as unknown as { __bukd_save_timer: ReturnType<typeof setTimeout> }).__bukd_save_timer) {
-      clearTimeout((window as unknown as { __bukd_save_timer: ReturnType<typeof setTimeout> }).__bukd_save_timer);
+    if ((window as unknown as { __skeduley_save_timer: ReturnType<typeof setTimeout> }).__skeduley_save_timer) {
+      clearTimeout((window as unknown as { __skeduley_save_timer: ReturnType<typeof setTimeout> }).__skeduley_save_timer);
     }
 
-    (window as unknown as { __bukd_save_timer: ReturnType<typeof setTimeout> }).__bukd_save_timer = setTimeout(async () => {
+    (window as unknown as { __skeduley_save_timer: ReturnType<typeof setTimeout> }).__skeduley_save_timer = setTimeout(async () => {
       const latestBusiness = get().business;
       if (!latestBusiness) return;
 
@@ -878,11 +878,11 @@ export const useAppStore = create<AppState>()(
       } : null
     }));
 
-    if ((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_svc_${id}`]) {
-      clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_svc_${id}`]);
+    if ((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__skeduley_timer_svc_${id}`]) {
+      clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__skeduley_timer_svc_${id}`]);
     }
 
-    (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_svc_${id}`] = setTimeout(async () => {
+    (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__skeduley_timer_svc_${id}`] = setTimeout(async () => {
       try {
         await supabase.from('services').update({
           name: service.name,
@@ -1050,7 +1050,7 @@ export const useAppStore = create<AppState>()(
 
     detectLocation: async () => {
       // Check if we already detected or set manually to avoid rate limiting
-      if (localStorage.getItem('bukd_geo_detected')) return;
+      if (localStorage.getItem('skeduley_geo_detected')) return;
 
       try {
         const response = await fetch('https://ipapi.co/json/');
@@ -1064,7 +1064,7 @@ export const useAppStore = create<AppState>()(
         } else {
           set({ isCanada: false, currency: 'USD' });
         }
-        localStorage.setItem('bukd_geo_detected', 'true');
+        localStorage.setItem('skeduley_geo_detected', 'true');
       } catch (err) {
         console.warn('[AppStore] Geolocation failed (Rate limited or CORS). Defaulting to USD.');
         set({ isCanada: false, currency: 'USD' });
@@ -1645,11 +1645,11 @@ export const useAppStore = create<AppState>()(
       } : null
     }));
 
-    if ((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_rev_${id}`]) {
-      clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_rev_${id}`]);
+    if ((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__skeduley_timer_rev_${id}`]) {
+      clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__skeduley_timer_rev_${id}`]);
     }
 
-    (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_rev_${id}`] = setTimeout(async () => {
+    (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__skeduley_timer_rev_${id}`] = setTimeout(async () => {
       await supabase.from('reviews').update(updates).eq('id', id);
     }, 800);
   },
@@ -1662,11 +1662,11 @@ export const useAppStore = create<AppState>()(
       } : null
     }));
 
-    if ((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_proof_${id}`]) {
-      clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_proof_${id}`]);
+    if ((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__skeduley_timer_proof_${id}`]) {
+      clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__skeduley_timer_proof_${id}`]);
     }
 
-    (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__bukd_timer_proof_${id}`] = setTimeout(async () => {
+    (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`__skeduley_timer_proof_${id}`] = setTimeout(async () => {
       await supabase.from('proof_items').update(updates).eq('id', id);
     }, 800);
   },
@@ -2002,11 +2002,11 @@ export const useAppStore = create<AppState>()(
     const now = Date.now();
     
     // Check global cache window object to avoid persistence issues
-    if (!window.__bukd_dash_cache) {
-      window.__bukd_dash_cache = {};
+    if (!window.__skeduley_dash_cache) {
+      window.__skeduley_dash_cache = {};
     }
     
-    const cache = window.__bukd_dash_cache[CACHE_KEY];
+    const cache = window.__skeduley_dash_cache[CACHE_KEY];
     if (cache && (now - cache.timestamp < 5 * 60 * 1000)) {
       return cache.data;
     }
@@ -2020,7 +2020,7 @@ export const useAppStore = create<AppState>()(
       staffId
     );
 
-    window.__bukd_dash_cache[CACHE_KEY] = {
+    window.__skeduley_dash_cache[CACHE_KEY] = {
       data: stats,
       timestamp: now
     };
@@ -2111,7 +2111,7 @@ export const useAppStore = create<AppState>()(
   }
 
 }), {
-  name: 'bukd-storage',
+  name: 'skeduley-storage',
   storage: createJSONStorage(() => localStorage),
   partialize: (state) => ({ 
     onboardingStep: state.onboardingStep,

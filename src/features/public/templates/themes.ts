@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// BUKD TEMPLATE SYSTEM — Theme Definitions
+// SKEDULEY TEMPLATE SYSTEM — Theme Definitions
 // ═══════════════════════════════════════════════════════════
 
 import type { ThemeKey, ThemeDefinition } from './types';

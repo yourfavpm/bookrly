@@ -56,8 +56,8 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, onBook, scrollTo, 
           {socialLinks}
           <div className="text-xs font-medium" style={{ color: 'var(--t-text-muted)' }}>
             © {year} {business.name}. All rights reserved. <br/>
-            <a href="https://bukd.co" target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-1 justify-center md:justify-end mt-2">
-              Powered by Bukd <ArrowUpRight size={10} />
+            <a href="https://skeduley.co" target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-1 justify-center md:justify-end mt-2">
+              Powered by Skeduley <ArrowUpRight size={10} />
             </a>
           </div>
         </div>
@@ -79,7 +79,7 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, onBook, scrollTo, 
             {socialLinks}
           </div>
           <div className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--t-text-muted)' }}>
-            © {year} {business.name} — <a href="https://bukd.co" target="_blank" rel="noreferrer" className="hover:underline">Built on Bukd</a>
+            © {year} {business.name} — <a href="https://skeduley.co" target="_blank" rel="noreferrer" className="hover:underline">Built on Skeduley</a>
           </div>
         </div>
       </footer>
@@ -127,7 +127,7 @@ export const SiteFooter: React.FC<FooterProps> = ({ business, onBook, scrollTo, 
         
         <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4 text-xs" style={{ borderColor: 'var(--t-border)', color: 'var(--t-text-muted)' }}>
           <p>© {year} {business.name}. All rights reserved.</p>
-          <p>Designed and powered by <a href="https://bukd.co" target="_blank" rel="noreferrer" className="font-bold hover:underline" style={{ color: 'var(--t-text-primary)' }}>Bukd</a></p>
+          <p>Designed and powered by <a href="https://skeduley.co" target="_blank" rel="noreferrer" className="font-bold hover:underline" style={{ color: 'var(--t-text-primary)' }}>Skeduley</a></p>
         </div>
       </div>
     </footer>

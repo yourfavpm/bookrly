@@ -53,7 +53,7 @@ serve(async (req) => {
             url: business.custom_domain
               ? `https://${business.custom_domain}`
               : business.subdomain
-                ? `https://${business.subdomain}.bukd.co`
+                ? `https://${business.subdomain}.skeduley.co`
                 : undefined,
             support_phone: business.phone || undefined,
           },

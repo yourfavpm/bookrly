@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// BUKD TEMPLATE SYSTEM — Core Type Definitions
+// SKEDULEY TEMPLATE SYSTEM — Core Type Definitions
 // ═══════════════════════════════════════════════════════════
 
 // ── Business Categories ──────────────────────────────────

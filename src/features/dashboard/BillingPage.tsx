@@ -136,7 +136,7 @@ export const BillingPage: React.FC = () => {
             <tbody className="divide-y divide-slate-50">
               {[
                 { section: 'Website & Booking' },
-                { name: 'Booking website (bukd subdomain)', starter: true, pro: true, business: true },
+                { name: 'Booking website (skeduley subdomain)', starter: true, pro: true, business: true },
                 { name: 'Custom domain connection', starter: false, pro: true, business: true },
                 { name: 'SSL Security (HTTPS)', starter: true, pro: true, business: true },
                 { name: 'Premium Studio Templates', starter: '1', pro: '5', business: 'All (10+)' },

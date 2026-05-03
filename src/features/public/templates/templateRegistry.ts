@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// BUKD TEMPLATE SYSTEM — Registry & Renderer
+// SKEDULEY TEMPLATE SYSTEM — Registry & Renderer
 // ═══════════════════════════════════════════════════════════
 //
 // This replaces the old system of individual layout files.

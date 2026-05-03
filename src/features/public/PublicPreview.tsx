@@ -206,7 +206,7 @@ export const PublicPreview: React.FC = () => {
                  <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic text-sm" style={{ backgroundColor: business.primaryColor }}>B</div>
                  <span className="text-lg font-bold tracking-tight">{business.name}</span>
               </div>
-              <p className="text-sm text-text-tertiary font-normal">Premium booking powered by Bukd.</p>
+              <p className="text-sm text-text-tertiary font-normal">Premium booking powered by Skeduley.</p>
             </div>
             <div className="space-y-6">
                <h4 className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Navigation</h4>

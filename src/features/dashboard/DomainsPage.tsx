@@ -67,7 +67,7 @@ export const DomainsPage: React.FC = () => {
           <div className="space-y-1 flex-1">
             <h3 className="font-bold text-text-primary">Custom Domains are a Pro feature</h3>
             <p className="text-sm text-text-secondary leading-relaxed">
-              Connect your own domain (e.g. www.yourname.com) to remove bukd branding and improve SEO.
+              Connect your own domain (e.g. www.yourname.com) to remove skeduley branding and improve SEO.
             </p>
             <div className="pt-3">
               <Button variant="ghost" className="text-brand text-xs font-bold p-0 hover:bg-transparent">

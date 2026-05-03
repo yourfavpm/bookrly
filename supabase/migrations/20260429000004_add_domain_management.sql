@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS public.domains (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     business_id UUID REFERENCES public.businesses(id) ON DELETE CASCADE NOT NULL,
-    domain TEXT NOT NULL UNIQUE, -- e.g. "sarah-yoga.bukd.co" or "sarahyoga.com"
+    domain TEXT NOT NULL UNIQUE, -- e.g. "sarah-yoga.skeduley.co" or "sarahyoga.com"
     type TEXT NOT NULL CHECK (type IN ('subdomain', 'custom')),
     status TEXT NOT NULL DEFAULT 'pending_verification' CHECK (status IN (
         'pending_verification',

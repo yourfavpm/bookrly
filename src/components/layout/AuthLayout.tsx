@@ -12,7 +12,7 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
               <div className="w-10 h-10 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic shadow-lg shadow-brand/10">
                 B
               </div>
-              <span className="font-semibold text-xl tracking-tight text-text-primary">Bukd</span>
+              <span className="font-semibold text-xl tracking-tight text-text-primary">Skeduley</span>
            </div>
            
            <div className="space-y-6">
@@ -21,7 +21,7 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                 <span className="text-text-tertiary">booking link</span>
               </h2>
               <p className="text-sm text-text-secondary font-light max-w-xs leading-relaxed">
-                Bukd gives you a complete booking website, not just a link. Focus on your craft, we'll handle the rest.
+                Skeduley gives you a complete booking website, not just a link. Focus on your craft, we'll handle the rest.
               </p>
            </div>
         </div>
@@ -38,7 +38,7 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
             <div className="w-9 h-9 rounded-xl bg-brand flex items-center justify-center text-white font-bold italic text-sm">
                 B
             </div>
-            <span className="font-semibold text-base tracking-tight text-text-primary">Bukd</span>
+            <span className="font-semibold text-base tracking-tight text-text-primary">Skeduley</span>
         </div>
 
         <motion.div 
@@ -52,7 +52,7 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         
         <footer className="absolute bottom-8 left-0 right-0 text-center">
             <p className="text-[10px] text-text-tertiary uppercase tracking-widest font-normal opacity-50">
-                &copy; 2026 Bukd Canada
+                &copy; 2026 Skeduley Canada
             </p>
         </footer>
       </div>

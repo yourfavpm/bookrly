@@ -332,7 +332,7 @@ export const SettingsPage: React.FC = () => {
                 <div className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full w-fit border ${statusColor}`}>
                   {statusLabel}
                 </div>
-                <h3 className="text-2xl font-bold">GetBukd Pro</h3>
+                <h3 className="text-2xl font-bold">Skeduley Pro</h3>
                 <p className="text-xs text-text-tertiary">
                   {isTrialing ? `Your trial expires in ${trialDaysLeft} days.` : isActive ? 'Full power for your business.' : isPastDue ? 'Update your payment to continue.' : isCanceled ? 'Your subscription has been canceled.' : 'Subscribe to unlock all features.'}
                 </p>

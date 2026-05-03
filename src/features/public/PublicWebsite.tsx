@@ -68,7 +68,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
         const rootDomain = getBaseDomain();
         
         if (host !== rootDomain && host.endsWith(rootDomain)) {
-          // Subdomain case (e.g. biz.bukd.co)
+          // Subdomain case (e.g. biz.skeduley.co)
           targetSubdomain = host.replace(`.${rootDomain}`, '');
         } else if (host !== rootDomain && host !== 'localhost' && !host.includes('vercel.app')) {
           // Custom domain case (e.g. mybiz.com)

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// BUKD TEMPLATE SYSTEM — Universal Template Renderer
+// SKEDULEY TEMPLATE SYSTEM — Universal Template Renderer
 // ═══════════════════════════════════════════════════════════
 //
 // Renders ANY template from its definition data.
