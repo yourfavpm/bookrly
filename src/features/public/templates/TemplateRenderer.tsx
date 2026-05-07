@@ -8,6 +8,7 @@
 import React from 'react';
 import type { SectionProps, SectionType, TemplateDefinition } from './types';
 import { getTheme, getThemeStyles, GOOGLE_FONTS_URL } from './themes';
+import { useAppStore } from '../../../store/useAppStore';
 
 // Section components
 import { SiteNav } from '../sections/SiteNav';
@@ -113,9 +114,36 @@ interface TemplateRendererProps extends SectionProps {
   template: TemplateDefinition;
 }
 
-export const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, ...props }) => {
+export const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, isEditing, ...props }) => {
   const theme = getTheme(template.theme);
   const themeStyles = getThemeStyles(theme);
+
+  const customStyles = {
+    ...themeStyles,
+    ...(props.business?.primaryColor && {
+      '--t-accent': props.business.primaryColor,
+      '--t-accent-hover': `${props.business.primaryColor}e6`,
+      '--t-accent-foreground': '#ffffff' // Assuming white text on accent for simplicity, though could calculate luminance
+    }),
+    ...(props.business?.themeMode === 'dark' && {
+      '--t-bg-primary': '#020617',    // slate-950
+      '--t-bg-secondary': '#0f172a',  // slate-900
+      '--t-bg-tertiary': '#1e293b',   // slate-800
+      '--t-text-primary': '#f8fafc',  // slate-50
+      '--t-text-secondary': '#94a3b8',// slate-400
+      '--t-text-tertiary': '#64748b', // slate-500
+      '--t-border': '#1e293b',        // slate-800
+    }),
+    ...(props.business?.themeMode === 'light' && {
+      '--t-bg-primary': '#ffffff',
+      '--t-bg-secondary': '#f8fafc',  // slate-50
+      '--t-bg-tertiary': '#f1f5f9',   // slate-100
+      '--t-text-primary': '#0f172a',  // slate-900
+      '--t-text-secondary': '#475569',// slate-600
+      '--t-text-tertiary': '#64748b', // slate-500
+      '--t-border': '#e2e8f0',        // slate-200
+    })
+  } as React.CSSProperties;
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
@@ -129,15 +157,92 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, ..
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="stylesheet" href={GOOGLE_FONTS_URL} />
 
-      <div style={themeStyles} data-theme={template.theme} data-template={template.id}>
+      <div 
+        style={customStyles} 
+        data-theme={template.theme} 
+        data-template={template.id}
+        data-theme-mode={props.business?.themeMode || 'light'}
+      >
+        <style dangerouslySetInnerHTML={{ __html: `
+          [data-theme-mode="dark"] h1, 
+          [data-theme-mode="dark"] h2, 
+          [data-theme-mode="dark"] h3, 
+          [data-theme-mode="dark"] h4, 
+          [data-theme-mode="dark"] h5, 
+          [data-theme-mode="dark"] h6,
+          [data-theme-mode="dark"] .text-gray-900,
+          [data-theme-mode="dark"] .text-slate-900 {
+            color: var(--t-text-primary) !important;
+          }
+          [data-theme-mode="dark"] p, 
+          [data-theme-mode="dark"] span:not(.no-dark-override),
+          [data-theme-mode="dark"] .text-gray-600,
+          [data-theme-mode="dark"] .text-slate-600,
+          [data-theme-mode="dark"] .text-gray-500,
+          [data-theme-mode="dark"] .text-slate-500 {
+            color: var(--t-text-secondary) !important;
+          }
+          [data-theme-mode="dark"] .bg-white {
+            background-color: var(--t-bg-secondary) !important;
+          }
+          [data-theme-mode="dark"] .bg-gray-50,
+          [data-theme-mode="dark"] .bg-slate-50 {
+            background-color: var(--t-bg-tertiary) !important;
+          }
+          [data-theme-mode="dark"] .border-gray-100,
+          [data-theme-mode="dark"] .border-slate-100,
+          [data-theme-mode="dark"] .border-gray-200,
+          [data-theme-mode="dark"] .border-slate-200 {
+            border-color: var(--t-border) !important;
+          }
+        `}} />
         {/* Nav */}
         <SiteNav {...props} scrollTo={scrollTo} />
 
         {/* Sections in order */}
-        {template.sectionOrder.map(section =>
-          renderSection(section, template, props, scrollTo)
-        )}
+        {template.sectionOrder.map((section) => {
+          const isHidden = props.business?.hiddenSections?.includes(section);
+          
+          // Hide on live site
+          if (isHidden && !isEditing) return null;
+
+          const rendered = renderSection(section, template, { ...props, isEditing }, scrollTo);
+          if (!rendered) return null;
+          
+          if (isEditing) {
+            return (
+              <EditorSectionWrapper key={`wrap-${section}`} section={section} isHidden={isHidden}>
+                {rendered}
+              </EditorSectionWrapper>
+            );
+          }
+          return rendered;
+        })}
       </div>
     </>
+  );
+};
+
+// ── Editor Wrapper Component ─────────────────────────────
+const EditorSectionWrapper: React.FC<{ section: string; isHidden?: boolean; children: React.ReactNode }> = ({ section, isHidden, children }) => {
+  const { activeEditorSection, setActiveEditorSection } = useAppStore();
+  const isActive = activeEditorSection === section;
+  
+  return (
+    <div 
+      className={`relative group transition-all duration-300 cursor-pointer ${isActive ? 'ring-2 ring-brand ring-inset z-10' : 'hover:ring-2 hover:ring-brand/40 hover:ring-inset'} ${isHidden ? 'opacity-50 grayscale' : ''}`}
+      onClick={(e) => {
+         e.stopPropagation();
+         setActiveEditorSection(section);
+      }}
+    >
+      {isActive && (
+        <div className="absolute top-0 left-0 bg-brand text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 z-20 rounded-br-lg shadow-sm flex items-center gap-2">
+          {section}
+          {isHidden && <span className="text-white/70 border-l border-white/20 pl-2">HIDDEN</span>}
+        </div>
+      )}
+      {children}
+    </div>
   );
 };

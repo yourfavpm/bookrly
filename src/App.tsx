@@ -5,7 +5,7 @@ import { Login } from './features/auth/Login';
 import { ForgotPassword } from './features/auth/ForgotPassword';
 import { OnboardingFlow } from './features/onboarding/OnboardingFlow';
 import { DashboardLayout } from './components/layout/DashboardLayout';
-import { WebsiteCustomizer } from './features/dashboard/WebsiteCustomizer';
+import { WebsiteEditor } from './features/dashboard/WebsiteEditor';
 import { ServicesList } from './features/dashboard/ServicesList';
 import { AvailabilityPage } from './features/dashboard/AvailabilityPage';
 import { BookingsPage } from './features/dashboard/BookingsPage';
@@ -54,7 +54,6 @@ function App() {
           }>
             <Route index element={<Navigate to="overview" replace />} />
             <Route path="overview" element={<DashboardOverview />} />
-            <Route path="website" element={<WebsiteCustomizer />} />
             <Route path="services" element={<ServicesList />} />
             <Route path="portfolio" element={<PortfolioPage />} />
             <Route path="testimonials" element={<TestimonialsPage />} />
@@ -69,6 +68,13 @@ function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="settings/notifications" element={<NotificationSettings />} />
           </Route>
+          
+          {/* Full Screen Website Editor */}
+          <Route path="/dashboard/website" element={
+            <ProtectedRoute>
+              <WebsiteEditor />
+            </ProtectedRoute>
+          } />
           
           {/* Public Site (Direct View) */}
           <Route path="/p/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />

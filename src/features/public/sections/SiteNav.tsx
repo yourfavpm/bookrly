@@ -19,9 +19,11 @@ export const SiteNav: React.FC<NavProps> = ({ business, scrollTo, onBook }) => {
             {business.name.charAt(0)}
           </div>
         )}
-        <span className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--t-heading-font)', color: 'var(--t-text-primary)' }}>
-          {business.name || 'Your Business'}
-        </span>
+        {!business.logo && (
+          <span className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--t-heading-font)', color: 'var(--t-text-primary)' }}>
+            {business.name || 'Your Business'}
+          </span>
+        )}
         {isCanada && (
           <div className="flex items-center gap-1.5 px-2 py-1 ml-2 border" 
                style={{ backgroundColor: 'var(--t-bg-secondary)', borderColor: 'var(--t-border)', borderRadius: 'var(--t-radius)' }}>

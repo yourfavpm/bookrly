@@ -207,6 +207,25 @@ interface BusinessState {
   trialEndDate: string | null;
   planType: 'free' | 'pro' | 'enterprise';
   domains: Domain[];
+  themeMode: 'light' | 'dark' | 'auto';
+  hiddenSections: string[];
+  faqs: FAQ[];
+  beforeAfterImages: BeforeAfterImage[];
+}
+
+export interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  orderIndex: number;
+}
+
+export interface BeforeAfterImage {
+  id: string;
+  beforeUrl: string;
+  afterUrl: string;
+  title: string;
+  description: string;
 }
 
 export interface Domain {
@@ -233,6 +252,13 @@ interface AppState {
   currency: 'USD' | 'CAD';
   staffRole: 'admin' | 'manager' | 'staff' | 'owner' | null;
   staffId: string | null;
+  
+  // Website Editor State
+  previewTemplateKey: string | null;
+  activeEditorSection: string | null;
+  
+  setPreviewTemplateKey: (key: string | null) => void;
+  setActiveEditorSection: (section: string | null) => void;
   
   // Actions
   setUser: (user: User | null) => void;
@@ -332,6 +358,11 @@ export const useAppStore = create<AppState>()(
   currency: 'CAD',
   staffRole: null,
   staffId: null,
+  previewTemplateKey: null,
+  activeEditorSection: null,
+  
+  setPreviewTemplateKey: (key) => set({ previewTemplateKey: key }),
+  setActiveEditorSection: (section) => set({ activeEditorSection: section }),
   
   setUser: (user) => set({ user }),
   setLoading: (loading) => set({ loading }),
@@ -558,7 +589,11 @@ export const useAppStore = create<AppState>()(
           })),
           reviews: reviews || [],
           proofOfWork: proof_items || [],
-          domains: mappedDomains
+          domains: mappedDomains,
+          themeMode: b.theme_mode || 'light',
+          hiddenSections: b.hidden_sections || [],
+          faqs: b.faqs || [],
+          beforeAfterImages: b.before_after_images || []
         } 
       });
     } catch (err) {
@@ -694,6 +729,10 @@ export const useAppStore = create<AppState>()(
         if ('templateKey' in updates) dbUpdates.template_key = updates.templateKey;
         if ('address' in updates) dbUpdates.address = updates.address;
         if ('socials' in updates) dbUpdates.socials = updates.socials;
+        if ('themeMode' in updates) dbUpdates.theme_mode = updates.themeMode;
+        if ('hiddenSections' in updates) dbUpdates.hidden_sections = updates.hiddenSections;
+        if ('faqs' in updates) dbUpdates.faqs = updates.faqs;
+        if ('beforeAfterImages' in updates) dbUpdates.before_after_images = updates.beforeAfterImages;
 
         // Handle workingHours sync: Delete existing and re-insert all for this business
         if ('workingHours' in updates && updates.workingHours) {
