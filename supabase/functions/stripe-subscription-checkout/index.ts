@@ -30,7 +30,7 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     if (userError || !user) throw new Error("Unauthorized")
 
-    const { action } = await req.json()
+    const { action, priceId } = await req.json()
 
     const { data: business, error: bError } = await supabaseClient
       .from("businesses")
@@ -42,6 +42,8 @@ serve(async (req) => {
 
     // --- Create Checkout Session ---
     if (action === "create-checkout-session") {
+      if (!priceId) throw new Error("Price ID is required to create a checkout session")
+
       let customerId = business.stripe_customer_id
 
       if (!customerId) {
@@ -74,7 +76,7 @@ serve(async (req) => {
         payment_method_types: ["card"],
         line_items: [
           {
-            price: Deno.env.get("STRIPE_PRO_PRICE_ID"),
+            price: priceId,
             quantity: 1,
           },
         ],

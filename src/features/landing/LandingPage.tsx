@@ -12,7 +12,9 @@ import {
   Trophy,
   Users,
   DollarSign,
-  Check
+  Check,
+  Menu,
+  X
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
@@ -74,6 +76,7 @@ const MarqueeColumn: React.FC<{
 
 export const LandingPage: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const user = useAppStore((state) => state.user);
 
   // Allow logged-in users to still view the landing page freely.
@@ -99,7 +102,7 @@ export const LandingPage: React.FC = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {user ? (
               <Link to="/dashboard">
                 <Button size="sm" className="h-10 px-6 font-bold text-[10px] uppercase tracking-widest bg-black text-white hover:bg-black/90 transition-all" style={{ borderRadius: 9999 }}>
@@ -117,8 +120,38 @@ export const LandingPage: React.FC = () => {
               </>
             )}
           </div>
+
+          {/* Mobile menu toggle */}
+          <button 
+            className="md:hidden p-2 text-black hover:bg-black/5 rounded-full transition-colors"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </nav>
+
+      {/* Mobile Menu Dropdown */}
+      <div className={`md:hidden fixed top-20 left-0 right-0 bg-[#FAFAF8] border-b border-black/3 shadow-xl z-40 transition-all duration-300 overflow-hidden ${isMobileMenuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="p-6 flex flex-col gap-4">
+          {user ? (
+            <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button className="w-full h-12 font-bold text-[11px] uppercase tracking-widest bg-black text-white hover:bg-black/90 transition-all" style={{ borderRadius: 9999 }}>
+                Go to Dashboard <ArrowRight size={14} className="ml-1.5" />
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center h-12 text-[11px] font-bold uppercase tracking-[0.2em] text-black hover:bg-black/5 rounded-full transition-colors">Login</Link>
+              <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full h-12 font-bold text-[11px] uppercase tracking-widest bg-black text-white hover:bg-black/90 transition-all" style={{ borderRadius: 9999 }}>
+                  Get Started
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
 
       <main>
         {/* Hero Section */}

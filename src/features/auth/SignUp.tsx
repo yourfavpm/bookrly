@@ -15,6 +15,7 @@ export const SignUp: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isVerificationSent, setIsVerificationSent] = useState(false);
   const navigate = useNavigate();
   const user = useAppStore((state) => state.user);
   const appLoading = useAppStore((state) => state.loading);
@@ -40,7 +41,7 @@ export const SignUp: React.FC = () => {
     setError(null);
 
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -49,6 +50,13 @@ export const SignUp: React.FC = () => {
       });
 
       if (signUpError) throw signUpError;
+      
+      // If session is null, it means email confirmation is required
+      if (!data.session) {
+        setIsVerificationSent(true);
+      } else {
+        navigate('/onboarding', { replace: true });
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setLoading(false);
@@ -86,7 +94,33 @@ export const SignUp: React.FC = () => {
       )}
 
       <AnimatePresence mode="wait">
-        {step === 1 ? (
+        {isVerificationSent ? (
+          <motion.div
+            key="step-verification"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-6 py-8"
+          >
+            <div className="w-16 h-16 bg-brand/10 text-brand rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8"></path>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                <path d="m16 19 2 2 4-4"></path>
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold text-text-primary tracking-tight">Check your email</h2>
+              <p className="text-sm text-text-secondary">
+                We sent a verification link to <br/>
+                <span className="font-medium text-text-primary">{email}</span>
+              </p>
+            </div>
+            <p className="text-[11px] text-text-tertiary mt-8">
+              Click the link in the email to verify your account and complete setup. 
+              <br/>You can safely close this window.
+            </p>
+          </motion.div>
+        ) : step === 1 ? (
           <motion.div
             key="step1"
             initial={{ opacity: 0, x: -10 }}
@@ -193,14 +227,16 @@ export const SignUp: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="mt-12 text-center">
-        <p className="text-[13px] text-text-secondary font-light underline-offset-4 decoration-black/10">
-          Already have an account?{' '}
-          <Link to="/login" className="text-brand font-medium hover:underline">
-            Sign in
-          </Link>
-        </p>
-      </div>
+      {!isVerificationSent && (
+        <div className="mt-12 text-center">
+          <p className="text-[13px] text-text-secondary font-light underline-offset-4 decoration-black/10">
+            Already have an account?{' '}
+            <Link to="/login" className="text-brand font-medium hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      )}
     </AuthLayout>
   );
 };

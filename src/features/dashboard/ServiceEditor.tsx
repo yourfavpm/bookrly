@@ -31,6 +31,7 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
     description: existingService?.description || '',
     price: existingService?.price || 0,
     duration: existingService?.duration || 60,
+    bufferTime: existingService?.bufferTime || 0,
     bookingFeeEnabled: existingService?.bookingFeeEnabled ?? false,
     bookingFeeAmount: existingService?.bookingFeeAmount || 0,
     active: existingService?.active ?? true,
@@ -43,6 +44,7 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
     if (!formData.name.trim()) return alert('Service name is required');
     if (formData.price < 0) return alert('Price cannot be negative');
     if (formData.duration <= 0) return alert('Duration must be greater than 0 minutes');
+    if (formData.bufferTime < 0) return alert('Buffer time cannot be negative');
     if (formData.bookingFeeEnabled && (formData.bookingFeeAmount < 0 || formData.bookingFeeAmount > formData.price)) {
       return alert('Booking deposit must be between $0 and the total service price');
     }
@@ -141,7 +143,7 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-normal text-text-secondary">Basic Price ({currency})</label>
                   <Input 
@@ -159,6 +161,16 @@ export const ServiceEditor: React.FC<ServiceEditorProps> = ({ serviceId, onClose
                     placeholder="60"
                     value={formData.duration || ''}
                     onChange={(e) => setFormData({...formData, duration: parseInt(e.target.value) || 0})}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-normal text-text-secondary">Buffer Time (Min)</label>
+                  <Input 
+                    type="number"
+                    placeholder="15"
+                    value={formData.bufferTime || ''}
+                    onChange={(e) => setFormData({...formData, bufferTime: parseInt(e.target.value) || 0})}
                     className="rounded-xl"
                   />
                 </div>

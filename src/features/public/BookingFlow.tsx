@@ -117,19 +117,46 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
       return true;
     });
 
+    const todaysBlocked = (business.blockedTimes || []).filter(b => {
+      if (b.date !== selectedDate) return false;
+      if (selectedStaff && !isAnyStaff) {
+         return !b.staffId || b.staffId === selectedStaff.id;
+      }
+      return !b.staffId;
+    });
+
+    const currentBuffer = selectedService.bufferTime || 0;
+
     const slots: string[] = [];
     for (let m = openMinutes; m + totalDurationMinutes <= closeMinutes; m += 15) {
        if (isToday && m <= currentMinutes + 30) continue;
        const slotStart = m;
-       const slotEnd = m + totalDurationMinutes;
+       const slotEnd = m + totalDurationMinutes + currentBuffer;
+       
        const isOverlap = todaysBookings.some((booking: any) => {
           const timeStr = booking.startTime;
           const [bh, bm] = timeStr.split(':').map(Number);
           const endStr = booking.endTime;
           const [eh, em] = endStr ? endStr.split(':').map(Number) : [bh + Math.floor(totalDurationMinutes/60), bm + (totalDurationMinutes%60)];
-          return (slotStart < (eh * 60 + em)) && (slotEnd > (bh * 60 + bm));
+          
+          const existingService = business.services.find(s => s.id === booking.serviceId);
+          const existingBuffer = existingService?.bufferTime || 0;
+          
+          const bookingStart = bh * 60 + bm;
+          const bookingEnd = (eh * 60 + em) + existingBuffer;
+          
+          return (slotStart < bookingEnd) && (slotEnd > bookingStart);
        });
-       if (!isOverlap) {
+
+       const isBlocked = todaysBlocked.some(block => {
+         const [bh, bm] = block.startTime.split(':').map(Number);
+         const [eh, em] = block.endTime.split(':').map(Number);
+         const blockStart = bh * 60 + bm;
+         const blockEnd = eh * 60 + em;
+         return (slotStart < blockEnd) && (slotEnd > blockStart);
+       });
+
+       if (!isOverlap && !isBlocked) {
           const h = Math.floor(m / 60);
           const mins = m % 60;
           const period = h >= 12 ? 'PM' : 'AM';

@@ -20,6 +20,7 @@ export interface Service {
   description: string;
   price: number;
   duration: number;
+  bufferTime: number;
   bookingFeeEnabled: boolean;
   bookingFeeAmount: number;
   addOns: AddOn[];
@@ -72,6 +73,17 @@ interface ProofItem {
   title?: string;
   category?: string;
   created_at: string;
+}
+
+export interface BlockedTime {
+  id: string;
+  businessId: string;
+  staffId?: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  reason?: string;
+  createdAt: string;
 }
 
 export interface StaffAvailability {
@@ -211,6 +223,7 @@ interface BusinessState {
   hiddenSections: string[];
   faqs: FAQ[];
   beforeAfterImages: BeforeAfterImage[];
+  blockedTimes: BlockedTime[];
 }
 
 export interface FAQ {
@@ -306,7 +319,7 @@ interface AppState {
   setupStripeConnect: () => Promise<string | null>;
   refreshStripeStatus: () => Promise<void>;
   refundBooking: (bookingId: string) => Promise<void>;
-  createSubscription: () => Promise<string | null>;
+  createSubscription: (priceId: string) => Promise<string | null>;
   openBillingPortal: () => Promise<string | null>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
   uploadLogo: (file: File) => Promise<string | null>;
@@ -328,6 +341,9 @@ interface AppState {
   verifyDomain: (id: string) => Promise<{ verified: boolean; errors?: any }>;
   setPrimaryDomain: (id: string) => Promise<void>;
   deleteDomain: (id: string) => Promise<void>;
+  // Blocked Times Actions
+  addBlockedTime: (data: Omit<BlockedTime, 'id' | 'businessId' | 'createdAt'>) => Promise<void>;
+  deleteBlockedTime: (id: string) => Promise<void>;
 }
 
 const generateSlug = (name: string): string => {
@@ -428,6 +444,15 @@ export const useAppStore = create<AppState>()(
              .select()
              .single();
            if (!createError && newBusiness) {
+             // Send the welcome email (email is verified at this point)
+             supabase.functions.invoke('send-email', {
+               body: {
+                 to: user.email,
+                 template: 'welcome',
+                 data: { name: user.user_metadata?.full_name || 'there' }
+               }
+             }).catch(console.error);
+
              return get().fetchBusiness(0);
            }
         }
@@ -449,7 +474,8 @@ export const useAppStore = create<AppState>()(
         { data: notifSettings },
         { data: smsUsageData },
         { data: scheduledMessages },
-        domainsRes
+        domainsRes,
+        blockedTimesRes
       ] = await Promise.all([
         supabase.from('availability').select('*').eq('business_id', b.id),
         supabase.from('services').select('*, addons(*)').eq('business_id', b.id).eq('active', true),
@@ -461,7 +487,8 @@ export const useAppStore = create<AppState>()(
         supabase.from('provider_notification_settings').select('*').eq('business_id', b.id).maybeSingle(),
         supabase.from('business_sms_usage').select('*').eq('business_id', b.id).eq('month_year', new Date().toISOString().substring(0, 7)).maybeSingle(),
         supabase.from('scheduled_messages').select('*').eq('business_id', b.id).order('scheduled_for', { ascending: false }).limit(100),
-        supabase.from('domains').select('*').eq('business_id', b.id)
+        supabase.from('domains').select('*').eq('business_id', b.id),
+        supabase.from('blocked_times').select('*').eq('business_id', b.id)
       ]);
 
       // Check for individual query errors to prevent silent failures
@@ -519,6 +546,17 @@ export const useAppStore = create<AppState>()(
            text: n.text as string,
            createdAt: n.created_at as string
          }))
+      }));
+
+      const mappedBlockedTimes: BlockedTime[] = (blockedTimesRes.status === 404 ? [] : (blockedTimesRes.data || [])).map((b: any) => ({
+        id: b.id,
+        businessId: b.business_id,
+        staffId: b.staff_id,
+        date: b.date,
+        startTime: b.start_time,
+        endTime: b.end_time,
+        reason: b.reason,
+        createdAt: b.created_at
       }));
 
       set({ 
@@ -593,7 +631,8 @@ export const useAppStore = create<AppState>()(
           themeMode: b.theme_mode || 'light',
           hiddenSections: b.hidden_sections || [],
           faqs: b.faqs || [],
-          beforeAfterImages: b.before_after_images || []
+          beforeAfterImages: b.before_after_images || [],
+          blockedTimes: mappedBlockedTimes
         } 
       });
     } catch (err) {
@@ -1754,11 +1793,11 @@ export const useAppStore = create<AppState>()(
     }
   },
 
-  createSubscription: async () => {
+  createSubscription: async (priceId: string) => {
     set({ loading: true, error: null });
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscription-checkout', {
-        body: { action: 'create-checkout-session' },
+        body: { action: 'create-checkout-session', priceId },
       });
 
       if (error) throw error;
@@ -2147,6 +2186,53 @@ export const useAppStore = create<AppState>()(
   deleteDomain: async (id) => {
     const { error } = await supabase.from('domains').delete().eq('id', id);
     if (!error) get().fetchDomains();
+  },
+
+  addBlockedTime: async (data) => {
+    const { business } = get();
+    if (!business) return;
+
+    const { data: newBlocked, error } = await supabase.from('blocked_times').insert([{
+      business_id: business.id,
+      staff_id: data.staffId,
+      date: data.date,
+      start_time: data.startTime,
+      end_time: data.endTime,
+      reason: data.reason
+    }]).select().single();
+
+    if (!error && newBlocked) {
+      set((state) => ({
+        business: state.business ? {
+          ...state.business,
+          blockedTimes: [...state.business.blockedTimes, {
+            id: newBlocked.id,
+            businessId: newBlocked.business_id,
+            staffId: newBlocked.staff_id,
+            date: newBlocked.date,
+            startTime: newBlocked.start_time,
+            endTime: newBlocked.end_time,
+            reason: newBlocked.reason,
+            createdAt: newBlocked.created_at
+          }]
+        } : null
+      }));
+    }
+  },
+
+  deleteBlockedTime: async (id) => {
+    const { business } = get();
+    if (!business) return;
+
+    const { error } = await supabase.from('blocked_times').delete().eq('id', id);
+    if (!error) {
+      set((state) => ({
+        business: state.business ? {
+          ...state.business,
+          blockedTimes: state.business.blockedTimes.filter((b) => b.id !== id)
+        } : null
+      }));
+    }
   }
 
 }), {

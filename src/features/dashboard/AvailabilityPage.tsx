@@ -10,7 +10,8 @@ import {
   XCircle, 
   Plus,
   Save,
-  Trash2
+  Trash2,
+  CalendarOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,11 +20,17 @@ const DAY_NAMES = [
 ];
 
 export const AvailabilityPage: React.FC = () => {
-  const { business, updateWorkingHours } = useAppStore();
+  const { business, updateWorkingHours, addBlockedTime, deleteBlockedTime } = useAppStore();
   const [localHours, setLocalHours] = useState<WorkingHour[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [blockedDate, setBlockedDate] = useState('');
+  const [blockedStartTime, setBlockedStartTime] = useState('09:00');
+  const [blockedEndTime, setBlockedEndTime] = useState('17:00');
+  const [blockedReason, setBlockedReason] = useState('');
+  const [isAddingBlocked, setIsAddingBlocked] = useState(false);
 
   if (business?.workingHours && !isInitialized) {
     setLocalHours([...business.workingHours]);
@@ -95,6 +102,22 @@ export const AvailabilityPage: React.FC = () => {
     await updateWorkingHours(localHours);
     setSaving(false);
     setHasChanges(false);
+  };
+
+  const handleAddBlockedTime = async () => {
+    if (!blockedDate || !blockedStartTime || !blockedEndTime) return alert('Date and times are required.');
+    setIsAddingBlocked(true);
+    await addBlockedTime({
+      date: blockedDate,
+      startTime: blockedStartTime,
+      endTime: blockedEndTime,
+      reason: blockedReason
+    });
+    setBlockedDate('');
+    setBlockedStartTime('09:00');
+    setBlockedEndTime('17:00');
+    setBlockedReason('');
+    setIsAddingBlocked(false);
   };
 
   return (
@@ -214,15 +237,94 @@ export const AvailabilityPage: React.FC = () => {
         })}
       </div>
 
-      <Card className="border-dashed flex flex-col items-center justify-center text-center bg-bg-canvas/30 py-12">
-        <div className="p-4 bg-white rounded-2xl shadow-sm border border-border-light text-text-tertiary mb-4">
-          <Calendar size={32} />
+      <div className="pt-8 mt-8 border-t border-border-polaris space-y-6">
+        <div className="space-y-1">
+          <h2 className="text-xl font-semibold tracking-tight text-text-primary">Blocked Time Off</h2>
+          <p className="text-sm text-text-secondary">Block off specific dates and times when you are unavailable.</p>
         </div>
-        <h4 className="text-base font-semibold text-text-primary tracking-tight">Advanced Scheduling Coming Soon</h4>
-        <p className="text-sm text-text-tertiary mt-2 max-w-sm">
-          Soon you'll be able to sync with Google Calendar, block off specific dates for holidays, and set custom durations for different services.
-        </p>
-      </Card>
+
+        <Card className="p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 space-y-1.5 w-full">
+              <label className="text-xs font-normal text-text-secondary">Date</label>
+              <input 
+                type="date" 
+                value={blockedDate}
+                onChange={(e) => setBlockedDate(e.target.value)}
+                className="w-full h-11 px-4 rounded-xl border border-border-polaris bg-white text-sm focus:outline-none focus:ring-4 focus:ring-brand/5 focus:border-brand transition-all"
+              />
+            </div>
+            <div className="w-full md:w-32 space-y-1.5">
+              <label className="text-xs font-normal text-text-secondary">Start Time</label>
+              <input 
+                type="time" 
+                value={blockedStartTime}
+                onChange={(e) => setBlockedStartTime(e.target.value)}
+                className="w-full h-11 px-4 rounded-xl border border-border-polaris bg-white text-sm focus:outline-none focus:ring-4 focus:ring-brand/5 focus:border-brand transition-all"
+              />
+            </div>
+            <div className="w-full md:w-32 space-y-1.5">
+              <label className="text-xs font-normal text-text-secondary">End Time</label>
+              <input 
+                type="time" 
+                value={blockedEndTime}
+                onChange={(e) => setBlockedEndTime(e.target.value)}
+                className="w-full h-11 px-4 rounded-xl border border-border-polaris bg-white text-sm focus:outline-none focus:ring-4 focus:ring-brand/5 focus:border-brand transition-all"
+              />
+            </div>
+            <div className="flex-1 space-y-1.5 w-full">
+              <label className="text-xs font-normal text-text-secondary">Reason (Optional)</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Doctor appointment"
+                value={blockedReason}
+                onChange={(e) => setBlockedReason(e.target.value)}
+                className="w-full h-11 px-4 rounded-xl border border-border-polaris bg-white text-sm focus:outline-none focus:ring-4 focus:ring-brand/5 focus:border-brand transition-all"
+              />
+            </div>
+            <Button 
+              onClick={handleAddBlockedTime} 
+              isLoading={isAddingBlocked}
+              className="bg-text-primary hover:bg-text-primary/90 text-white rounded-xl h-11 px-6 w-full md:w-auto"
+            >
+              Block Time
+            </Button>
+          </div>
+
+          {business.blockedTimes && business.blockedTimes.length > 0 && (
+            <div className="mt-8 space-y-3">
+              <h3 className="text-sm font-medium text-text-secondary uppercase tracking-widest">Upcoming Blocked Times</h3>
+              <div className="space-y-3">
+                {business.blockedTimes
+                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .map((block) => (
+                  <div key={block.id} className="flex items-center justify-between p-4 rounded-xl border border-border-polaris bg-bg-canvas/50">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-error/10 text-error flex items-center justify-center">
+                        <CalendarOff size={18} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-text-primary">
+                          {new Date(block.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          {block.startTime} - {block.endTime} {block.reason ? `• ${block.reason}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => deleteBlockedTime(block.id)}
+                      className="p-2 text-text-tertiary hover:text-error hover:bg-error/5 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 };
