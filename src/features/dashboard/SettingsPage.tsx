@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { calculateDaysRemaining } from '../../lib/dateUtils';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -265,11 +264,9 @@ export const SettingsPage: React.FC = () => {
 
   const BillingSection: React.FC<{ business: any, createSubscription: any, openBillingPortal: any }> = ({ business, createSubscription, openBillingPortal }) => {
     const isTrialing = business.subscriptionStatus === 'trialing';
-    const trialEndDate = business.trialEndDate ? new Date(business.trialEndDate) : null;
     const isActive = business.subscriptionStatus === 'active';
     const isPastDue = business.subscriptionStatus === 'past_due';
     const isCanceled = business.subscriptionStatus === 'canceled';
-    const trialDaysLeft = calculateDaysRemaining(trialEndDate);
 
     const params = new URLSearchParams(window.location.search);
     const showUpgradeSuccess = params.get('upgraded') === 'true';

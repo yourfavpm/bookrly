@@ -5,7 +5,6 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { 
   Clock, 
-  Calendar, 
   CheckCircle2, 
   XCircle, 
   Plus,

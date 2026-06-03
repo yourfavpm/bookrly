@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useAppStore, BeforeAfterImage } from '../../../store/useAppStore';
+import { useAppStore } from '../../../store/useAppStore';
+import type { BeforeAfterImage } from '../../../store/useAppStore';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { X, Plus, Trash2, Wand2, Image as ImageIcon } from 'lucide-react';
@@ -92,7 +93,7 @@ export const BeforeAfterEditorModal: React.FC<BeforeAfterEditorModalProps> = ({ 
         </header>
 
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
-          {images.map((item, index) => (
+          {images.map((item) => (
             <div key={item.id} className="p-6 rounded-3xl border border-slate-100 bg-slate-50/50 space-y-6 relative group">
               <button 
                 onClick={() => handleDelete(item.id)}

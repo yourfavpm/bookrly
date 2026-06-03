@@ -27,15 +27,13 @@ const SidebarItem: React.FC<NavItemProps & { onClick?: () => void }> = ({ icon, 
       {icon}
     </div>
     <span className={`text-[11px] uppercase tracking-wider font-bold ${active ? 'text-text-primary' : 'text-text-tertiary group-hover:text-text-primary'}`}>{label}</span>
-  </Link>
-);
+  </Link>);
 
 export const DashboardLayout: React.FC = () => {
   const { 
     business, 
     loading, 
     error,
-    createSubscription, 
     updateBusiness, 
     signOut, 
     staffRole 
@@ -54,9 +52,8 @@ export const DashboardLayout: React.FC = () => {
 
   const trialDaysLeft = calculateDaysRemaining(trialEndDate);
 
-  const handleSubscribe = async () => {
-    const url = await createSubscription();
-    if (url) window.location.href = url;
+  const handleSubscribe = () => {
+    window.location.href = '/dashboard/settings?section=billing';
   };
 
   // Only redirect to onboarding if we are sure there is no business AND no error

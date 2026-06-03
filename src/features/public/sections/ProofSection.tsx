@@ -19,7 +19,7 @@ export const ProofSection: React.FC<ProofProps> = ({ business, variant = 'masonr
             <div key={img.id || i} className="w-[85vw] md:w-1/2 lg:w-1/3 h-[60vh] shrink-0 snap-center relative group">
               <img src={getOptimizedImageUrl(img.image_url, { width: 800 })} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Work" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-8">
-                <p className="text-white text-lg font-bold" style={{ fontFamily: 'var(--t-heading-font)' }}>{img.caption || 'Our Work'}</p>
+                <p className="text-white text-lg font-bold" style={{ fontFamily: 'var(--t-heading-font)' }}>{img.title || 'Our Work'}</p>
               </div>
             </div>
           ))}
@@ -63,7 +63,7 @@ export const ProofSection: React.FC<ProofProps> = ({ business, variant = 'masonr
                 <div className="w-full aspect-[4/3] overflow-hidden mb-4" style={{ borderRadius: 'calc(var(--t-radius) * 0.8)' }}>
                   <img src={getOptimizedImageUrl(img.image_url, { width: 600 })} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Work" />
                 </div>
-                <h3 className="text-sm font-bold" style={{ color: 'var(--t-text-primary)' }}>{img.caption || 'Project Showcase'}</h3>
+                <h3 className="text-sm font-bold" style={{ color: 'var(--t-text-primary)' }}>{img.title || 'Project Showcase'}</h3>
               </div>
             ))}
           </div>
@@ -84,9 +84,9 @@ export const ProofSection: React.FC<ProofProps> = ({ business, variant = 'masonr
           {images.map((img, i) => (
             <div key={img.id || i} className="break-inside-avoid relative group overflow-hidden" style={{ borderRadius: 'var(--t-radius)' }}>
               <img src={getOptimizedImageUrl(img.image_url, { width: 600 })} className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="Work" />
-              {img.caption && (
+              {img.title && (
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                  <p className="text-white text-sm font-medium">{img.caption}</p>
+                  <p className="text-white text-sm font-medium">{img.title}</p>
                 </div>
               )}
             </div>

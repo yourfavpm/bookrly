@@ -30,15 +30,15 @@ export const ReviewsSection: React.FC<ReviewsProps> = ({ business, variant = 'gr
                   ))}
                 </div>
                 <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--t-text-secondary)', fontFamily: 'var(--t-body-font)' }}>
-                  "{review.comment}"
+                  "{review.content}"
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-xs"
                        style={{ backgroundColor: 'var(--t-accent)' }}>
-                    {review.customer_name.charAt(0)}
+                    {review.author_name.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-bold" style={{ color: 'var(--t-text-primary)' }}>{review.customer_name}</p>
+                    <p className="text-sm font-bold" style={{ color: 'var(--t-text-primary)' }}>{review.author_name}</p>
                     <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--t-text-muted)' }}>Verified Client</p>
                   </div>
                 </div>
@@ -65,10 +65,10 @@ export const ReviewsSection: React.FC<ReviewsProps> = ({ business, variant = 'gr
                 <Quote size={48} className="absolute -top-6 -left-6 opacity-10" style={{ color: 'var(--t-accent)' }} />
                 <div className="pl-6 md:pl-12 border-l" style={{ borderColor: 'var(--t-accent)' }}>
                   <p className="text-xl md:text-2xl leading-relaxed mb-6" style={{ color: 'var(--t-text-primary)', fontFamily: 'var(--t-heading-font)', fontWeight: 'var(--t-heading-weight)' }}>
-                    "{review.comment}"
+                    "{review.content}"
                   </p>
                   <div className="flex items-center gap-4">
-                    <p className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--t-text-primary)' }}>— {review.customer_name}</p>
+                    <p className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--t-text-primary)' }}>— {review.author_name}</p>
                     <div className="flex gap-0.5">
                       {[...Array(review.rating)].map((_, j) => (
                         <Star key={j} size={12} fill="var(--t-accent)" style={{ color: 'var(--t-accent)' }} />
@@ -97,8 +97,8 @@ export const ReviewsSection: React.FC<ReviewsProps> = ({ business, variant = 'gr
                     <Star key={j} size={16} fill="var(--t-accent)" style={{ color: 'var(--t-accent)' }} />
                   ))}
                 </div>
-                <p className="text-lg md:text-xl leading-relaxed" style={{ color: 'var(--t-text-primary)' }}>"{review.comment}"</p>
-                <p className="text-sm font-bold" style={{ color: 'var(--t-text-secondary)' }}>— {review.customer_name}</p>
+                <p className="text-lg md:text-xl leading-relaxed" style={{ color: 'var(--t-text-primary)' }}>"{review.content}"</p>
+                <p className="text-sm font-bold" style={{ color: 'var(--t-text-secondary)' }}>— {review.author_name}</p>
               </div>
             ))}
           </div>
@@ -125,8 +125,8 @@ export const ReviewsSection: React.FC<ReviewsProps> = ({ business, variant = 'gr
                   <Star key={j} size={14} fill="var(--t-accent)" style={{ color: 'var(--t-accent)' }} />
                 ))}
               </div>
-              <p className="text-sm leading-relaxed mb-6 flex-1" style={{ color: 'var(--t-text-secondary)' }}>"{review.comment}"</p>
-              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--t-text-primary)' }}>{review.customer_name}</p>
+              <p className="text-sm leading-relaxed mb-6 flex-1" style={{ color: 'var(--t-text-secondary)' }}>"{review.content}"</p>
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--t-text-primary)' }}>{review.author_name}</p>
             </div>
           ))}
         </div>

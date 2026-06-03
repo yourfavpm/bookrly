@@ -35,7 +35,7 @@ export const PreviewCanvas: React.FC<{ deviceMode: 'desktop' | 'mobile' }> = ({ 
             e.preventDefault();
          }
       }}>
-         <TemplateRenderer template={activeTemplate} business={business} isEditing={true} />
+         <TemplateRenderer template={activeTemplate} business={business} isEditing={true} onBook={() => {}} />
       </div>
     </motion.div>
   );

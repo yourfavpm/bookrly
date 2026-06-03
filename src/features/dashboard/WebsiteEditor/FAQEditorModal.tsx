@@ -1,5 +1,6 @@
 import React from 'react';
-import { useAppStore, FAQ } from '../../../store/useAppStore';
+import { useAppStore } from '../../../store/useAppStore';
+import type { FAQ } from '../../../store/useAppStore';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { X, Plus, Trash2, HelpCircle } from 'lucide-react';

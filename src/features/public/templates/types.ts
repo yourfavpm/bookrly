@@ -155,18 +155,21 @@ export interface SectionProps {
     aboutImage: string | null;
     address: string;
     socials: { instagram: string; facebook: string; twitter: string };
-    reviews: Array<{ id: string; customer_name: string; rating: number; comment: string }>;
-    proofOfWork: Array<{ id: string; image_url: string; caption: string }>;
+    reviews: Array<{ id: string; author_name: string; rating: number; content: string; created_at?: string }>;
+    proofOfWork: Array<{ id: string; image_url: string; title?: string; category?: string; created_at?: string }>;
     services: Array<{ id: string; name: string; description: string; price: number; duration: number }>;
-    staff?: Array<{ id: string; name: string; role: string; avatarUrl?: string }>;
+    staff?: Array<{ id: string; name: string; role: string; avatarUrl?: string | null }>;
     templateKey: string;
     isPublished: boolean;
     workingHours: Array<{ dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean }>;
+    themeMode?: 'light' | 'dark' | 'auto';
+    hiddenSections?: string[];
   };
   onBook: () => void;
   scrollTo?: (id: string) => void;
   isMobile?: boolean;
   isPreview?: boolean;
+  isEditing?: boolean;
 }
 
 // ── Template Layout Component Props ──────────────────────

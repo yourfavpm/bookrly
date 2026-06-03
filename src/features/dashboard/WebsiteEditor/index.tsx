@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../../store/useAppStore';
 import { useNavigate } from 'react-router-dom';
-import { X, Eye, Monitor, Smartphone, Globe, ExternalLink } from 'lucide-react';
+import { X, Monitor, Smartphone, ExternalLink } from 'lucide-react';
 import { ContextualSidebar } from './ContextualSidebar';
 import { PreviewCanvas } from './PreviewCanvas';
 import { getBusinessUrl } from '../../../lib/domainUtils';
