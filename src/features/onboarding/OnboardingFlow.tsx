@@ -191,6 +191,18 @@ export const OnboardingFlow: React.FC = () => {
     } else {
       // Force publish the business IMMEDIATELY once onboarding is finished
       await updateBusiness({ isPublished: true }, true);
+      
+      // Trigger welcome email
+      if (user?.email && business?.name) {
+        supabase.functions.invoke('send-email', {
+          body: {
+            to: user.email,
+            template: 'welcome',
+            data: { name: business.name }
+          }
+        }).catch(err => console.error('Failed to send welcome email', err));
+      }
+
       setIsSuccess(true);
     }
   };
