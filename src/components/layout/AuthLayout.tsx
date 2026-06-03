@@ -31,8 +31,8 @@ export const AuthLayout: React.FC<{ children: React.ReactNode }> = ({ children }
       {/* Right Side: Form Container */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 lg:p-20 relative bg-white">
         {/* Mobile Logo */}
-        <div className="lg:hidden absolute top-12 left-1/2 -translate-x-1/2 flex justify-center">
-            <img src="/images/logomain.png" alt="Skeduley Logo" className="h-[120px] w-auto" />
+        <div className="lg:hidden flex justify-center mb-8 w-full max-w-[380px]">
+            <img src="/images/logomain.png" alt="Skeduley Logo" className="h-[48px] w-auto" />
         </div>
 
         <motion.div 

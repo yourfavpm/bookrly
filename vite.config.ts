@@ -12,7 +12,7 @@ export default defineConfig({
         name: 'Skeduley',
         short_name: 'Skeduley',
         description: 'Launch your booking website in minutes.',
-        theme_color: '#863bff',
+        theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [

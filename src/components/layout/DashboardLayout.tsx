@@ -304,27 +304,27 @@ export const DashboardLayout: React.FC = () => {
           <div className="p-6 lg:p-12 max-w-[1200px] mx-auto min-h-full">
             {/* Restricted Banner - Non-blocking */}
             {isRestricted && (
-              <div className="mb-8 p-6 rounded-[32px] bg-linear-to-br from-brand/10 to-brand/5 border border-brand/20 flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-top duration-500">
-                <div className="flex items-center gap-5 text-left">
-                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-brand shadow-sm border border-brand/10">
+              <div className="mb-8 p-4 md:p-6 rounded-2xl md:rounded-[32px] bg-linear-to-br from-brand/10 to-brand/5 border border-brand/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6 animate-in slide-in-from-top duration-500">
+                <div className="flex items-center gap-3 md:gap-5 text-left">
+                  <div className="hidden md:flex w-14 h-14 bg-white rounded-2xl items-center justify-center text-brand shadow-sm border border-brand/10 shrink-0">
                     <CreditCard size={24} />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                    <h3 className="text-xs md:text-sm font-bold text-text-primary uppercase tracking-wider">
                       {isTrialExpired ? 'Trial Ended' : 'Subscription Required'}
                     </h3>
-                    <p className="text-[11px] text-text-secondary leading-relaxed max-w-sm">
+                    <p className="text-[10px] md:text-[11px] text-text-secondary leading-relaxed max-w-sm">
                       {isTrialExpired 
-                        ? "Your trial has ended and your public site is now unpublished. Upgrade to Pro to go live again."
-                        : "An active subscription is required to keep your site published and accept bookings."}
+                        ? "Your trial ended. Upgrade to Pro to go live again."
+                        : "An active subscription is required to stay published."}
                     </p>
                   </div>
                 </div>
                 <Button 
                   onClick={handleSubscribe}
-                  className="h-12 px-8 rounded-2xl bg-brand text-white font-medium text-[10px] uppercase tracking-widest shadow-lg shadow-brand/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
+                  className="w-full md:w-auto h-10 md:h-12 px-6 md:px-8 rounded-xl md:rounded-2xl bg-brand text-white font-medium text-[10px] uppercase tracking-widest shadow-lg shadow-brand/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap shrink-0"
                 >
-                  Upgrade to Pro — $10/mo
+                  Upgrade to Pro
                 </Button>
               </div>
             )}
