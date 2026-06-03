@@ -56,6 +56,8 @@ const getEmailTemplate = (actionType: string, token: string, redirect_to: string
     .btn { display: inline-block; background-color: #111111; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 100px; font-weight: 500; font-size: 15px; }
     .footer { background-color: #fcfcfc; padding: 32px 40px; text-align: center; border-top: 1px solid #f0f0f0; }
     .footer p { font-size: 13px; color: #888888; margin: 0; }
+    .links { margin-top: 16px; }
+    .links a { color: #6B21A8; text-decoration: none; font-size: 13px; margin: 0 8px; }
   </style>
 </head>
 <body>
@@ -75,6 +77,10 @@ const getEmailTemplate = (actionType: string, token: string, redirect_to: string
     </div>
     <div class="footer">
       <p>&copy; ${new Date().getFullYear()} Skeduley. All rights reserved.</p>
+      <div class="links">
+        <a href="https://skeduley.com/help">Help Center</a>
+        <a href="https://skeduley.com/privacy">Privacy Policy</a>
+      </div>
     </div>
   </div>
 </body>

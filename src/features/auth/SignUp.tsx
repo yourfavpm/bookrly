@@ -119,6 +119,14 @@ export const SignUp: React.FC = () => {
               Click the link in the email to verify your account and complete setup. 
               <br/>You can safely close this window.
             </p>
+            <div className="pt-6">
+              <Link
+                to="/login"
+                className="w-full h-12 flex items-center justify-center bg-white border border-black/10 rounded-2xl text-[13px] font-medium text-text-primary hover:bg-bg-secondary transition-all"
+              >
+                Go to login
+              </Link>
+            </div>
           </motion.div>
         ) : step === 1 ? (
           <motion.div
