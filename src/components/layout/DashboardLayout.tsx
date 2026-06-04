@@ -348,6 +348,22 @@ export const DashboardLayout: React.FC = () => {
         </main>
       </div>
 
+      {/* Floating Mobile Trial Banner */}
+      {isTrialing && !isTrialExpired && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-sm lg:hidden z-50 bg-brand text-white px-4 py-3 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] flex items-center justify-between gap-3 animate-in slide-in-from-bottom-8 fade-in duration-500 border border-white/10">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Trial Mode</span>
+            <span className="text-xs font-medium">{trialDaysLeft} days left</span>
+          </div>
+          <button 
+            onClick={handleSubscribe}
+            className="px-4 py-2 bg-white text-brand text-[10px] font-bold uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-transform whitespace-nowrap shadow-sm"
+          >
+            Upgrade
+          </button>
+        </div>
+      )}
+
       <InstallAppPrompt />
       <GlobalError />
     </div>
