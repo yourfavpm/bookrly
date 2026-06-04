@@ -17,13 +17,13 @@ interface EmailHookPayload {
   };
 }
 
-const getEmailTemplate = (actionType: string, token: string, redirect_to: string, token_hash: string) => {
+const getEmailTemplate = (actionType: string, token: string, redirect_to: string, token_hash: string, supabaseUrl: string) => {
   let title = "Verify your email";
   let greeting = "Welcome to Skeduley!";
   let message = "Please verify your email address to get started with your new booking website. We're excited to have you!";
   let ctaText = "Verify Email Address";
   
-  const verifyUrl = `${redirect_to}?token_hash=${token_hash}&type=${actionType}`;
+  const verifyUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${actionType}&redirect_to=${encodeURIComponent(redirect_to)}`;
 
   if (actionType === 'recovery') {
     title = "Reset your password";
@@ -105,11 +105,14 @@ serve(async (req) => {
     if (email_data.email_action_type === 'recovery') subject = "Reset your Skeduley password";
     if (email_data.email_action_type === 'invite') subject = "You've been invited to Skeduley";
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+
     const html = getEmailTemplate(
       email_data.email_action_type, 
       email_data.token, 
       email_data.redirect_to, 
-      email_data.token_hash
+      email_data.token_hash,
+      supabaseUrl
     );
 
     // Send the email directly via Resend

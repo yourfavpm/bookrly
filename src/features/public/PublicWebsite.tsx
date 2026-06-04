@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { Globe, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
-import { getBaseDomain } from '../../lib/domainUtils';
+import { extractSubdomainFromHost, getBusinessUrl } from '../../lib/domainUtils';
 import { getTemplate } from './templates/templateRegistry';
 import { BookingModal } from './sections/BookingModal';
 import { getSampleBusiness } from './templates/sampleData';
 import { TemplateRenderer } from './templates/TemplateRenderer';
+import { SEO } from '../../components/seo/SEO';
 
 interface PublicWebsiteProps {
   forcedView?: 'desktop' | 'mobile';
@@ -16,7 +17,7 @@ interface PublicWebsiteProps {
 
 export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPreview, isDemo: propIsDemo }) => {
   const { subdomain: paramSubdomain, templateKey: demoTemplateKey } = useParams<{ subdomain: string, templateKey: string }>();
-  const { business: storeBusiness, fetchPublicBusiness, loading, error, user, updateBusiness, isCanada } = useAppStore();
+  const { business: storeBusiness, fetchPublicBusiness, loading, error, user, updateBusiness } = useAppStore();
   const [isBooking, setIsBooking] = useState(false);
   const isMobile = forcedView === 'mobile';
   const navigate = useNavigate();
@@ -62,30 +63,28 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
     const resolveTenant = async () => {
       if (isPreview) return;
 
-      let targetSubdomain = paramSubdomain;
-      if (!targetSubdomain) {
-        const host = window.location.hostname;
-        const rootDomain = getBaseDomain();
-        
-        if (host !== rootDomain && host.endsWith(rootDomain)) {
-          // Subdomain case (e.g. biz.skeduley.co)
-          targetSubdomain = host.replace(`.${rootDomain}`, '');
-        } else if (host !== rootDomain && host !== 'localhost' && !host.includes('vercel.app')) {
-          // Custom domain case (e.g. mybiz.com)
-          targetSubdomain = host;
-        }
+      // Priority 1: subdomain-based routing (businessname.skeduley.com)
+      const subdomainFromHost = extractSubdomainFromHost();
+
+      // Priority 2: path-based routing (skeduley.com/businessname via /:subdomain route)
+      const identifier = subdomainFromHost || paramSubdomain;
+
+      if (!identifier) {
+        console.log('[PublicWebsite] No tenant identifier found — showing landing page or 404');
+        return;
       }
 
-      if (targetSubdomain) {
-        try {
-          await fetchPublicBusiness(targetSubdomain);
-        } catch (err) {
-          console.error('[PublicWebsite] Failed to fetch business:', err);
-        }
+      console.log(`[PublicWebsite] Resolving tenant: "${identifier}" (source: ${subdomainFromHost ? 'subdomain' : 'path'})`);
+      
+      try {
+        await fetchPublicBusiness(identifier);
+      } catch (err) {
+        console.error('[PublicWebsite] Failed to fetch business:', err);
       }
     };
     resolveTenant();
   }, [paramSubdomain, fetchPublicBusiness, isPreview]);
+
 
   const isTrialing = business?.subscriptionStatus === 'trialing';
   const gracePeriodDays = 3;
@@ -134,15 +133,32 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
     );
   }
 
+
+  const canonicalUrl = business ? getBusinessUrl(business.subdomain, business.customDomain) : 'https://skeduley.com';
+
+
   return (
     <div className="min-h-full bg-white flex flex-col relative font-sans">
-      {/* Canada First Banner */}
-      {isCanada && !isDemo && (
-        <div className="bg-red-600 text-white px-4 py-2 flex items-center justify-center gap-2 sticky top-0 z-60 shadow-md">
-          <span className="text-[10px] font-black uppercase tracking-[0.25em] flex items-center gap-2">
-            🇨🇦 Proudly Supporting Canadian Businesses
-          </span>
-        </div>
+      {business && !isPreview && !isDemo && (
+        <SEO 
+          title={`${business.name} | Book Online`}
+          description={business.description || `Book your appointment with ${business.name} online today.`}
+          canonicalUrl={canonicalUrl}
+          ogImage={business.coverImage || business.logoUrl}
+          ogType="profile"
+          structuredData={{
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": business.name,
+            "description": business.description,
+            "image": business.logoUrl || business.coverImage,
+            "url": canonicalUrl,
+            "address": business.address ? {
+              "@type": "PostalAddress",
+              "streetAddress": business.address
+            } : undefined
+          }}
+        />
       )}
 
       {/* Demo Header - Only show on standalone demo page, not in-editor preview */}

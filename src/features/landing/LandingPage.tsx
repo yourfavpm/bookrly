@@ -19,6 +19,7 @@ import {
 import { Button } from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
+import { SEO } from '../../components/seo/SEO';
 
 interface Template {
   name: string;
@@ -93,6 +94,30 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-black selection:bg-brand/10 selection:text-brand font-sans">
+      <SEO 
+        title="Skeduley | The all-in-one booking software for modern businesses"
+        description="Skeduley gives you a beautiful booking website, scheduling, and payments in one place. Turn your Instagram followers into paying clients today."
+        canonicalUrl="https://skeduley.com"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "Skeduley",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "All",
+          "offers": {
+            "@type": "Offer",
+            "price": "6.00",
+            "priceCurrency": "USD"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Skeduley",
+            "url": "https://skeduley.com",
+            "logo": "https://skeduley.com/images/logomain.png"
+          }
+        }}
+      />
+      
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 h-20 bg-[#FAFAF8]/80 backdrop-blur-xl z-50 border-b border-black/3">
         <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">

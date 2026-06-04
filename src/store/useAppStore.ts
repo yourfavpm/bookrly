@@ -1003,36 +1003,33 @@ export const useAppStore = create<AppState>()(
 
     set({ loading: true, error: null });
     try {
-      // Try to find business by subdomain first, then slug, then custom domain
-      // Use slug as fallback since it's always generated
-      let query = supabase.from('businesses').select('*');
-      const cleanId = identifier.toLowerCase().trim();
-      
-      // Build the OR filter safely. We try subdomain, slug, and custom_domain.
-      // We wrap it in a try-catch or check for error because 'slug' might not be in the DB yet
-      // if migrations haven't run.
-      const { data: business, error } = await query
+      const cleanId = identifier.toLowerCase().trim().replace(/\/$/, '');
+
+      // Use maybeSingle() so we get null (not an error) when no row matches.
+      // We try subdomain, slug, and custom_domain in order.
+      const { data: business, error } = await supabase
+        .from('businesses')
+        .select('*')
         .or(`subdomain.eq.${cleanId},slug.eq.${cleanId},custom_domain.eq.${cleanId}`)
-        .single();
-      
+        .maybeSingle();
+
       if (error) {
-        throw error;
+        console.error('[fetchPublicBusiness] Supabase query error:', error);
+        throw new Error(error.message);
       }
 
       if (!business) {
+        console.warn(`[fetchPublicBusiness] No published business found for identifier: "${cleanId}"`);
         throw new Error('Business not found');
       }
 
-      const [servicesRes, availabilityRes, reviewsRes, proofRes, bookingsRes, staffRes] = await Promise.all([
+      const [servicesRes, availabilityRes, reviewsRes, proofRes, staffRes] = await Promise.all([
         supabase.from('services').select('*, addons(*)').eq('business_id', business.id).eq('active', true),
         supabase.from('availability').select('*').eq('business_id', business.id),
         supabase.from('reviews').select('*').eq('business_id', business.id),
         supabase.from('proof_items').select('*').eq('business_id', business.id),
-        supabase.from('bookings').select('*').eq('business_id', business.id),
         supabase.from('staff_members').select('*, staff_availability(*), staff_services(*)').eq('business_id', business.id).eq('status', 'active')
       ]);
-
-      if (servicesRes.error) throw servicesRes.error;
 
       const mappedServices = (servicesRes.data || []).map((s) => ({
         ...s,
@@ -1041,59 +1038,72 @@ export const useAppStore = create<AppState>()(
         addOns: s.addons || []
       }));
 
-      const mappedBookings = (bookingsRes.data || []).map((b) => ({
-        ...b,
-        customerName: b.customer_name,
-        customerEmail: b.customer_email,
-        customerPhone: b.customer_phone,
-        date: b.date,
-        time: b.start_time,
-        totalAmount: b.total_amount,
-        paidAmount: b.paid_amount || 0,
-        paymentStatus: b.payment_status || 'pending'
-      }));
-
       // Auto-generate subdomain if missing
       let businessSubdomain = business.subdomain;
       if (!businessSubdomain && business.name) {
         businessSubdomain = generateSubdomain(business.name, business.id);
-        // Save it to the database (non-blocking)
-        void supabase
-          .from('businesses')
-          .update({ subdomain: businessSubdomain })
-          .eq('id', business.id);
+        void supabase.from('businesses').update({ subdomain: businessSubdomain }).eq('id', business.id);
       }
 
-      // Auto-generate slug if missing
       const businessSlug = business.slug || (business.name ? generateSlug(business.name) : '');
       if (!business.slug && business.name) {
-        // Save it to the database (non-blocking)
-        void supabase
-          .from('businesses')
-          .update({ slug: businessSlug })
-          .eq('id', business.id);
+        void supabase.from('businesses').update({ slug: businessSlug }).eq('id', business.id);
       }
 
-      set({ 
+      // Resolve logo: support both old 'logo' text column and new 'logo_url'
+      const logoResolved = business.logo_url || business.logo || null;
+
+      set({
         business: {
-          ...business,
-          subdomain: businessSubdomain,
+          id: business.id,
+          name: business.name || '',
+          category: business.category || '',
+          email: business.email || '',
+          phone: business.phone || '',
+          subdomain: businessSubdomain || '',
           slug: businessSlug,
-          isPublished: business.is_published,
-          heroTitle: business.hero_title,
-          heroSubtitle: business.hero_subtitle,
-          ctaText: business.cta_text,
-          secondaryCtaText: business.secondary_cta_text,
-          aboutTitle: business.about_title,
-          aboutDescription: business.about_description,
-          aboutImage: business.about_image,
-          trustSection: business.trust_section,
-          stripeAccountId: business.stripe_account_id,
-          stripeEnabled: business.stripe_enabled,
-          templateKey: business.template_key || 'editorial_luxe',
+          // Logo: support both old and new column names
+          logo: logoResolved,
+          logoUrl: logoResolved,
+          coverImage: business.cover_image || null,
+          primaryColor: business.primary_color || '#6B21A8',
+          heroTitle: business.hero_title || '',
+          heroSubtitle: business.hero_subtitle || '',
+          ctaText: business.cta_text || 'Book Now',
+          secondaryCtaText: business.secondary_cta_text || '',
+          aboutTitle: business.about_title || '',
+          aboutDescription: business.about_description || '',
+          aboutImage: business.about_image || null,
+          address: business.address || '',
+          socials: business.socials || { instagram: '', facebook: '', twitter: '' },
+          trustSection: business.trust_section || 'none',
+          isPublished: business.is_published || false,
+          customDomain: business.custom_domain || null,
+          templateKey: business.template_key || 'beauty_editorial_luxe',
+          // Stripe fields
+          stripeAccountId: business.stripe_account_id || null,
+          stripeConnected: business.stripe_enabled || false,
+          stripeOnboardingStatus: business.stripe_onboarding_status || 'not_started',
+          stripeChargesEnabled: business.stripe_charges_enabled || false,
+          stripePayouts_enabled: business.stripe_payouts_enabled || false,
+          stripeDetailsSubmitted: business.stripe_details_submitted || false,
+          stripeCustomerId: business.stripe_customer_id || null,
+          stripeSubscriptionId: business.stripe_subscription_id || null,
+          // Subscription / trial
+          subscriptionStatus: business.subscription_status || 'trialing',
+          trialStartDate: business.trial_start_date || null,
+          trialEndDate: business.trial_end_date || null,
+          planType: business.plan_type || 'pro',
+          // Relations
           services: mappedServices,
-          workingHours: (availabilityRes.data || []).map((h) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open })),
-          bookings: mappedBookings,
+          workingHours: (availabilityRes.data || []).map((h) => ({
+            ...h,
+            dayOfWeek: h.day_of_week,
+            startTime: h.start_time,
+            endTime: h.end_time,
+            isOpen: h.is_open
+          })),
+          bookings: [],
           staff: (staffRes.data || []).map((s: Record<string, unknown>) => ({
             id: s.id as string,
             businessId: s.business_id as string,
@@ -1116,15 +1126,22 @@ export const useAppStore = create<AppState>()(
           })),
           clients: [],
           reviews: reviewsRes.data || [],
-          proofOfWork: proofRes.data || []
-        } 
+          proofOfWork: proofRes.data || [],
+          domains: [],
+          themeMode: business.theme_mode || 'light',
+          hiddenSections: business.hidden_sections || [],
+          faqs: business.faqs || [],
+          beforeAfterImages: business.before_after_images || [],
+          blockedTimes: [],
+        }
       });
     } catch (err) {
+      console.error('[fetchPublicBusiness] Error:', (err as Error).message);
       set({ error: (err as Error).message });
-      } finally {
-        set({ loading: false });
-      }
-    },
+    } finally {
+      set({ loading: false });
+    }
+  },
 
     detectLocation: async () => {
       // Check if we already detected or set manually to avoid rate limiting

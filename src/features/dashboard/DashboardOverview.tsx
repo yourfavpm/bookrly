@@ -149,7 +149,7 @@ export const DashboardOverview: React.FC = () => {
       
       {/* Trial Awareness */}
       {trialDaysLeft !== null && trialDaysLeft <= 14 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-text-primary text-white shadow-xl overflow-hidden relative group">
+        <div className="hidden sm:flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-text-primary text-white shadow-xl overflow-hidden relative group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-110 transition-transform duration-1000" />
           <div className="flex items-center gap-4 relative z-10">
             <div className="p-2 rounded-xl bg-white/10 text-emerald-400">
@@ -165,6 +165,58 @@ export const DashboardOverview: React.FC = () => {
             Upgrade Now
           </Button>
         </div>
+      )}
+
+      {/* Onboarding Section - Moved to top */}
+      {progressPercent < 100 && (
+        <section className="space-y-6 pt-2 pb-4">
+          <div className="flex items-center justify-between px-1">
+            <div className="space-y-1">
+               <h2 className="text-xl font-bold tracking-tight">Complete your setup</h2>
+               <p className="text-sm text-text-secondary">{onboardingSteps.length - completedSteps} steps left to launch your business.</p>
+            </div>
+            <div className="text-right space-y-1">
+               <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">{progressPercent}% Done</p>
+               <div className="w-32 h-1.5 bg-bg-canvas rounded-full overflow-hidden">
+                 <motion.div 
+                   className="h-full bg-brand"
+                   initial={{ width: 0 }}
+                   animate={{ width: `${progressPercent}%` }}
+                   transition={{ duration: 1, ease: "easeOut" }}
+                 />
+               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {onboardingSteps.map((step) => (
+              <Card 
+                key={step.id}
+                className={`p-6 border-border-polaris shadow-none bg-white group transition-all ${step.isCompleted ? 'opacity-60' : 'hover:border-brand/40'}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-5">
+                    <div className={`p-3 rounded-2xl ${step.isCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-bg-canvas text-text-tertiary group-hover:text-brand group-hover:bg-brand/5'} transition-all`}>
+                      {step.isCompleted ? <CheckCircle2 size={24} /> : <PlusCircle size={24} />}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-text-primary tracking-tight">{step.title}</h3>
+                      <p className="text-xs text-text-secondary font-medium">{step.description}</p>
+                    </div>
+                  </div>
+                  {!step.isCompleted && (
+                    <button 
+                      onClick={step.action}
+                      className="p-2 text-text-tertiary hover:text-brand hover:bg-brand/5 rounded-xl transition-all"
+                    >
+                      <ArrowRight size={20} />
+                    </button>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Greeting Bar */}
@@ -409,57 +461,7 @@ export const DashboardOverview: React.FC = () => {
          </div>
       </div>
 
-      {/* Onboarding Section - Moved below analytics */}
-      {progressPercent < 100 && (
-        <section className="space-y-6 pt-10">
-          <div className="flex items-center justify-between px-1">
-            <div className="space-y-1">
-               <h2 className="text-xl font-bold tracking-tight">Complete your setup</h2>
-               <p className="text-sm text-text-secondary">{onboardingSteps.length - completedSteps} steps left to launch your business.</p>
-            </div>
-            <div className="text-right space-y-1">
-               <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">{progressPercent}% Done</p>
-               <div className="w-32 h-1.5 bg-bg-canvas rounded-full overflow-hidden">
-                 <motion.div 
-                   className="h-full bg-brand"
-                   initial={{ width: 0 }}
-                   animate={{ width: `${progressPercent}%` }}
-                   transition={{ duration: 1, ease: "easeOut" }}
-                 />
-               </div>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {onboardingSteps.map((step) => (
-              <Card 
-                key={step.id}
-                className={`p-6 border-border-polaris shadow-none bg-white group transition-all ${step.isCompleted ? 'opacity-60' : 'hover:border-brand/40'}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-5">
-                    <div className={`p-3 rounded-2xl ${step.isCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-bg-canvas text-text-tertiary group-hover:text-brand group-hover:bg-brand/5'} transition-all`}>
-                      {step.isCompleted ? <CheckCircle2 size={24} /> : <PlusCircle size={24} />}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-text-primary tracking-tight">{step.title}</h3>
-                      <p className="text-xs text-text-secondary font-medium">{step.description}</p>
-                    </div>
-                  </div>
-                  {!step.isCompleted && (
-                    <button 
-                      onClick={step.action}
-                      className="p-2 text-text-tertiary hover:text-brand hover:bg-brand/5 rounded-xl transition-all"
-                    >
-                      <ArrowRight size={20} />
-                    </button>
-                  )}
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 };

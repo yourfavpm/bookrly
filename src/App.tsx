@@ -1,5 +1,5 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { SignUp } from './features/auth/SignUp';
 import { Login } from './features/auth/Login';
 import { ForgotPassword } from './features/auth/ForgotPassword';
@@ -31,81 +31,83 @@ import { NotFoundPage } from './features/errors/NotFoundPage';
 
 function App() {
   return (
-    <Router>
-      <AuthObserver>
-        <Routes>
-          {/* Auth Routes */}
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          
-          {/* Onboarding */}
-          <Route path="/onboarding" element={
-            <ProtectedRoute>
-              <OnboardingFlow />
-            </ProtectedRoute>
-          } />
-          
-          {/* Dashboard Routes - Nested to prevent Layout remounting */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<Navigate to="overview" replace />} />
-            <Route path="overview" element={<DashboardOverview />} />
-            <Route path="services" element={<ServicesList />} />
-            <Route path="portfolio" element={<PortfolioPage />} />
-            <Route path="testimonials" element={<TestimonialsPage />} />
-            <Route path="availability" element={<AvailabilityPage />} />
-            <Route path="team" element={<StaffPage />} />
-            <Route path="clients" element={<ClientsPage />} />
-            <Route path="clients/:id" element={<ClientProfilePage />} />
-            <Route path="bookings" element={<BookingsPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="billing" element={<BillingPage />} />
-            <Route path="domains" element={<DomainsPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="settings/notifications" element={<NotificationSettings />} />
-          </Route>
-          
-          {/* Full Screen Website Editor */}
-          <Route path="/dashboard/website" element={
-            <ProtectedRoute>
-              <WebsiteEditor />
-            </ProtectedRoute>
-          } />
-          
-          {/* Public Site (Direct View) */}
-          <Route path="/p/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />
-          <Route path="/unsubscribe/:businessId" element={<UnsubscribePage />} />
-          
-          {/* Staff Invite Accept */}
-          <Route path="/invite/:token" element={<StaffInviteAccept />} />
-          
-          {/* Dashboard Preview (Local State) */}
-          <Route path="/preview" element={
-            <ProtectedRoute>
-              <PublicLayout><PublicWebsite isPreview={true} /></PublicLayout>
-            </ProtectedRoute>
-          } />
+    <HelmetProvider>
+      <Router>
+        <AuthObserver>
+          <Routes>
+            {/* Auth Routes */}
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            
+            {/* Onboarding */}
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <OnboardingFlow />
+              </ProtectedRoute>
+            } />
+            
+            {/* Dashboard Routes - Nested to prevent Layout remounting */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="overview" element={<DashboardOverview />} />
+              <Route path="services" element={<ServicesList />} />
+              <Route path="portfolio" element={<PortfolioPage />} />
+              <Route path="testimonials" element={<TestimonialsPage />} />
+              <Route path="availability" element={<AvailabilityPage />} />
+              <Route path="team" element={<StaffPage />} />
+              <Route path="clients" element={<ClientsPage />} />
+              <Route path="clients/:id" element={<ClientProfilePage />} />
+              <Route path="bookings" element={<BookingsPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="billing" element={<BillingPage />} />
+              <Route path="domains" element={<DomainsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="settings/notifications" element={<NotificationSettings />} />
+            </Route>
+            
+            {/* Full Screen Website Editor */}
+            <Route path="/dashboard/website" element={
+              <ProtectedRoute>
+                <WebsiteEditor />
+              </ProtectedRoute>
+            } />
+            
+            {/* Public Site (Direct View) */}
+            <Route path="/p/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />
+            <Route path="/unsubscribe/:businessId" element={<UnsubscribePage />} />
+            
+            {/* Staff Invite Accept */}
+            <Route path="/invite/:token" element={<StaffInviteAccept />} />
+            
+            {/* Dashboard Preview (Local State) */}
+            <Route path="/preview" element={
+              <ProtectedRoute>
+                <PublicLayout><PublicWebsite isPreview={true} /></PublicLayout>
+              </ProtectedRoute>
+            } />
 
-          {/* Template Demo (Sample Data) */}
-          <Route path="/demo/:templateKey" element={
-            <PublicLayout><PublicWebsite isDemo={true} /></PublicLayout>
-          } />
-          
-          {/* Redirects */}
-          <Route path="/" element={<LandingPage />} />
+            {/* Template Demo (Sample Data) */}
+            <Route path="/demo/:templateKey" element={
+              <PublicLayout><PublicWebsite isDemo={true} /></PublicLayout>
+            } />
+            
+            {/* Redirects */}
+            <Route path="/" element={<LandingPage />} />
 
-          {/* Public Site Catch-all (for clean URLs like domain.com/name) */}
-          <Route path="/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />
+            {/* Public Site Catch-all (for clean URLs like domain.com/name) */}
+            <Route path="/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />
 
-          {/* 404 Catch-all */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </AuthObserver>
-    </Router>
+            {/* 404 Catch-all */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </AuthObserver>
+      </Router>
+    </HelmetProvider>
   );
 }
 
