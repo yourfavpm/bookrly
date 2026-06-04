@@ -194,21 +194,21 @@ export const DashboardLayout: React.FC = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-[280px] bg-white z-70 lg:hidden flex flex-col shadow-2xl"
+              className="fixed inset-y-0 left-0 w-[260px] bg-white z-70 lg:hidden flex flex-col shadow-2xl"
             >
-              <div className="p-6 border-b border-black/5 flex items-center justify-between">
+              <div className="p-4 border-b border-black/5 flex items-center justify-between">
                 <div className="flex items-center">
-                   <img src="/images/logomain.png" alt="Skeduley Console" className="h-[96px] w-auto" />
+                   <img src="/images/logomain.png" alt="Skeduley Console" className="h-[40px] w-auto" />
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-black/20 hover:text-black/40"><ChevronLeft size={20} /></button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 py-8">
-                 <nav className="space-y-2">
+              <div className="flex-1 overflow-y-auto p-3 py-4">
+                 <nav className="space-y-1">
                     {navItems.map(item => (
                       <SidebarItem 
                         key={item.to} 
-                        icon={React.isValidElement(item.icon) ? React.cloneElement(item.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 18, strokeWidth: 1.5 }) : item.icon} 
+                        icon={React.isValidElement(item.icon) ? React.cloneElement(item.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>, { size: 16, strokeWidth: 1.5 }) : item.icon} 
                         label={item.label} 
                         to={item.to} 
                         active={isSelected(item.to)}
@@ -217,7 +217,7 @@ export const DashboardLayout: React.FC = () => {
                     ))}
                     {(currentRole === 'owner' || currentRole === 'admin') && (
                       <SidebarItem 
-                        icon={<Settings size={18} strokeWidth={1.5} />} 
+                        icon={<Settings size={16} strokeWidth={1.5} />} 
                         label="Settings" 
                         to="/dashboard/settings" 
                         active={isSelected('/dashboard/settings')} 
@@ -227,15 +227,15 @@ export const DashboardLayout: React.FC = () => {
                  </nav>
               </div>
 
-              <div className="p-6 border-t border-black/5 bg-bg-secondary/30">
+              <div className="p-4 border-t border-black/5 bg-bg-secondary/30">
                  <button 
                    onClick={() => {
                      setIsMobileMenuOpen(false);
                      signOut();
                    }}
-                   className="w-full flex items-center gap-3 px-4 py-3 text-text-tertiary hover:text-red-500 transition-colors"
+                   className="w-full flex items-center gap-3 px-3 py-2 text-text-tertiary hover:text-red-500 transition-colors rounded-lg hover:bg-black/5"
                  >
-                    <LogOut size={18} strokeWidth={1.5} />
+                    <LogOut size={16} strokeWidth={1.5} />
                     <span className="text-sm font-light">Sign Out</span>
                  </button>
               </div>
@@ -244,7 +244,7 @@ export const DashboardLayout: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-1 overflow-hidden relative bg-white lg:rounded-t-[24px] lg:shadow-[0_-8px_30px_rgba(0,0,0,0.2)] lg:ring-1 lg:ring-white/10 lg:mx-2 lg:border-t lg:border-white/10">
+      <div className="flex flex-1 overflow-hidden relative bg-white rounded-t-[20px] shadow-[0_-8px_30px_rgba(0,0,0,0.2)] ring-1 ring-white/10 mx-1 mt-1 border-t border-white/10 lg:rounded-t-[24px] lg:mx-2 lg:mt-0">
         {/* Sidebar - Desktop */}
         <aside className="hidden lg:flex flex-col w-64 bg-bg-sidebar border-r border-border-polaris/40 overflow-y-auto shrink-0 z-40 p-5 rounded-tl-[24px]">
           {isTrialing && !isTrialExpired && (
