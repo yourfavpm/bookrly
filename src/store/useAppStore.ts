@@ -176,6 +176,7 @@ interface BusinessState {
   phone: string;
   subdomain: string;
   logo: string | null;
+  logoUrl: string | null;
   coverImage: string | null;
   primaryColor: string;
   heroTitle: string;
