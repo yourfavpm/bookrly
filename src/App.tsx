@@ -28,6 +28,15 @@ import { AuthObserver } from './components/auth/AuthObserver';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LandingPage } from './features/landing/LandingPage';
 import { NotFoundPage } from './features/errors/NotFoundPage';
+import { extractSubdomainFromHost } from './lib/domainUtils';
+
+const RootRoute = () => {
+  const subdomain = extractSubdomainFromHost();
+  if (subdomain) {
+    return <PublicLayout><PublicWebsite /></PublicLayout>;
+  }
+  return <LandingPage />;
+};
 
 function App() {
   return (
@@ -97,7 +106,9 @@ function App() {
             } />
             
             {/* Redirects */}
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={
+              <RootRoute />
+            } />
 
             {/* Public Site Catch-all (for clean URLs like domain.com/name) */}
             <Route path="/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />
