@@ -167,73 +167,21 @@ export const DashboardOverview: React.FC = () => {
         </div>
       )}
 
-      {/* Onboarding Section - Moved to top */}
-      {progressPercent < 100 && (
-        <section className="space-y-6 pt-2 pb-4">
-          <div className="flex items-center justify-between px-1">
-            <div className="space-y-1">
-               <h2 className="text-xl font-bold tracking-tight">Complete your setup</h2>
-               <p className="text-sm text-text-secondary">{onboardingSteps.length - completedSteps} steps left to launch your business.</p>
-            </div>
-            <div className="text-right space-y-1">
-               <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">{progressPercent}% Done</p>
-               <div className="w-32 h-1.5 bg-bg-canvas rounded-full overflow-hidden">
-                 <motion.div 
-                   className="h-full bg-brand"
-                   initial={{ width: 0 }}
-                   animate={{ width: `${progressPercent}%` }}
-                   transition={{ duration: 1, ease: "easeOut" }}
-                 />
-               </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {onboardingSteps.map((step) => (
-              <Card 
-                key={step.id}
-                className={`p-6 border-border-polaris shadow-none bg-white group transition-all ${step.isCompleted ? 'opacity-60' : 'hover:border-brand/40'}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-5">
-                    <div className={`p-3 rounded-2xl ${step.isCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-bg-canvas text-text-tertiary group-hover:text-brand group-hover:bg-brand/5'} transition-all`}>
-                      {step.isCompleted ? <CheckCircle2 size={24} /> : <PlusCircle size={24} />}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-text-primary tracking-tight">{step.title}</h3>
-                      <p className="text-xs text-text-secondary font-medium">{step.description}</p>
-                    </div>
-                  </div>
-                  {!step.isCompleted && (
-                    <button 
-                      onClick={step.action}
-                      className="p-2 text-text-tertiary hover:text-brand hover:bg-brand/5 rounded-xl transition-all"
-                    >
-                      <ArrowRight size={20} />
-                    </button>
-                  )}
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Greeting Bar */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
-        <div className="space-y-1.5">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 px-1 pt-2 md:pt-0">
+        <div className="space-y-1 md:space-y-1.5">
           <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-[0.2em]">
             {today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
-          <h1 className="text-3xl font-bold tracking-tight text-text-primary">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary">
             {greeting}, {business.name.split(' ')[0]}
           </h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <select 
             value={period}
             onChange={(e) => setPeriod(e.target.value as Period)}
-            className="h-10 px-4 rounded-xl border border-border-polaris bg-white text-xs font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-brand/10 transition-all"
+            className="h-9 md:h-10 px-3 md:px-4 rounded-xl border border-border-polaris bg-white text-[10px] md:text-xs font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-brand/10 transition-all flex-1 md:flex-none"
           >
             <option value="today">Today</option>
             <option value="thisWeek">This Week</option>
@@ -244,12 +192,64 @@ export const DashboardOverview: React.FC = () => {
           <Button 
             variant="secondary" 
             onClick={handleCopyLink}
-            className="h-10 px-6 rounded-xl border-border-polaris font-bold text-[10px] uppercase tracking-widest bg-white"
+            className="h-9 md:h-10 px-4 md:px-6 rounded-xl border-border-polaris font-bold text-[10px] uppercase tracking-widest bg-white whitespace-nowrap shrink-0"
           >
             {copying ? 'Copied!' : 'Booking Link'}
           </Button>
         </div>
       </header>
+
+      {/* Onboarding Section */}
+      {progressPercent < 100 && (
+        <section className="space-y-4 md:space-y-6 pt-2 md:pt-4 pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between px-1 gap-4">
+            <div className="space-y-0.5 md:space-y-1">
+               <h2 className="text-lg md:text-xl font-bold tracking-tight">Complete your setup</h2>
+               <p className="text-xs md:text-sm text-text-secondary">{onboardingSteps.length - completedSteps} steps left to launch your business.</p>
+            </div>
+            <div className="flex items-center md:items-end md:flex-col gap-3 md:gap-1 w-full md:w-auto">
+               <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest shrink-0">{progressPercent}% Done</p>
+               <div className="flex-1 md:w-32 h-1.5 bg-bg-canvas rounded-full overflow-hidden">
+                 <motion.div 
+                   className="h-full bg-brand"
+                   initial={{ width: 0 }}
+                   animate={{ width: `${progressPercent}%` }}
+                   transition={{ duration: 1, ease: "easeOut" }}
+                 />
+               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+            {onboardingSteps.map((step) => (
+              <Card 
+                key={step.id}
+                className={`p-4 md:p-6 border-border-polaris shadow-none bg-white group transition-all ${step.isCompleted ? 'opacity-60' : 'hover:border-brand/40'}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 md:gap-5">
+                    <div className={`p-2.5 md:p-3 rounded-2xl ${step.isCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-bg-canvas text-text-tertiary group-hover:text-brand group-hover:bg-brand/5'} transition-all shrink-0`}>
+                      {step.isCompleted ? <CheckCircle2 size={20} className="md:w-6 md:h-6" /> : <PlusCircle size={20} className="md:w-6 md:h-6" />}
+                    </div>
+                    <div>
+                      <h3 className="text-sm md:text-base font-bold text-text-primary tracking-tight leading-tight">{step.title}</h3>
+                      <p className="text-[11px] md:text-xs text-text-secondary font-medium mt-0.5">{step.description}</p>
+                    </div>
+                  </div>
+                  {!step.isCompleted && (
+                    <button 
+                      onClick={step.action}
+                      className="p-1.5 md:p-2 text-text-tertiary hover:text-brand hover:bg-brand/5 rounded-xl transition-all shrink-0"
+                    >
+                      <ArrowRight size={18} className="md:w-5 md:h-5" />
+                    </button>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Top Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
