@@ -18,8 +18,35 @@ interface BookingFlowProps {
   onCancel?: () => void;
 }
 
+const getZonedDateParts = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(date);
+
+  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0);
+  return {
+    year: get('year'),
+    month: get('month'),
+    day: get('day'),
+    hour: get('hour'),
+    minute: get('minute')
+  };
+};
+
+const getZonedDateKey = (date: Date, timeZone: string) => {
+  const { year, month, day } = getZonedDateParts(date, timeZone);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
 export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   const { business, createBooking, createCheckoutSession, currency } = useAppStore();
+  const businessTimezone = business?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const isStripeReady = business?.stripeConnected && business?.stripeDetailsSubmitted;
   const [step, setStep] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -61,12 +88,13 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   const totalDue = subtotal;
 
   const availableDates = useMemo(() => {
+    const today = new Date();
     return Array.from({ length: 14 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() + i + 1);
-      return d.toISOString().split('T')[0];
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      return getZonedDateKey(d, businessTimezone);
     });
-  }, []);
+  }, [businessTimezone]);
 
   // Get qualified staff for the selected service
   const qualifiedStaff = useMemo(() => {
@@ -88,8 +116,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     });
 
     const now = new Date();
-    const isToday = now.getFullYear() === dateObj.getFullYear() && now.getMonth() === dateObj.getMonth() && now.getDate() === dateObj.getDate();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const nowParts = getZonedDateParts(now, business.timezone || businessTimezone);
+    const todayKey = `${nowParts.year}-${String(nowParts.month).padStart(2, '0')}-${String(nowParts.day).padStart(2, '0')}`;
+    const isToday = selectedDate === todayKey;
+    const currentMinutes = nowParts.hour * 60 + nowParts.minute;
 
     // Use staff-specific availability if a staff member is selected
     const useStaffHours = selectedStaff && !isAnyStaff;
@@ -165,7 +195,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
        }
     }
     return slots;
-  }, [selectedDate, selectedService, selectedAddOns, business, selectedStaff, isAnyStaff]);
+  }, [selectedDate, selectedService, selectedAddOns, business, selectedStaff, isAnyStaff, businessTimezone]);
 
   if (!business) return null;
 

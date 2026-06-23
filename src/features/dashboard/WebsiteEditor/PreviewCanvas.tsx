@@ -24,7 +24,7 @@ export const PreviewCanvas: React.FC<{ deviceMode: 'desktop' | 'mobile' }> = ({ 
       layout
       initial={false}
       className={`h-full bg-white shadow-[0_0_40px_rgba(0,0,0,0.08)] rounded-xl overflow-y-auto overflow-x-hidden border border-slate-200 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] relative ${
-        deviceMode === 'mobile' ? 'w-[375px]' : 'w-full max-w-[1400px]'
+        deviceMode === 'mobile' ? 'w-full max-w-[375px]' : 'w-full max-w-[1400px]'
       }`}
     >
       {/* Editor overlay blocking default interactions on links/buttons to prevent navigation */}

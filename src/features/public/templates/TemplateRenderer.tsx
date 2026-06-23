@@ -28,6 +28,14 @@ import { BeforeAfterSection } from '../sections/BeforeAfterSection';
 import { CaseStudiesSection } from '../sections/CaseStudiesSection';
 import { BookingSectionInline } from '../sections/BookingSectionInline';
 
+const normalizeSectionKey = (section: string): string => {
+  if (section === 'results' || section === 'before-after') return 'before_after';
+  if (section === 'testimonials') return 'reviews';
+  if (section === 'portfolio') return 'gallery';
+  if (section === 'schedule') return 'availability';
+  return section;
+};
+
 // ── Hero variant mapper ──────────────────────────────────
 const mapHeroVariant = (v?: string) => v || 'centered';
 
@@ -201,7 +209,9 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, is
 
         {/* Sections in order */}
         {template.sectionOrder.map((section) => {
-          const isHidden = props.business?.hiddenSections?.includes(section);
+          const normalizedSection = normalizeSectionKey(section);
+          const hiddenSections = (props.business?.hiddenSections || []).map(normalizeSectionKey);
+          const isHidden = hiddenSections.includes(normalizedSection);
           
           // Hide on live site
           if (isHidden && !isEditing) return null;
@@ -211,7 +221,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, is
           
           if (isEditing) {
             return (
-              <EditorSectionWrapper key={`wrap-${section}`} section={section} isHidden={isHidden}>
+              <EditorSectionWrapper key={`wrap-${section}`} section={normalizedSection} label={section} isHidden={isHidden}>
                 {rendered}
               </EditorSectionWrapper>
             );
@@ -224,24 +234,37 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({ template, is
 };
 
 // ── Editor Wrapper Component ─────────────────────────────
-const EditorSectionWrapper: React.FC<{ section: string; isHidden?: boolean; children: React.ReactNode }> = ({ section, isHidden, children }) => {
+const EditorSectionWrapper: React.FC<{ section: string; label?: string; isHidden?: boolean; children: React.ReactNode }> = ({ section, label, isHidden, children }) => {
   const { activeEditorSection, setActiveEditorSection } = useAppStore();
   const isActive = activeEditorSection === section;
+  const displayLabel = (label || section).replace(/_/g, ' ');
   
   return (
     <div 
+      id={`editor-section-${section}`}
       className={`relative group transition-all duration-300 cursor-pointer ${isActive ? 'ring-2 ring-brand ring-inset z-10' : 'hover:ring-2 hover:ring-brand/40 hover:ring-inset'} ${isHidden ? 'opacity-50 grayscale' : ''}`}
       onClick={(e) => {
          e.stopPropagation();
          setActiveEditorSection(section);
       }}
     >
+      {/* Active State Label */}
       {isActive && (
         <div className="absolute top-0 left-0 bg-brand text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 z-20 rounded-br-lg shadow-sm flex items-center gap-2">
-          {section}
+          {displayLabel}
           {isHidden && <span className="text-white/70 border-l border-white/20 pl-2">HIDDEN</span>}
         </div>
       )}
+
+      {/* Hover Overlay */}
+      {!isActive && (
+        <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center pointer-events-none">
+          <div className="bg-brand text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+            Click to Edit {displayLabel}
+          </div>
+        </div>
+      )}
+
       {children}
     </div>
   );

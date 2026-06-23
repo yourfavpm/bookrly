@@ -3,7 +3,15 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import type { User, AuthError } from '@supabase/supabase-js';
 import { calculateDashboardStats, type DashboardStats } from '../lib/analyticsUtils';
-import { getBaseDomain, getBusinessUrl } from '../lib/domainUtils';
+import {
+  generateBusinessSubdomain,
+  getBaseDomain,
+  getBusinessUrl,
+  getDomainLookupCandidates,
+  isDefaultSubdomain,
+  normalizeDomainIdentifier,
+  slugifyDomainLabel
+} from '../lib/domainUtils';
 
 export interface AddOn {
   id: string;
@@ -198,6 +206,7 @@ interface BusinessState {
   isPublished: boolean;
   slug: string;
   customDomain: string | null;
+  timezone: string;
   workingHours: WorkingHour[];
   services: Service[];
   bookings: Booking[];
@@ -261,6 +270,8 @@ interface AppState {
   business: BusinessState | null;
   loading: boolean;
   error: string | null;
+  editorSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  editorSaveError: string | null;
   onboardingStep: number;
   isCanada: boolean;
   currency: 'USD' | 'CAD';
@@ -279,6 +290,7 @@ interface AppState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setBusiness: (business: BusinessState | null) => void;
+  resetEditorSaveStatus: () => void;
   updateBusiness: (updates: Partial<BusinessState>, immediate?: boolean) => Promise<void>;
   setOnboardingStep: (step: number) => void;
   fetchBusiness: (retryCount?: number) => Promise<void>;
@@ -347,19 +359,99 @@ interface AppState {
   deleteBlockedTime: (id: string) => Promise<void>;
 }
 
-const generateSlug = (name: string): string => {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+const generateSubdomain = (name: string, businessId: string): string => {
+  return generateBusinessSubdomain(name, businessId);
 };
 
-const generateSubdomain = (name: string, businessId: string): string => {
-  const baseSlug = generateSlug(name);
-  // Use first 20 chars of slug or fallback to business ID prefix
-  const subdomain = baseSlug ? baseSlug.substring(0, 20) : `biz-${businessId.substring(0, 8)}`;
+const isSubdomainAvailable = async (subdomain: string, businessId: string): Promise<boolean> => {
+  const [{ data: businessMatch }, { data: domainMatch }] = await Promise.all([
+    supabase
+      .from('businesses')
+      .select('id')
+      .eq('subdomain', subdomain)
+      .neq('id', businessId)
+      .maybeSingle(),
+    supabase
+      .from('domains')
+      .select('id,business_id')
+      .eq('domain', subdomain)
+      .neq('business_id', businessId)
+      .maybeSingle()
+  ]);
+
+  return !businessMatch && !domainMatch;
+};
+
+const findAvailableSubdomain = async (businessName: string, businessId: string): Promise<string> => {
+  const base = generateSubdomain(businessName, businessId);
+  if (await isSubdomainAvailable(base, businessId)) return base;
+
+  const suffix = businessId.slice(0, 6);
+  const withId = `${base.slice(0, 56 - suffix.length).replace(/-+$/g, '')}-${suffix}`;
+  if (await isSubdomainAvailable(withId, businessId)) return withId;
+
+  for (let i = 2; i < 100; i += 1) {
+    const numeric = `${base.slice(0, 61 - String(i).length).replace(/-+$/g, '')}-${i}`;
+    if (await isSubdomainAvailable(numeric, businessId)) return numeric;
+  }
+
+  return `biz-${businessId.slice(0, 8)}`;
+};
+
+const ensureBusinessDomain = async (
+  businessId: string,
+  businessName: string,
+  currentSubdomain?: string | null,
+  forceFromName = false
+): Promise<string> => {
+  const cleanedCurrent = currentSubdomain ? slugifyDomainLabel(currentSubdomain) : '';
+  let subdomain = forceFromName || isDefaultSubdomain(cleanedCurrent)
+    ? await findAvailableSubdomain(businessName, businessId)
+    : cleanedCurrent;
+
+  if (!await isSubdomainAvailable(subdomain, businessId)) {
+    subdomain = await findAvailableSubdomain(businessName, businessId);
+  }
+
+  const { error: businessUpdateError } = await supabase
+    .from('businesses')
+    .update({ subdomain, slug: subdomain })
+    .eq('id', businessId);
+  if (businessUpdateError) throw businessUpdateError;
+
+  const { error: primaryResetError } = await supabase
+    .from('domains')
+    .update({ is_primary: false })
+    .eq('business_id', businessId);
+  if (primaryResetError) throw primaryResetError;
+
+  const { data: existingDomain } = await supabase
+    .from('domains')
+    .select('id')
+    .eq('business_id', businessId)
+    .eq('type', 'subdomain')
+    .maybeSingle();
+
+  const domainPayload = {
+    business_id: businessId,
+    domain: subdomain,
+    type: 'subdomain' as const,
+    status: 'active' as const,
+    is_primary: true,
+    ssl_enabled: true,
+    ssl_status: 'active',
+    verified_at: new Date().toISOString(),
+    dns_records: {}
+  };
+
+  if (existingDomain) {
+    const { error } = await supabase.from('domains').update(domainPayload).eq('id', existingDomain.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('domains').insert([domainPayload]);
+    if (error) throw error;
+  }
+
   return subdomain;
 };
 
@@ -370,6 +462,8 @@ export const useAppStore = create<AppState>()(
   business: null,
   loading: true,
   error: null,
+  editorSaveStatus: 'idle',
+  editorSaveError: null,
   onboardingStep: 1,
   isCanada: true,
   currency: 'CAD',
@@ -385,6 +479,7 @@ export const useAppStore = create<AppState>()(
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setBusiness: (business) => set({ business }),
+  resetEditorSaveStatus: () => set({ editorSaveStatus: 'idle', editorSaveError: null }),
   setOnboardingStep: (step) => set({ onboardingStep: step }),
 
   fetchBusiness: async (retryCount?: number) => {
@@ -432,11 +527,10 @@ export const useAppStore = create<AppState>()(
              .insert([{ 
                 owner_id: user.id, 
                 name: '',
-                subdomain: `biz-${user.id.slice(0, 8)}`,
                 primary_color: '#111111',
                 trust_section: 'none',
                 template_key: 'clean_classic',
-                is_published: true,
+                is_published: false,
                 subscription_status: 'trialing',
                 trial_start_date: now.toISOString(),
                 trial_end_date: trialEndDate.toISOString(),
@@ -572,6 +666,7 @@ export const useAppStore = create<AppState>()(
           slug: b.slug || '',
           subdomain: b.subdomain || '',
           customDomain: b.custom_domain || null,
+          timezone: b.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
           heroTitle: b.hero_title || '',
           heroSubtitle: b.hero_subtitle || '',
           ctaText: b.cta_text || '',
@@ -653,11 +748,35 @@ export const useAppStore = create<AppState>()(
   updateBusiness: async (updates, immediate = false) => {
     const { business, user } = get();
     if (!business || !user) return;
+    set({ editorSaveStatus: 'saving', editorSaveError: null });
+
+    const shouldEnsureDomain = Boolean(
+      updates.isPublished === true || (business.isPublished && updates.name && updates.name.length >= 3)
+    );
+    let ensuredSubdomain: string | null = null;
+
+    if (shouldEnsureDomain) {
+      try {
+        ensuredSubdomain = await ensureBusinessDomain(
+          business.id,
+          updates.name || business.name || 'business',
+          business.subdomain,
+          isDefaultSubdomain(business.subdomain)
+        );
+      } catch (err) {
+        console.error('Domain generation failed:', err);
+        set({ error: 'Could not generate a domain for this business.', editorSaveStatus: 'error', editorSaveError: 'Could not generate a domain for this business.' });
+        if (updates.isPublished === true) return;
+      }
+    }
 
     // 1. Auto-generate subdomain from name if it's currently a default biz-ID
     const nextUpdates = { ...updates };
-    if (updates.name && updates.name.length >= 3 && (!business.subdomain || business.subdomain.startsWith('biz-'))) {
-      const slugified = updates.name.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+    if (ensuredSubdomain) {
+      nextUpdates.subdomain = ensuredSubdomain;
+      nextUpdates.slug = ensuredSubdomain;
+    } else if (updates.name && updates.name.length >= 3 && isDefaultSubdomain(business.subdomain)) {
+      const slugified = generateSubdomain(updates.name, business.id);
       if (slugified) {
         nextUpdates.subdomain = slugified;
         nextUpdates.slug = slugified;
@@ -673,8 +792,11 @@ export const useAppStore = create<AppState>()(
     const dbUpdates: Record<string, unknown> = {};
     if ('name' in updates && updates.name) {
       dbUpdates.name = updates.name;
-      if (!business.subdomain || business.subdomain.startsWith('biz-')) {
-        const slugified = updates.name.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+      if (ensuredSubdomain) {
+        dbUpdates.subdomain = ensuredSubdomain;
+        dbUpdates.slug = ensuredSubdomain;
+      } else if (business.isPublished && isDefaultSubdomain(business.subdomain)) {
+        const slugified = generateSubdomain(updates.name, business.id);
         if (slugified && slugified.length >= 3) {
           dbUpdates.subdomain = slugified;
           dbUpdates.slug = slugified;
@@ -685,14 +807,17 @@ export const useAppStore = create<AppState>()(
     if ('phone' in updates) dbUpdates.phone = updates.phone;
     if ('category' in updates) dbUpdates.category = updates.category;
     if ('subdomain' in updates && updates.subdomain) {
-      const slugified = updates.subdomain.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+      const slugified = slugifyDomainLabel(updates.subdomain);
       dbUpdates.subdomain = slugified;
       dbUpdates.slug = slugified;
     }
-    if ('logo' in updates) dbUpdates.logo = updates.logo;
+    if ('logo' in updates) {
+      dbUpdates.logo = updates.logo;
+      dbUpdates.logo_url = updates.logo;
+    }
     if ('isPublished' in updates) dbUpdates.is_published = updates.isPublished;
     if ('slug' in updates) dbUpdates.slug = updates.slug;
-    if ('customDomain' in updates) dbUpdates.custom_domain = updates.customDomain;
+    if ('timezone' in updates) dbUpdates.timezone = updates.timezone;
     if ('heroTitle' in updates) dbUpdates.hero_title = updates.heroTitle;
     if ('heroSubtitle' in updates) dbUpdates.hero_subtitle = updates.heroSubtitle;
     if ('ctaText' in updates) dbUpdates.cta_text = updates.ctaText;
@@ -712,9 +837,12 @@ export const useAppStore = create<AppState>()(
       try {
         const { error } = await supabase.from('businesses').update(dbUpdates).eq('id', business.id);
         if (error) throw error;
-        console.log('Immediate save successful');
+        set({ editorSaveStatus: 'saved', editorSaveError: null });
       } catch (err) {
         console.error('Immediate save failed:', err);
+        const message = (err as Error).message || 'Save failed.';
+        set({ editorSaveStatus: 'error', editorSaveError: message, error: message });
+        get().fetchBusiness(0);
       }
       return;
     }
@@ -736,8 +864,11 @@ export const useAppStore = create<AppState>()(
         if ('name' in updates && updates.name) {
           dbUpdates.name = updates.name;
           // Auto-update subdomain in DB if current is default
-          if (!latestBusiness.subdomain || latestBusiness.subdomain.startsWith('biz-')) {
-            const slugified = updates.name.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+          if (ensuredSubdomain) {
+            dbUpdates.subdomain = ensuredSubdomain;
+            dbUpdates.slug = ensuredSubdomain;
+          } else if (latestBusiness.isPublished && isDefaultSubdomain(latestBusiness.subdomain)) {
+            const slugified = generateSubdomain(updates.name, latestBusiness.id);
             if (slugified && slugified.length >= 3) {
               dbUpdates.subdomain = slugified;
               dbUpdates.slug = slugified;
@@ -748,14 +879,17 @@ export const useAppStore = create<AppState>()(
         if ('phone' in updates) dbUpdates.phone = updates.phone;
         if ('category' in updates) dbUpdates.category = updates.category;
         if ('subdomain' in updates && updates.subdomain) {
-          const slugified = updates.subdomain.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+          const slugified = slugifyDomainLabel(updates.subdomain);
           dbUpdates.subdomain = slugified;
           dbUpdates.slug = slugified; // Sync slug with subdomain for now
         }
-        if ('logo' in updates) dbUpdates.logo = updates.logo;
+        if ('logo' in updates) {
+          dbUpdates.logo = updates.logo;
+          dbUpdates.logo_url = updates.logo;
+        }
         if ('isPublished' in updates) dbUpdates.is_published = updates.isPublished;
         if ('slug' in updates) dbUpdates.slug = updates.slug;
-        if ('customDomain' in updates) dbUpdates.custom_domain = updates.customDomain;
+        if ('timezone' in updates) dbUpdates.timezone = updates.timezone;
         if ('heroTitle' in updates) dbUpdates.hero_title = updates.heroTitle;
         if ('heroSubtitle' in updates) dbUpdates.hero_subtitle = updates.heroSubtitle;
         if ('ctaText' in updates) dbUpdates.cta_text = updates.ctaText;
@@ -793,6 +927,7 @@ export const useAppStore = create<AppState>()(
               }))
             );
           if (aError) console.error('Availability sync error:', aError);
+          if (aError) throw aError;
         }
 
         if (Object.keys(dbUpdates).length > 0) {
@@ -807,10 +942,14 @@ export const useAppStore = create<AppState>()(
                alert('That subdomain or slug is already taken by another business. Reverting your changes.');
                get().fetchBusiness(0);
             }
+            throw error;
           }
         }
+        set({ editorSaveStatus: 'saved', editorSaveError: null });
       } catch (err) {
-        console.error('Save error:', (err as Error).message);
+        const message = (err as Error).message || 'Save failed.';
+        console.error('Save error:', message);
+        set({ editorSaveStatus: 'error', editorSaveError: message, error: message });
       }
     }, 800);
   },
@@ -1004,15 +1143,48 @@ export const useAppStore = create<AppState>()(
 
     set({ loading: true, error: null });
     try {
-      const cleanId = identifier.toLowerCase().trim().replace(/\/$/, '');
+      const cleanId = normalizeDomainIdentifier(identifier);
+      const lookupCandidates = getDomainLookupCandidates(cleanId);
 
-      // Use maybeSingle() so we get null (not an error) when no row matches.
-      // We try subdomain, slug, and custom_domain in order.
-      const { data: business, error } = await supabase
-        .from('businesses')
-        .select('*')
-        .or(`subdomain.eq.${cleanId},slug.eq.${cleanId},custom_domain.eq.${cleanId}`)
-        .maybeSingle();
+      const { data: activeDomains, error: domainError } = await supabase
+        .from('domains')
+        .select('business_id')
+        .in('domain', lookupCandidates)
+        .eq('status', 'active')
+        .order('is_primary', { ascending: false })
+        .limit(1);
+
+      if (domainError) {
+        console.warn('[fetchPublicBusiness] Domain lookup failed:', domainError);
+      }
+
+      const activeDomain = activeDomains?.[0] || null;
+
+      const createPublishedBusinessQuery = () => supabase
+          .from('businesses')
+          .select('*')
+          .eq('is_published', true);
+
+      let business = null;
+      let error = null;
+
+      if (activeDomain) {
+        const domainBusinessRes = await createPublishedBusinessQuery().eq('id', activeDomain.business_id).maybeSingle();
+        business = domainBusinessRes.data;
+        error = domainBusinessRes.error;
+      }
+
+      if (!business && !error) {
+        const fallbackFilter = lookupCandidates
+          .flatMap((candidate) => [
+            `subdomain.eq.${candidate}`,
+            `slug.eq.${candidate}`
+          ])
+          .join(',');
+        const fallbackRes = await createPublishedBusinessQuery().or(fallbackFilter).maybeSingle();
+        business = fallbackRes.data;
+        error = fallbackRes.error;
+      }
 
       if (error) {
         console.error('[fetchPublicBusiness] Supabase query error:', error);
@@ -1020,7 +1192,7 @@ export const useAppStore = create<AppState>()(
       }
 
       if (!business) {
-        console.warn(`[fetchPublicBusiness] No published business found for identifier: "${cleanId}"`);
+        console.warn(`[fetchPublicBusiness] No published business found for identifier: "${cleanId}"`, lookupCandidates);
         throw new Error('Business not found');
       }
 
@@ -1039,17 +1211,8 @@ export const useAppStore = create<AppState>()(
         addOns: s.addons || []
       }));
 
-      // Auto-generate subdomain if missing
-      let businessSubdomain = business.subdomain;
-      if (!businessSubdomain && business.name) {
-        businessSubdomain = generateSubdomain(business.name, business.id);
-        void supabase.from('businesses').update({ subdomain: businessSubdomain }).eq('id', business.id);
-      }
-
-      const businessSlug = business.slug || (business.name ? generateSlug(business.name) : '');
-      if (!business.slug && business.name) {
-        void supabase.from('businesses').update({ slug: businessSlug }).eq('id', business.id);
-      }
+      const businessSubdomain = business.subdomain || generateSubdomain(business.name || '', business.id);
+      const businessSlug = business.slug || businessSubdomain;
 
       // Resolve logo: support both old 'logo' text column and new 'logo_url'
       const logoResolved = business.logo_url || business.logo || null;
@@ -1080,6 +1243,7 @@ export const useAppStore = create<AppState>()(
           trustSection: business.trust_section || 'none',
           isPublished: business.is_published || false,
           customDomain: business.custom_domain || null,
+          timezone: business.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
           templateKey: business.template_key || 'beauty_editorial_luxe',
           // Stripe fields
           stripeAccountId: business.stripe_account_id || null,
@@ -1540,6 +1704,7 @@ export const useAppStore = create<AppState>()(
         date: data.date,
         start_time: startTime24,
         end_time: endTime24,
+        timezone: business.timezone,
         total_amount: data.totalPrice,
         paid_amount: data.depositDue || 0,
         payment_status: data.depositDue > 0 ? 'pending' : 'paid',
@@ -1677,10 +1842,9 @@ export const useAppStore = create<AppState>()(
     const { business } = get();
     if (!business) return null;
 
-    const protocol = 'https:';
-    const domain = import.meta.env.VITE_ROOT_DOMAIN || 'localhost:5173';
-    const successUrl = `${protocol}//${business.subdomain}.${domain}/?booking_success=true`;
-    const cancelUrl = `${protocol}//${business.subdomain}.${domain}/?booking_cancel=true`;
+    const bookingUrl = getBusinessUrl(business.subdomain, business.customDomain);
+    const successUrl = `${bookingUrl}/?booking_success=true`;
+    const cancelUrl = `${bookingUrl}/?booking_cancel=true`;
 
     const { data, error } = await supabase.functions.invoke('booking-checkout', {
       body: { 
@@ -2153,6 +2317,9 @@ export const useAppStore = create<AppState>()(
   addDomain: async (domain, type) => {
     const { business } = get();
     if (!business) return;
+    const normalizedDomain = type === 'subdomain'
+      ? slugifyDomainLabel(domain)
+      : normalizeDomainIdentifier(domain);
     
     const dnsRecords = type === 'custom' ? {
       A: { host: '@', value: '76.76.21.21' },
@@ -2161,9 +2328,12 @@ export const useAppStore = create<AppState>()(
 
     const { error } = await supabase.from('domains').insert([{
       business_id: business.id,
-      domain,
+      domain: normalizedDomain,
       type,
       status: type === 'subdomain' ? 'active' : 'pending_verification',
+      ssl_enabled: type === 'subdomain',
+      ssl_status: type === 'subdomain' ? 'active' : 'none',
+      verified_at: type === 'subdomain' ? new Date().toISOString() : null,
       dns_records: dnsRecords,
       is_primary: (business.domains || []).length === 0
     }]);
@@ -2192,9 +2362,10 @@ export const useAppStore = create<AppState>()(
     await supabase.from('domains').update({ is_primary: true }).eq('id', id);
     
     const domain = (business.domains || []).find(d => d.id === id);
-    if (domain) {
+    if (domain?.type === 'subdomain') {
       await supabase.from('businesses').update({
-        [domain.type === 'subdomain' ? 'subdomain' : 'custom_domain']: domain.domain
+        subdomain: domain.domain,
+        slug: domain.domain
       }).eq('id', business.id);
     }
 
@@ -2260,6 +2431,3 @@ export const useAppStore = create<AppState>()(
     onboardingStep: state.onboardingStep,
   }),
 }));
-
-
-

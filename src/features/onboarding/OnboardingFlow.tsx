@@ -122,11 +122,10 @@ export const OnboardingFlow: React.FC = () => {
           .insert([{ 
             owner_id: user.id, 
             name: '',
-            subdomain: `biz-${user.id.slice(0, 8)}`,
             primary_color: '#111111',
             trust_section: 'none',
             template_key: 'clean_classic',
-            is_published: true
+            is_published: false
           }])
           .select()
           .single();

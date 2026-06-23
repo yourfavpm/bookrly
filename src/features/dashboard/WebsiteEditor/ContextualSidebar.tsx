@@ -1,36 +1,46 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../../store/useAppStore';
-import { TemplateSwitcher } from './TemplateSwitcher';
-import { ChevronLeft, Image as ImageIcon, Type, Layout, Wand2, BookOpen, MessageSquare, ChevronRight, Check, AlignLeft, Clock } from 'lucide-react';
-import { Input } from '../../../components/ui/Input';
-import { supabase } from '../../../lib/supabase';
-import { ServicesEditor, ReviewsEditor, GalleryEditor, FooterEditor } from './SectionEditors';
+import { ChevronLeft, Image as ImageIcon, Type, Layout, Wand2, BookOpen, MessageSquare, ChevronRight, Check, Clock, AlertCircle } from 'lucide-react';
+import { ServicesEditor, ReviewsEditor, GalleryEditor, FooterEditor, FAQEditor, BeforeAfterEditor, HeroEditor, AboutEditor, AvailabilityEditor } from './SectionEditors';
+import { getEditorSectionLabel, normalizeEditorSectionKey, uploadEditorAsset } from './editorUtils';
 
 interface ContextualSidebarProps {
-  onOpenModal: (modal: 'services' | 'reviews' | 'gallery' | 'availability' | 'faq' | 'before_after' | null) => void;
-  onEditService: (id: string | null) => void;
+  onOpenThemeGallery: () => void;
 }
 
-export const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ onOpenModal, onEditService }) => {
+export const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ onOpenThemeGallery }) => {
   const { business, updateBusiness, activeEditorSection, setActiveEditorSection } = useAppStore();
   const [uploading, setUploading] = useState<string | null>(null);
-  const [mainMenu, setMainMenu] = useState<'templates' | 'brand' | 'sections'>('templates');
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [mainMenu, setMainMenu] = useState<'brand' | 'sections'>('sections');
 
   if (!business) return null;
+
+  const selectSection = (section: string) => {
+    const sectionKey = normalizeEditorSectionKey(section);
+    setActiveEditorSection(sectionKey);
+    window.setTimeout(() => {
+      document.getElementById(`editor-section-${sectionKey}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 80);
+  };
 
   const handleUpload = async (file: File, type: 'logo' | 'cover' | 'about') => {
     if (!file) return;
     setUploading(type);
+    setUploadError(null);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${type}-${Date.now()}.${fileExt}`;
-      const filePath = `${business.id}/${fileName}`;
-      await supabase.storage.from('business-assets').upload(filePath, file);
-      const { data: { publicUrl } } = supabase.storage.from('business-assets').getPublicUrl(filePath);
+      const publicUrl = await uploadEditorAsset({ businessId: business.id, file, folder: type, maxSizeMb: type === 'logo' ? 5 : 10 });
       if (type === 'logo') updateBusiness({ logo: publicUrl });
       else if (type === 'cover') updateBusiness({ coverImage: publicUrl });
       else if (type === 'about') updateBusiness({ aboutImage: publicUrl });
-    } catch (err: any) { alert(err.message); } finally { setUploading(null); }
+    } catch (err) {
+      setUploadError((err as Error).message);
+    } finally {
+      setUploading(null);
+    }
   };
 
   // 1. If a section is selected, show its contextual controls
@@ -41,140 +51,50 @@ export const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ onOpenModa
             <button onClick={() => setActiveEditorSection(null)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-brand transition-colors">
                <ChevronLeft size={18} />
             </button>
-            <h2 className="text-sm font-bold text-text-primary tracking-tight capitalize">{activeEditorSection} Settings</h2>
+            <h2 className="text-sm font-bold text-text-primary tracking-tight">{getEditorSectionLabel(activeEditorSection)} Settings</h2>
          </div>
 
          <div className="p-6 space-y-8">
+            {uploadError && (
+              <div className="p-3 rounded-xl border border-red-100 bg-red-50 text-red-600 flex items-start gap-2">
+                <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                <p className="text-xs leading-relaxed">{uploadError}</p>
+              </div>
+            )}
             {/* VISIBILITY TOGGLE */}
-            {activeEditorSection !== 'hero' && ( // Usually hero is required, or allow hiding? Let's allow hiding everything except maybe hero. Actually, let's allow hiding anything.
-            <div className="p-4 rounded-xl border border-slate-100 flex items-center justify-between bg-slate-50">
-              <div>
-                <h3 className="text-xs font-bold text-text-primary">Show Section</h3>
-                <p className="text-[10px] text-text-tertiary">Display this on your website</p>
-              </div>
-              <button 
-                onClick={() => {
-                  const isHidden = business.hiddenSections?.includes(activeEditorSection);
-                  if (isHidden) {
-                    updateBusiness({ hiddenSections: (business.hiddenSections || []).filter(s => s !== activeEditorSection) });
-                  } else {
-                    updateBusiness({ hiddenSections: [...(business.hiddenSections || []), activeEditorSection] });
-                  }
-                }}
-                className={`w-9 h-5 rounded-full transition-all relative flex items-center px-0.5 cursor-pointer ${!(business.hiddenSections || []).includes(activeEditorSection) ? 'bg-emerald-500' : 'bg-slate-300'}`}
-              >
-                <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all ${!(business.hiddenSections || []).includes(activeEditorSection) ? 'translate-x-4' : 'translate-x-0'}`} />
-              </button>
-            </div>
-            )}
-            
-            {/* HERO SETTINGS */}
-            {activeEditorSection === 'hero' && (
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest flex items-center gap-2"><Type size={12} /> Main Headline</label>
-                  <Input value={business.heroTitle} onChange={e => updateBusiness({ heroTitle: e.target.value })} className="h-10 text-sm rounded-lg" />
+            {activeEditorSection !== 'hero' && (
+              <div className="p-4 rounded-xl border border-slate-100 flex items-center justify-between bg-slate-50">
+                <div>
+                  <h3 className="text-xs font-bold text-text-primary">Show Section</h3>
+                  <p className="text-[10px] text-text-tertiary">Display this on your website</p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest flex items-center gap-2"><AlignLeft size={12} /> Subtitle</label>
-                  <textarea 
-                    value={business.heroSubtitle || ''} 
-                    onChange={e => updateBusiness({ heroSubtitle: e.target.value })}
-                    className="w-full p-3 rounded-lg border border-slate-200 text-sm min-h-[100px] focus:outline-none focus:border-brand transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest flex items-center gap-2"><Wand2 size={12} /> Button Text</label>
-                  <Input value={business.ctaText || ''} onChange={e => updateBusiness({ ctaText: e.target.value })} className="h-10 text-sm rounded-lg" />
-                </div>
-                <div className="space-y-3 pt-4 border-t border-slate-100">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest flex items-center gap-2"><ImageIcon size={12} /> Cover Image</label>
-                  <div className="aspect-[4/3] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center relative overflow-hidden group cursor-pointer hover:border-brand/40 transition-all">
-                      {business.coverImage ? <img src={business.coverImage} className="w-full h-full object-cover" /> : <ImageIcon size={24} className="text-slate-300" />}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold uppercase tracking-widest">Replace</span>
-                      </div>
-                      <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'cover')} />
-                      {uploading === 'cover' && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>}
-                  </div>
-                </div>
+                <button 
+                  onClick={() => {
+                    const sectionKey = normalizeEditorSectionKey(activeEditorSection);
+                    const isHidden = business.hiddenSections?.includes(sectionKey);
+                    if (isHidden) {
+                      updateBusiness({ hiddenSections: (business.hiddenSections || []).filter(s => normalizeEditorSectionKey(s) !== sectionKey) });
+                    } else {
+                      updateBusiness({ hiddenSections: [...(business.hiddenSections || []), sectionKey] });
+                    }
+                  }}
+                  className={`w-9 h-5 rounded-full transition-all relative flex items-center px-0.5 cursor-pointer ${!(business.hiddenSections || []).map(normalizeEditorSectionKey).includes(normalizeEditorSectionKey(activeEditorSection)) ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all ${!(business.hiddenSections || []).map(normalizeEditorSectionKey).includes(normalizeEditorSectionKey(activeEditorSection)) ? 'translate-x-4' : 'translate-x-0'}`} />
+                </button>
               </div>
             )}
 
-            {/* ABOUT SETTINGS */}
-            {activeEditorSection === 'about' && (
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Title</label>
-                  <Input value={business.aboutTitle || ''} onChange={e => updateBusiness({ aboutTitle: e.target.value })} className="h-10 text-sm rounded-lg" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Description</label>
-                  <textarea 
-                    value={business.aboutDescription || ''} 
-                    onChange={e => updateBusiness({ aboutDescription: e.target.value })}
-                    className="w-full p-3 rounded-lg border border-slate-200 text-sm min-h-[140px] focus:outline-none focus:border-brand transition-all"
-                  />
-                </div>
-                <div className="space-y-3 pt-4 border-t border-slate-100">
-                  <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">About Image</label>
-                  <div className="aspect-square max-w-[200px] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center relative overflow-hidden group cursor-pointer hover:border-brand/40 transition-all">
-                      {business.aboutImage ? <img src={business.aboutImage} className="w-full h-full object-cover" /> : <ImageIcon size={24} className="text-slate-300" />}
-                      <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'about')} />
-                      {uploading === 'about' && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* DEFAULT FALLBACK FOR OTHER SECTIONS */}
-            {activeEditorSection !== 'hero' && activeEditorSection !== 'about' && activeEditorSection !== 'services' && activeEditorSection !== 'reviews' && activeEditorSection !== 'gallery' && activeEditorSection !== 'footer' && (
-               <div className="py-10 text-center space-y-3">
-                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300">
-                     <Layout size={20} />
-                  </div>
-                  <p className="text-xs text-text-secondary leading-relaxed">This section uses data from your dashboard. Go to the relevant tab to manage its content.</p>
-               </div>
-            )}
-            
             {/* NEW INLINE EDITORS */}
-            {activeEditorSection === 'services' && <ServicesEditor onEdit={onEditService} onAdd={() => onEditService(null)} />}
-            {activeEditorSection === 'reviews' && <ReviewsEditor onManage={() => onOpenModal('reviews')} />}
-            {activeEditorSection === 'gallery' && <GalleryEditor onManage={() => onOpenModal('gallery')} />}
+            {activeEditorSection === 'hero' && <HeroEditor />}
+            {activeEditorSection === 'about' && <AboutEditor />}
+            {activeEditorSection === 'services' && <ServicesEditor />}
+            {activeEditorSection === 'reviews' && <ReviewsEditor />}
+            {activeEditorSection === 'gallery' && <GalleryEditor />}
             {activeEditorSection === 'footer' && <FooterEditor />}
-            {activeEditorSection === 'availability' && (
-              <div className="space-y-4">
-                <p className="text-xs text-text-secondary leading-relaxed">Set your weekly operating hours and availability for bookings.</p>
-                <button 
-                  onClick={() => onOpenModal('availability')}
-                  className="w-full py-3 rounded-xl border border-slate-200 text-[10px] font-bold uppercase tracking-widest hover:border-brand hover:text-brand transition-all bg-white shadow-sm"
-                >
-                  Manage Availability Schedule
-                </button>
-              </div>
-            )}
-            {activeEditorSection === 'faq' && (
-              <div className="space-y-4">
-                <p className="text-xs text-text-secondary leading-relaxed">Manage frequently asked questions to help your customers.</p>
-                <button 
-                  onClick={() => onOpenModal('faq')}
-                  className="w-full py-3 rounded-xl border border-slate-200 text-[10px] font-bold uppercase tracking-widest hover:border-brand hover:text-brand transition-all bg-white shadow-sm"
-                >
-                  Manage FAQs
-                </button>
-              </div>
-            )}
-            {activeEditorSection === 'results' && (
-              <div className="space-y-4">
-                <p className="text-xs text-text-secondary leading-relaxed">Showcase your work with before and after comparison sliders.</p>
-                <button 
-                  onClick={() => onOpenModal('before_after')}
-                  className="w-full py-3 rounded-xl border border-slate-200 text-[10px] font-bold uppercase tracking-widest hover:border-brand hover:text-brand transition-all bg-white shadow-sm"
-                >
-                  Manage Comparison Gallery
-                </button>
-              </div>
-            )}
+            {activeEditorSection === 'faq' && <FAQEditor />}
+            {activeEditorSection === 'before_after' && <BeforeAfterEditor />}
+            {activeEditorSection === 'availability' && <AvailabilityEditor />}
          </div>
       </div>
     );
@@ -183,27 +103,42 @@ export const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ onOpenModa
   // 2. Default View: Main navigation
   return (
     <div className="h-full bg-white border-r border-[#e0e0e0] flex flex-col shrink-0 overflow-y-auto z-10 shadow-xl shadow-black/5 relative">
-      <div className="p-4 border-b border-slate-100 flex gap-2 sticky top-0 bg-white/90 backdrop-blur-md z-10">
-         {[
-           { id: 'templates', label: 'Templates' },
-           { id: 'brand', label: 'Brand' },
-           { id: 'sections', label: 'Sections' }
-         ].map(tab => (
-           <button 
-             key={tab.id}
-             onClick={() => setMainMenu(tab.id as any)}
-             className={`flex-1 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
-               mainMenu === tab.id ? 'bg-slate-100 text-brand' : 'text-slate-400 hover:text-slate-600'
-             }`}
-           >
-             {tab.label}
-           </button>
-         ))}
+      <div className="p-4 border-b border-slate-100 flex flex-col gap-4 sticky top-0 bg-white/90 backdrop-blur-md z-10">
+         <button 
+           onClick={onOpenThemeGallery}
+           className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-brand/5 border border-slate-200 hover:border-brand/30 transition-all group"
+         >
+           <div className="flex items-center gap-3">
+             <div className="w-8 h-8 rounded-lg bg-brand/10 text-brand flex items-center justify-center">
+               <Layout size={16} />
+             </div>
+             <div className="text-left">
+               <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Current Theme</p>
+               <p className="text-xs font-bold text-text-primary capitalize">{business.templateKey.replace('_', ' ')}</p>
+             </div>
+           </div>
+           <ChevronRight size={16} className="text-slate-400 group-hover:text-brand transition-colors" />
+         </button>
+
+         <div className="flex gap-2">
+           {[
+             { id: 'sections', label: 'Sections' },
+             { id: 'brand', label: 'Brand' }
+           ].map(tab => (
+             <button 
+               key={tab.id}
+               onClick={() => setMainMenu(tab.id as any)}
+               className={`flex-1 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                 mainMenu === tab.id ? 'bg-slate-100 text-brand' : 'text-slate-400 hover:text-slate-600'
+               }`}
+             >
+               {tab.label}
+             </button>
+           ))}
+         </div>
       </div>
 
       <div className="py-6 flex-1 overflow-y-auto">
-        {mainMenu === 'templates' && <TemplateSwitcher onNext={() => setMainMenu('brand')} />}
-
         {mainMenu === 'brand' && (
           <div className="flex flex-col h-full">
             <div className="px-5 space-y-8 flex-1 pb-20">
@@ -275,10 +210,10 @@ export const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ onOpenModa
              </div>
              
              <div className="space-y-1 mt-4">
-                {['hero', 'services', 'about', 'reviews', 'gallery', 'availability', 'faq', 'results', 'footer'].map(section => (
+                {['hero', 'services', 'about', 'reviews', 'gallery', 'availability', 'faq', 'before_after', 'footer'].map(section => (
                   <button 
                     key={section}
-                    onClick={() => setActiveEditorSection(section)}
+                    onClick={() => selectSection(section)}
                     className="w-full p-3 rounded-lg flex items-center gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 text-left group"
                   >
                      <div className="text-slate-400 group-hover:text-brand transition-colors">
@@ -289,9 +224,9 @@ export const ContextualSidebar: React.FC<ContextualSidebarProps> = ({ onOpenModa
                          section === 'gallery' ? <ImageIcon size={16} /> :
                          section === 'availability' ? <Clock size={16} /> :
                          section === 'faq' ? <MessageSquare size={16} /> :
-                         section === 'results' ? <Wand2 size={16} /> : <Layout size={16} />}
+                         section === 'before_after' ? <Wand2 size={16} /> : <Layout size={16} />}
                      </div>
-                     <span className="text-xs font-bold text-text-primary capitalize">{section}</span>
+                     <span className="text-xs font-bold text-text-primary">{getEditorSectionLabel(section)}</span>
                   </button>
                 ))}
              </div>

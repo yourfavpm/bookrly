@@ -1,19 +1,97 @@
+const RESERVED_SUBDOMAINS = [
+  'www',
+  'app',
+  'api',
+  'admin',
+  'dashboard',
+  'mail',
+  'smtp',
+  'support',
+  'help',
+  'billing',
+  'auth',
+  'login',
+  'signup',
+  'onboarding',
+  'preview',
+  'demo',
+  'invite',
+  'unsubscribe',
+  'p'
+];
+
+export const isReservedSubdomain = (subdomain: string): boolean => {
+  return RESERVED_SUBDOMAINS.includes(subdomain.toLowerCase());
+};
+
+export const slugifyDomainLabel = (value: string): string => {
+  return value
+    .toLowerCase()
+    .trim()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 63)
+    .replace(/-+$/g, '');
+};
+
+export const isDefaultSubdomain = (subdomain?: string | null): boolean => {
+  return !subdomain || /^biz-[a-z0-9-]+$/i.test(subdomain);
+};
+
+export const generateBusinessSubdomain = (businessName: string, businessId?: string): string => {
+  const fromName = slugifyDomainLabel(businessName).slice(0, 50).replace(/-+$/g, '');
+  const candidate = fromName.length >= 3 ? fromName : `biz-${(businessId || crypto.randomUUID()).slice(0, 8)}`;
+  return isReservedSubdomain(candidate) ? `${candidate}-${(businessId || 'site').slice(0, 6)}` : candidate;
+};
+
+export const normalizeDomainIdentifier = (identifier: string): string => {
+  return identifier
+    .toLowerCase()
+    .trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/.*$/, '')
+    .replace(/\.$/, '');
+};
+
+export const getDomainLookupCandidates = (identifier: string): string[] => {
+  const normalized = normalizeDomainIdentifier(identifier);
+  if (!normalized) return [];
+
+  const rootDomain = getRootDomain().split(':')[0];
+  const withoutWww = normalized.startsWith('www.') ? normalized.slice(4) : normalized;
+  const label = withoutWww.endsWith(`.${rootDomain}`)
+    ? withoutWww.slice(0, -(rootDomain.length + 1))
+    : withoutWww;
+
+  return Array.from(new Set([
+    normalized,
+    withoutWww,
+    label,
+    `${label}.${rootDomain}`
+  ].filter(Boolean)));
+};
+
 /**
  * Returns the root domain of the app (e.g. "skeduley.com" in prod, "localhost:5173" locally).
  * Reads VITE_ROOT_DOMAIN env var first, then falls back to runtime detection.
  */
 export const getRootDomain = (): string => {
-  // 1. Use explicit env var if provided (most reliable)
-  const envDomain = import.meta.env.VITE_ROOT_DOMAIN;
-  if (envDomain && !envDomain.includes('localhost')) {
-    return envDomain;
-  }
-
   const host = window.location.hostname;
 
-  // 2. Local dev
+  // 1. Local dev must win over VITE_ROOT_DOMAIN so local preview/live links
+  // resolve to localhost instead of the production domain.
   if (host === 'localhost' || host === '127.0.0.1') {
     return window.location.host; // includes port e.g. "localhost:5173"
+  }
+
+  // 2. Use explicit env var in deployed environments.
+  const envDomain = import.meta.env.VITE_ROOT_DOMAIN;
+  if (envDomain && !envDomain.includes('localhost')) {
+    return normalizeDomainIdentifier(envDomain);
   }
 
   // 3. Vercel preview deployments — use the full host as root
@@ -88,12 +166,14 @@ export const extractSubdomainFromHost = (): string | null => {
     // Subdomain case: businessname.skeduley.com
     const sub = host.replace(`.${rootDomainHost}`, '');
     // Exclude reserved/app subdomains
-    const reserved = ['www', 'app', 'api', 'admin', 'dashboard', 'mail', 'smtp'];
-    if (!reserved.includes(sub)) {
+    if (!isReservedSubdomain(sub)) {
       return sub;
     }
   }
 
+  if (!host.includes('vercel.app') && !host.endsWith('.localhost')) {
+    return normalizeDomainIdentifier(host);
+  }
+
   return null;
 };
-
