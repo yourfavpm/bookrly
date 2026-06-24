@@ -615,7 +615,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                            throw new Error('We saved your booking, but payment setup could not start.');
                        }
                        if (booking) {
-                         window.location.href = getBookingConfirmationUrl(siteBookingUrl, { bookingId: booking.id });
+                         setStep(8);
                          return;
                        }
                   } catch (err) {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { 
+import {
   Bell, 
   MessageSquare, 
   Mail, 
@@ -14,9 +14,14 @@ import {
   Eye,
   RotateCcw,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  Send,
+  RefreshCcw,
+  Activity,
+  XCircle,
+  CircleAlert
 } from 'lucide-react';
-import { getBaseDomain } from '../../lib/domainUtils';
+import { getBusinessUrl } from '../../lib/domainUtils';
 
 const TOKENS = [
   { label: 'Client Name', value: '{client_name}' },
@@ -30,10 +35,12 @@ const TOKENS = [
 ];
 
 export const NotificationSettings: React.FC = () => {
-  const { business, updateNotificationSettings } = useAppStore();
+  const { business, updateNotificationSettings, sendTestNotification, fetchBusiness } = useAppStore();
   const settings = business?.notificationSettings;
   const smsUsage = business?.smsUsage;
   const isStarter = (business?.planType as string) === 'starter';
+  const [testingChannel, setTestingChannel] = useState<'sms' | 'email' | null>(null);
+  const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'editor'>('overview');
   const [editingType, setEditingType] = useState<'confirmation' | 'reminder' | 'followup'>('confirmation');
@@ -56,6 +63,27 @@ export const NotificationSettings: React.FC = () => {
       emailFollowupTemplate: localTemplates.emailFollowup
     });
     setActiveTab('overview');
+  };
+
+  const handleTestSend = async (channel: 'sms' | 'email') => {
+    const currentTemplate = editingType === 'confirmation' 
+      ? (channel === 'sms' ? localTemplates.smsConfirm : localTemplates.emailConfirm)
+      : editingType === 'reminder'
+      ? (channel === 'sms' ? localTemplates.smsReminder : localTemplates.emailReminder)
+      : localTemplates.emailFollowup;
+
+    setTestingChannel(channel);
+    try {
+      await sendTestNotification(channel, currentTemplate, editingType);
+    } finally {
+      setTestingChannel(null);
+    }
+  };
+
+  const refreshLogs = async () => {
+    setIsRefreshingLogs(true);
+    await fetchBusiness(0);
+    setIsRefreshingLogs(false);
   };
 
   const insertToken = (token: string) => {
@@ -147,13 +175,51 @@ export const NotificationSettings: React.FC = () => {
                             {token.label}
                           </button>
                         ))}
-                     </div>
+                      </div>
+                  </div>
+
+                  <div className="pt-4 flex flex-wrap gap-3">
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleTestSend(editingChannel)}
+                      isLoading={testingChannel === editingChannel}
+                      className="rounded-xl h-11 px-5 text-[10px] font-bold uppercase tracking-widest"
+                    >
+                      <Send size={14} className="mr-2" />
+                      Send Test {editingChannel.toUpperCase()}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setLocalTemplates(prev => ({ ...prev }))}
+                      className="rounded-xl h-11 px-5 text-[10px] font-bold uppercase tracking-widest"
+                    >
+                      <RotateCcw size={14} className="mr-2" />
+                      Keep Draft
+                    </Button>
                   </div>
                </div>
             </Card>
 
             <div className="flex items-center justify-center p-6 border border-dashed border-border-polaris rounded-[32px] bg-bg-canvas/10">
-               <button className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-brand transition-colors">
+               <button 
+                  onClick={() => {
+                    const defaultTemplates = {
+                      smsConfirm: "Hi {client_name}, your {service} with {provider_name} is confirmed for {date} at {time}. Need to cancel? {cancel_link} — {business_name}",
+                      emailConfirm: "Hi {client_name},\n\nYour booking for {service} is confirmed for {date} at {time}.\n\nLocation: {business_name}\n\nWe look forward to seeing you!",
+                      smsReminder: "Reminder: {service} with {provider_name} tomorrow at {time}. Need to cancel? {cancel_link} — {business_name}",
+                      emailReminder: "Just a reminder of your {service} tomorrow at {time}.\n\nLooking forward to seeing you!",
+                      emailFollowup: "Thanks for coming in, {client_name}!\n\nIt would mean a lot if you left us a quick review: {review_link}\n\nReady for your next appointment? {booking_link}"
+                    };
+                    const field = editingType === 'confirmation' 
+                      ? (editingChannel === 'sms' ? 'smsConfirm' : 'emailConfirm')
+                      : editingType === 'reminder'
+                      ? (editingChannel === 'sms' ? 'smsReminder' : 'emailReminder')
+                      : 'emailFollowup';
+                    
+                    setLocalTemplates(prev => ({ ...prev, [field]: defaultTemplates[field as keyof typeof defaultTemplates] }));
+                  }}
+                  className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-brand transition-colors"
+               >
                   <RotateCcw size={14} /> Reset to default template
                </button>
             </div>
@@ -181,8 +247,8 @@ export const NotificationSettings: React.FC = () => {
                               .replace(/{time}/g, '10:00 AM')
                               .replace(/{provider_name}/g, 'Jane')
                               .replace(/{business_name}/g, business?.name || 'Skeduley Salon')
-                              .replace(/{cancel_link}/g, `${getBaseDomain()}/c/abc123`)
-                              .replace(/{review_link}/g, `${getBaseDomain()}/r/abc123`)
+                              .replace(/{cancel_link}/g, `${getBusinessUrl(business?.subdomain || '', business?.customDomain)}/c/abc123`)
+                              .replace(/{review_link}/g, `${getBusinessUrl(business?.subdomain || '', business?.customDomain)}/r/abc123`)
                             }
                          </div>
                          <p className="text-[10px] text-text-tertiary italic text-center px-4">
@@ -256,15 +322,15 @@ export const NotificationSettings: React.FC = () => {
                      </div>
                   </div>
                </div>
-               <div className="relative inline-flex items-center cursor-pointer">
+               <label className="relative inline-flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
-                    checked={settings?.confirmationEnabled} 
+                    checked={settings?.confirmationEnabled || false} 
                     onChange={(e) => updateNotificationSettings({ confirmationEnabled: e.target.checked })}
                     className="sr-only peer" 
                   />
                   <div className="w-11 h-6 bg-border-polaris rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-               </div>
+               </label>
             </div>
 
             {/* Appointment Reminder */}
@@ -316,15 +382,15 @@ export const NotificationSettings: React.FC = () => {
                      </div>
                   </div>
                </div>
-               <div className="relative inline-flex items-center cursor-pointer">
+               <label className="relative inline-flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
-                    checked={settings?.reminderEnabled} 
+                    checked={settings?.reminderEnabled || false} 
                     onChange={(e) => updateNotificationSettings({ reminderEnabled: e.target.checked })}
                     className="sr-only peer" 
                   />
                   <div className="w-11 h-6 bg-border-polaris rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-               </div>
+               </label>
             </div>
 
             {/* Follow-up / Review */}
@@ -348,15 +414,15 @@ export const NotificationSettings: React.FC = () => {
                      </div>
                   </div>
                </div>
-               <div className="relative inline-flex items-center cursor-pointer">
+               <label className="relative inline-flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
-                    checked={settings?.followupEnabled} 
+                    checked={settings?.followupEnabled || false} 
                     onChange={(e) => updateNotificationSettings({ followupEnabled: e.target.checked })}
                     className="sr-only peer" 
                   />
                   <div className="w-11 h-6 bg-border-polaris rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-               </div>
+               </label>
             </div>
           </Card>
         </section>
@@ -379,12 +445,81 @@ export const NotificationSettings: React.FC = () => {
               <Card className="flex-1 bg-white p-6 space-y-4">
                  <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-text-tertiary uppercase tracking-widest">SMS Credits</span>
-                    <span className="text-xs font-bold text-text-primary">{isStarter ? '100 / mo' : 'Unlimited'}</span>
+                    <span className="text-xs font-bold text-text-primary">{smsUsage?.limit ? `${smsUsage.limit.toLocaleString()} / mo` : 'Unlimited'}</span>
                  </div>
-                 <p className="text-xl font-bold text-text-primary">{isStarter ? `${100 - (smsUsage?.count || 0)} Left` : 'Pro Active'}</p>
-                 <p className="text-xs text-text-tertiary leading-relaxed">Your plan includes high-priority SMS delivery for all reminders.</p>
+                 <p className="text-xl font-bold text-text-primary">
+                  {smsUsage?.limit ? `${Math.max(0, smsUsage.limit - (smsUsage?.count || 0)).toLocaleString()} Left` : 'Unlimited'}
+                 </p>
+                 <p className="text-xs text-text-tertiary leading-relaxed">Your plan includes generous SMS delivery for all reminders.</p>
               </Card>
            </div>
+           <div className="flex flex-wrap gap-3">
+             <Button
+               variant="secondary"
+               onClick={() => handleTestSend('email')}
+               isLoading={testingChannel === 'email'}
+               className="rounded-xl h-11 px-5 text-[10px] font-bold uppercase tracking-widest"
+             >
+               <Send size={14} className="mr-2" />
+               Send Test Email
+             </Button>
+             <Button
+               variant="secondary"
+               onClick={() => handleTestSend('sms')}
+               isLoading={testingChannel === 'sms'}
+               className="rounded-xl h-11 px-5 text-[10px] font-bold uppercase tracking-widest"
+             >
+               <Send size={14} className="mr-2" />
+               Send Test SMS
+             </Button>
+           </div>
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex items-center justify-between gap-4 px-2">
+            <div className="flex items-center gap-2">
+              <Activity size={18} className="text-brand" />
+              <h2 className="text-lg font-bold tracking-tight text-text-primary">Notification Logs</h2>
+            </div>
+            <Button variant="secondary" onClick={refreshLogs} isLoading={isRefreshingLogs} className="rounded-xl h-11 px-5 text-[10px] font-bold uppercase tracking-widest">
+              <RefreshCcw size={14} className="mr-2" />
+              Refresh
+            </Button>
+          </div>
+
+          <Card className="p-0 overflow-hidden">
+            <div className="divide-y divide-border-polaris">
+              {(business?.scheduledMessages || []).slice(0, 12).map((message) => (
+                <div key={message.id} className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${message.status === 'SENT' || message.status === 'DELIVERED' || message.status === 'OPENED' ? 'bg-emerald-50 text-emerald-600' : message.status === 'FAILED' ? 'bg-red-50 text-red-600' : message.status === 'SKIPPED' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-600'}`}>
+                      {message.status === 'FAILED' ? <XCircle size={18} /> : message.status === 'SKIPPED' ? <CircleAlert size={18} /> : <CheckCircle2 size={18} />}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-text-primary">
+                        {message.type} • {message.channel}
+                      </p>
+                      <p className="text-xs text-text-tertiary">
+                        Scheduled {new Date(message.scheduledFor).toLocaleString()} • {message.status}
+                      </p>
+                      {message.failureReason && (
+                        <p className="text-xs text-red-600">{message.failureReason}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-xs text-text-tertiary sm:text-right">
+                    <p>{message.sentAt ? `Sent ${new Date(message.sentAt).toLocaleString()}` : 'Not sent yet'}</p>
+                    <p className="mt-1 font-mono break-all">{message.twilioSid || message.sendgridId || message.id}</p>
+                  </div>
+                </div>
+              ))}
+              {(business?.scheduledMessages || []).length === 0 && (
+                <div className="p-8 text-center text-sm text-text-tertiary">
+                  No notification logs yet. Once bookings start coming in, you’ll see queued and sent messages here.
+                </div>
+              )}
+            </div>
+          </Card>
         </section>
       </div>
     </div>

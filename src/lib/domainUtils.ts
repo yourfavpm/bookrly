@@ -135,14 +135,15 @@ export const getBusinessUrl = (subdomain: string, customDomain?: string | null):
   const isLocalDev = rootDomain.includes('localhost') || rootDomain.includes('127.0.0.1');
   const isVercelPreview = rootDomain.includes('vercel.app');
 
-  if (isLocalDev || isVercelPreview) {
-    // Path-based for local dev and Vercel previews (subdomain DNS not available)
+  if (isVercelPreview) {
+    // Path-based for Vercel previews (subdomain DNS not available)
     const protocol = window.location.protocol;
     return `${protocol}//${rootDomain}/${subdomain}`;
   }
 
-  // Production: subdomain-based URL
-  return `https://${subdomain}.${rootDomain}`;
+  // Production and Local Dev: subdomain-based URL
+  const url = `https://${subdomain}.${rootDomain}`;
+  return isLocalDev ? url.replace('https://', 'http://') : url;
 };
 
 export const getBookingConfirmationUrl = (
@@ -162,6 +163,12 @@ export const getBookingConfirmationUrl = (
   }
 
   return `${url.toString()}${queryParts.length > 0 ? `?${queryParts.join('&')}` : ''}`;
+};
+
+export const appendPathToUrl = (baseUrl: string, path: string): string => {
+  const normalizedBase = baseUrl.replace(/\/$/, '');
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${normalizedBase}${normalizedPath}`;
 };
 
 /**

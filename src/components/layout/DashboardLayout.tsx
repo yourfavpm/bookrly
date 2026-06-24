@@ -48,7 +48,7 @@ export const DashboardLayout: React.FC = () => {
   const restrictionDate = trialEndDate ? new Date(trialEndDate.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000) : null;
   const isTrialExpired = isTrialing && restrictionDate && new Date() > restrictionDate;
   const isActive = business?.subscriptionStatus === 'active';
-  const isRestricted = isTrialExpired || (!isTrialing && !isActive);
+  const isRestricted = !!business && (isTrialExpired || (!isTrialing && !isActive));
 
   const trialDaysLeft = calculateDaysRemaining(trialEndDate);
 
@@ -251,7 +251,7 @@ export const DashboardLayout: React.FC = () => {
             <div className="mb-4 p-4 rounded-2xl bg-white border border-border-polaris/10 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-text-primary uppercase tracking-widest">Trial Mode</span>
-                <span className="text-[10px] font-bold text-brand">{trialDaysLeft} days left</span>
+                <span className="text-[10px] font-bold text-brand">{trialDaysLeft > 0 ? `${trialDaysLeft} days left` : 'Trial Ended'}</span>
               </div>
               <div className="h-1.5 w-full bg-bg-canvas rounded-full overflow-hidden">
                 <div 
@@ -353,7 +353,7 @@ export const DashboardLayout: React.FC = () => {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-sm lg:hidden z-50 bg-brand text-white px-4 py-3 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] flex items-center justify-between gap-3 animate-in slide-in-from-bottom-8 fade-in duration-500 border border-white/10">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Trial Mode</span>
-            <span className="text-xs font-medium">{trialDaysLeft} days left</span>
+            <span className="text-xs font-medium">{trialDaysLeft > 0 ? `${trialDaysLeft} days left` : 'Trial Ended'}</span>
           </div>
           <button 
             onClick={handleSubscribe}

@@ -162,7 +162,6 @@ export interface ProviderNotificationSettings {
   businessId: string;
   confirmationEnabled: boolean;
   reminderEnabled: boolean;
-  followup_enabled: boolean; // Using underscore for DB consistency if needed, but let's camelCase here
   followupEnabled: boolean;
   reminderLeadTimeHours: number;
   smsConfirmTemplate: string | null;
@@ -335,6 +334,7 @@ interface AppState {
   refundBooking: (bookingId: string) => Promise<void>;
   createSubscription: (priceId: string, planType?: string) => Promise<string | null>;
   openBillingPortal: () => Promise<string | null>;
+  sendTestNotification: (channel: 'sms' | 'email', templateText?: string, notificationType?: string) => Promise<void>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
   uploadLogo: (file: File) => Promise<string | null>;
   updateWorkingHours: (hours: WorkingHour[]) => Promise<void>;
@@ -372,6 +372,14 @@ const normalizePlanType = (planType?: string | null): BusinessState['planType'] 
     return normalized;
   }
   return 'pro';
+};
+
+const getSmsLimitForPlan = (planType?: string | null): number => {
+  const normalized = normalizePlanType(planType);
+  if (normalized === 'starter') return 1000;
+  if (normalized === 'pro') return 5000;
+  if (normalized === 'business') return 20000;
+  return 500;
 };
 
 const isSubdomainAvailable = async (subdomain: string, businessId: string): Promise<boolean> => {
@@ -506,7 +514,11 @@ export const useAppStore = create<AppState>()(
       return;
     }
 
-    set({ loading: true, error: null });
+    if (!business) {
+      set({ loading: true, error: null });
+    } else {
+      set({ error: null });
+    }
     try {
       // 1. Fetch Business
       const bQuery = supabase
@@ -718,7 +730,7 @@ export const useAppStore = create<AppState>()(
           } : undefined,
           smsUsage: {
              count: smsUsageData?.count || 0,
-             limit: normalizePlanType(b.plan_type) === 'starter' ? 100 : 1000000
+             limit: getSmsLimitForPlan(b.plan_type)
           },
           scheduledMessages: (scheduledMessages || []).map((m: any) => ({
              ...m,
@@ -1943,7 +1955,7 @@ export const useAppStore = create<AppState>()(
   },
 
   setupStripeConnect: async () => {
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
       const { data, error } = await supabase.functions.invoke('connect-onboarding', {
         body: { action: 'create-onboarding-link' },
@@ -1954,8 +1966,6 @@ export const useAppStore = create<AppState>()(
     } catch (err) {
       set({ error: (err as Error).message });
       return null;
-    } finally {
-      set({ loading: false });
     }
   },
 
@@ -1987,7 +1997,7 @@ export const useAppStore = create<AppState>()(
   },
 
   createSubscription: async (priceId: string, planType?: string) => {
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscription-checkout', {
         body: { action: 'create-checkout-session', priceId, planType },
@@ -1998,13 +2008,11 @@ export const useAppStore = create<AppState>()(
     } catch (err) {
       set({ error: (err as Error).message });
       return null;
-    } finally {
-      set({ loading: false });
     }
   },
 
   openBillingPortal: async () => {
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscription-checkout', {
         body: { action: 'create-portal-session' },
@@ -2015,8 +2023,31 @@ export const useAppStore = create<AppState>()(
     } catch (err) {
       set({ error: (err as Error).message });
       return null;
-    } finally {
-      set({ loading: false });
+    }
+  },
+
+  sendTestNotification: async (channel: 'sms' | 'email', templateText?: string, notificationType?: string) => {
+    const { business } = get();
+    if (!business) return;
+
+    set({ error: null });
+    try {
+      const { data, error } = await supabase.functions.invoke('notification-test-send', {
+        body: {
+          businessId: business.id,
+          channel,
+          templateText,
+          notificationType
+        },
+      });
+
+      if (error) throw error;
+      if (data && data.error) throw new Error(data.error);
+      
+      await get().fetchBusiness(0);
+    } catch (err) {
+      set({ error: (err as Error).message });
+      throw err;
     }
   },
 
@@ -2095,6 +2126,19 @@ export const useAppStore = create<AppState>()(
     const { business } = get();
     if (!business) return;
 
+    const previousSettings = business.notificationSettings;
+    
+    // Optimistic update
+    set({
+      business: {
+        ...business,
+        notificationSettings: {
+          ...(previousSettings || { businessId: business.id } as ProviderNotificationSettings),
+          ...updates
+        }
+      }
+    });
+
     try {
       const dbUpdates: any = {};
       if ('confirmationEnabled' in updates) dbUpdates.confirmation_enabled = updates.confirmationEnabled;
@@ -2113,7 +2157,7 @@ export const useAppStore = create<AppState>()(
           business_id: business.id,
           ...dbUpdates,
           updated_at: new Date().toISOString()
-        });
+        }, { onConflict: 'business_id' });
 
       if (error) throw error;
       
@@ -2121,7 +2165,14 @@ export const useAppStore = create<AppState>()(
       await get().fetchBusiness(0);
     } catch (err) {
       console.error('Update settings error:', err);
-      set({ error: (err as Error).message });
+      // Revert on error
+      set({ 
+        business: {
+          ...business,
+          notificationSettings: previousSettings
+        },
+        error: (err as Error).message 
+      });
     }
   },
 
@@ -2129,8 +2180,39 @@ export const useAppStore = create<AppState>()(
     const { business } = get();
     if (!business) return;
 
-    const booking = business.bookings.find(b => b.id === bookingId);
-    if (!booking) return;
+    let booking = business.bookings.find(b => b.id === bookingId);
+    
+    // If booking was just created, it might not be in the store yet. Fetch it.
+    if (!booking) {
+      const { data: bData } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('id', bookingId)
+        .maybeSingle();
+        
+      if (!bData) return;
+      
+      booking = {
+        id: bData.id,
+        customerName: bData.customer_name,
+        customerEmail: bData.customer_email,
+        customerPhone: bData.customer_phone,
+        serviceId: bData.service_id,
+        staffId: bData.staff_id,
+        client_id: bData.client_id,
+        date: bData.date,
+        startTime: bData.start_time,
+        endTime: bData.end_time,
+        status: bData.status,
+        paymentStatus: bData.payment_status || 'unpaid',
+        paymentMethod: bData.payment_method || 'UNPAID',
+        totalAmount: bData.total_amount,
+        paidAmount: bData.paid_amount || 0,
+        addOns: [],
+        createdAt: bData.created_at,
+        notes: bData.notes
+      };
+    }
 
     const settings = business.notificationSettings;
     const clientId = booking.client_id;
@@ -2164,15 +2246,15 @@ export const useAppStore = create<AppState>()(
         .replace(/{time}/g, booking.startTime)
         .replace(/{provider_name}/g, provider?.name || business.name)
         .replace(/{business_name}/g, business.name)
-        .replace(/{cancel_link}/g, `${getBaseDomain()}/c/${booking.id}`)
-        .replace(/{booking_link}/g, getBusinessUrl(business.subdomain))
-        .replace(/{review_link}/g, `${getBaseDomain()}/r/${booking.id}`);
+        .replace(/{cancel_link}/g, `${getBusinessUrl(business.subdomain, business.customDomain)}/c/${booking.id}`)
+        .replace(/{booking_link}/g, getBusinessUrl(business.subdomain, business.customDomain))
+        .replace(/{review_link}/g, `${getBusinessUrl(business.subdomain, business.customDomain)}/r/${booking.id}`);
 
       // Append Opt-out
       if (type === 'SMS') {
         text += " \nReply STOP to unsubscribe";
       } else {
-        text += `\n\n---\nManage your preferences: ${getBaseDomain()}/unsubscribe/${business.id}?clientId=${clientId}`;
+        text += `\n\n---\nManage your preferences: ${getBusinessUrl(business.subdomain, business.customDomain)}/unsubscribe/${business.id}?clientId=${clientId}`;
       }
 
       return text;

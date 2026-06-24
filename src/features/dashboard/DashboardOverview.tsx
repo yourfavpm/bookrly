@@ -155,7 +155,7 @@ export const DashboardOverview: React.FC = () => {
             <div className="p-2 rounded-xl bg-white/10 text-emerald-400">
               <AlertCircle size={20} />
             </div>
-            <p className="text-sm font-medium">Your trial ends in <span className="text-emerald-400 font-bold">{trialDaysLeft} days</span>. Keep your business running without interruption.</p>
+            <p className="text-sm font-medium">{trialDaysLeft > 0 ? <>Your trial ends in <span className="text-emerald-400 font-bold">{trialDaysLeft} days</span>.</> : <span className="text-emerald-400 font-bold">Your trial has ended.</span>} Keep your business running without interruption.</p>
           </div>
           <Button 
             size="sm" 

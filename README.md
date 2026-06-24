@@ -80,5 +80,15 @@ Required Edge Function secrets:
 - `STRIPE_WEBHOOK_SECRET` for subscription checkout and billing portal events
 - `STRIPE_BOOKING_WEBHOOK_SECRET` for booking payment and refund events
 - `APP_URL` for redirect URLs in deployed environments
+- `ROOT_DOMAIN` for public tenant links generated in edge functions
+- `RESEND_API_KEY` and `RESEND_FROM_EMAIL` for email delivery
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` for SMS delivery
+
+Operational note:
+
+- `notification-processor` should run on a cron or scheduled invocation so queued messages get sent.
+- `notification-status-webhook` can receive delivery callbacks from your email/SMS providers.
+- `sms-inbound-webhook` can receive STOP/unsubscribe replies from Twilio.
+- Point provider webhooks at the deployed Edge Function URLs for those handlers.
 
 Frontend price IDs live in the `VITE_STRIPE_*` environment variables in `.env.example`.

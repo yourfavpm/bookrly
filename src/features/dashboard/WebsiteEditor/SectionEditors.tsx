@@ -670,6 +670,10 @@ export const FooterEditor: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
+        <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Contact Email</label>
+        <Input value={business.email || ''} onChange={e => updateBusiness({ email: e.target.value })} type="email" className="h-10 text-sm" placeholder="e.g. hello@mybusiness.com" />
+      </div>
+      <div className="space-y-2">
         <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Address</label>
         <Input value={business.address || ''} onChange={e => updateBusiness({ address: e.target.value })} className="h-10 text-sm" placeholder="e.g. 123 Main St, City" />
       </div>
