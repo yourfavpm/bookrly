@@ -52,7 +52,7 @@ export const BookingConfirmationPage: React.FC = () => {
 
   const confirmationTitle = useMemo(() => {
     if (cancelled) return 'Payment not completed';
-    if (state.booking?.payment_status === 'paid' || state.booking?.status === 'confirmed') return 'Booking confirmed';
+    if (state.booking?.status === 'confirmed' || state.booking?.payment_status === 'paid') return 'Booking confirmed';
     if (state.booking?.payment_status === 'pending') return 'Payment pending';
     return 'Booking received';
   }, [cancelled, state.booking]);
@@ -157,9 +157,10 @@ export const BookingConfirmationPage: React.FC = () => {
     );
   }
 
+  const isConfirmed = state.booking.status === 'confirmed';
   const isPaid = state.booking.payment_status === 'paid';
   const isCancelled = cancelled || state.booking.status === 'cancelled' || state.booking.payment_status === 'refunded';
-  const isPendingPayment = state.booking.payment_status === 'pending' || state.booking.payment_status === 'unpaid';
+  const isPendingPayment = !isConfirmed && !isPaid && !isCancelled;
 
   return (
     <div className="min-h-screen bg-bg-canvas flex items-center justify-center p-6">
@@ -180,8 +181,8 @@ export const BookingConfirmationPage: React.FC = () => {
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-text-primary">{state.business.name}</h1>
               <p className="text-text-secondary">
-                {isPaid
-                  ? 'Your appointment is locked in and payment has been received.'
+                {isConfirmed || isPaid
+                  ? 'Your appointment is locked in and confirmed.'
                   : isCancelled
                     ? 'Your payment was not completed. The booking is not fully confirmed yet.'
                     : 'We have your booking details. Payment status will update as the payment finishes processing.'}

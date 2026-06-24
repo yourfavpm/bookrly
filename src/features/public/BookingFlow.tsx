@@ -656,7 +656,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                           staffId: selectedStaff?.id
                       });
 
-                       if (isStripeReady && booking) {
+                       if (isStripeReady && booking && totalDue > 0) {
                            const checkoutUrl = await createCheckoutSession(booking.id);
                            if (checkoutUrl) {
                                window.location.href = checkoutUrl;
