@@ -16,6 +16,7 @@ import {
   Clock,
   History as HistoryIcon,
   CheckCircle2,
+  XCircle,
   Save,
   X,
   AlertCircle
@@ -401,15 +402,15 @@ export const ClientProfilePage: React.FC = () => {
                              <div className="space-y-1">
                                 <h3 className="text-sm font-medium tracking-tight text-text-primary">{service?.name || 'Payment'}</h3>
                                 <p className="text-[11px] text-text-tertiary font-light">
-                                   {new Date(booking.date).toLocaleDateString()} • {booking.paymentStatus === 'paid' ? 'Full Payment' : 'Deposit'} via Card
+                                   {new Date(booking.date).toLocaleDateString()} • {booking.paymentStatus === 'paid' ? 'Full Payment' : booking.paymentStatus === 'unpaid' ? 'Unpaid' : 'Deposit'} via Card
                                 </p>
                              </div>
                           </div>
                           <div className="text-right space-y-1">
                              <p className="text-sm font-medium text-text-primary">{currency === 'CAD' ? 'C$' : '$'}{booking.paidAmount || booking.totalAmount}</p>
                              <div className="flex items-center justify-end gap-1.5">
-                                {booking.paymentStatus === 'paid' ? <CheckCircle2 size={12} className="text-emerald-500" /> : <Clock size={12} className="text-amber-500" />}
-                                <span className={`text-[9px] font-bold uppercase tracking-widest ${booking.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                {booking.paymentStatus === 'paid' ? <CheckCircle2 size={12} className="text-emerald-500" /> : booking.paymentStatus === 'unpaid' ? <XCircle size={12} className="text-slate-400" /> : <Clock size={12} className="text-amber-500" />}
+                                <span className={`text-[9px] font-bold uppercase tracking-widest ${booking.paymentStatus === 'paid' ? 'text-emerald-600' : booking.paymentStatus === 'unpaid' ? 'text-slate-500' : 'text-amber-600'}`}>
                                    {booking.paymentStatus}
                                 </span>
                              </div>

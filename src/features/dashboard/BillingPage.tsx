@@ -1,11 +1,84 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useAppStore } from '../../store/useAppStore';
 import { Check, Zap } from 'lucide-react';
 import { PRICING_TIERS, BILLING_CADENCES } from '../../constants/billing';
 import type { BillingCadence } from '../../constants/billing';
 import { Button } from '../../components/ui/Button';
+import { calculateDaysRemaining } from '../../lib/dateUtils';
 
 export const BillingPage: React.FC = () => {
+  const { business, createSubscription, openBillingPortal } = useAppStore();
   const [cadence, setCadence] = useState<BillingCadence>('annual');
+  const [redirectingPlan, setRedirectingPlan] = useState<string | null>(null);
+  const [billingAction, setBillingAction] = useState<'portal' | 'upgrade' | null>(null);
+  const priceIds = {
+    starter: {
+      monthly: import.meta.env.VITE_STRIPE_STARTER_MONTHLY,
+      quarterly: import.meta.env.VITE_STRIPE_STARTER_QUARTERLY,
+      biannual: import.meta.env.VITE_STRIPE_STARTER_BIANNUAL,
+      annual: import.meta.env.VITE_STRIPE_STARTER_ANNUAL,
+    },
+    pro: {
+      monthly: import.meta.env.VITE_STRIPE_PRO_MONTHLY,
+      quarterly: import.meta.env.VITE_STRIPE_PRO_QUARTERLY,
+      biannual: import.meta.env.VITE_STRIPE_PRO_BIANNUAL,
+      annual: import.meta.env.VITE_STRIPE_PRO_ANNUAL,
+    },
+    business: {
+      monthly: import.meta.env.VITE_STRIPE_BUSINESS_MONTHLY,
+      quarterly: import.meta.env.VITE_STRIPE_BUSINESS_QUARTERLY,
+      biannual: import.meta.env.VITE_STRIPE_BUSINESS_BIANNUAL,
+      annual: import.meta.env.VITE_STRIPE_BUSINESS_ANNUAL,
+    },
+  } as const;
+
+  const currentPlan = useMemo(() => {
+    const planType = (business?.planType || 'pro').toLowerCase();
+    if (planType === 'enterprise') return 'business';
+    if (planType === 'starter' || planType === 'pro' || planType === 'business' || planType === 'free') {
+      return planType;
+    }
+    return 'pro';
+  }, [business?.planType]);
+
+  const trialDaysLeft = calculateDaysRemaining(business?.trialEndDate);
+  const statusLabel = business?.subscriptionStatus === 'trialing'
+    ? 'Free Trial'
+    : business?.subscriptionStatus === 'active'
+      ? 'Active'
+      : business?.subscriptionStatus === 'past_due'
+        ? 'Past Due'
+        : business?.subscriptionStatus === 'canceled'
+          ? 'Canceled'
+          : 'No Plan';
+
+  const statusTone = business?.subscriptionStatus === 'active'
+    ? 'text-emerald-600 bg-emerald-50 border-emerald-100'
+    : business?.subscriptionStatus === 'past_due'
+      ? 'text-red-600 bg-red-50 border-red-100'
+      : business?.subscriptionStatus === 'canceled'
+        ? 'text-slate-500 bg-slate-50 border-slate-200'
+        : 'text-brand bg-brand/5 border-brand/10';
+
+  const handleSelectPlan = async (tierId: string, priceId?: string) => {
+    if (!priceId) {
+      setRedirectingPlan(tierId);
+      window.location.href = 'mailto:hello@skeduley.com?subject=Enterprise Inquiry';
+      return;
+    }
+
+    setRedirectingPlan(tierId);
+    const url = await createSubscription(priceId, tierId);
+    if (url) window.location.href = url;
+    else setRedirectingPlan(null);
+  };
+
+  const handleManageBilling = async () => {
+    setBillingAction('portal');
+    const url = await openBillingPortal();
+    if (url) window.location.href = url;
+    else setBillingAction(null);
+  };
 
   return (
     <div className="max-w-6xl mx-auto py-10 px-6 space-y-12 pb-32">
@@ -44,18 +117,45 @@ export const BillingPage: React.FC = () => {
           </div>
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-brand uppercase tracking-widest">Current Plan</p>
-            <h3 className="text-2xl font-bold text-text-primary">Free Trial</h3>
-            <p className="text-sm text-text-secondary">Your 14-day trial ends in 12 days. Upgrade to keep your custom domain.</p>
+            <h3 className="text-2xl font-bold text-text-primary">
+              {business?.subscriptionStatus === 'trialing'
+                ? 'Free Trial'
+                : PRICING_TIERS.find(t => t.id === currentPlan)?.name || 'Pro'}
+            </h3>
+            <p className="text-sm text-text-secondary">
+              {business?.subscriptionStatus === 'trialing'
+                ? (trialDaysLeft > 0
+                    ? `Your trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}.`
+                    : 'Your trial ends today. Upgrade to avoid interruption.')
+                : business?.subscriptionStatus === 'past_due'
+                  ? 'Your last payment failed. Update your billing method to avoid interruption.'
+                  : business?.subscriptionStatus === 'active'
+                    ? 'Your subscription is active and billing is up to date.'
+                    : 'Choose a plan to get started.'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="secondary" className="rounded-xl px-6 h-12 text-[11px] font-bold uppercase tracking-widest">Manage Billing</Button>
-          <Button className="bg-brand text-white rounded-xl px-8 h-12 text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-brand/20">Upgrade Now</Button>
+          <span className={`px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest ${statusTone}`}>{statusLabel}</span>
+          <Button
+            variant="secondary"
+            onClick={handleManageBilling}
+            isLoading={billingAction === 'portal'}
+            className="rounded-xl px-6 h-12 text-[11px] font-bold uppercase tracking-widest"
+          >
+            Manage Billing
+          </Button>
+          <Button
+            onClick={() => document.getElementById('billing-plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            className="bg-brand text-white rounded-xl px-8 h-12 text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-brand/20"
+          >
+            {business?.subscriptionStatus === 'active' ? 'View Plans' : 'Upgrade Now'}
+          </Button>
         </div>
       </div>
 
       {/* Pricing Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div id="billing-plans" className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {PRICING_TIERS.map((tier) => (
           <div 
             key={tier.id} 
@@ -103,14 +203,17 @@ export const BillingPage: React.FC = () => {
               ))}
             </ul>
 
-            <Button 
+            <Button
+              onClick={() => handleSelectPlan(tier.id, priceIds[tier.id as keyof typeof priceIds]?.[cadence])}
+              isLoading={redirectingPlan === tier.id}
+              disabled={currentPlan === tier.id && business?.subscriptionStatus === 'active'}
               className={`w-full h-12 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all ${
-                tier.popular 
-                  ? 'bg-brand text-white shadow-lg shadow-brand/20 hover:scale-[1.02]' 
+                tier.popular
+                  ? 'bg-brand text-white shadow-lg shadow-brand/20 hover:scale-[1.02]'
                   : 'bg-slate-900 text-white hover:bg-black'
               }`}
             >
-              Select {tier.name}
+              {currentPlan === tier.id && business?.subscriptionStatus === 'active' ? 'Current Plan' : `Select ${tier.name}`}
             </Button>
           </div>
         ))}

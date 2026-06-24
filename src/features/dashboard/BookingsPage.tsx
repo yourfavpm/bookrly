@@ -70,6 +70,7 @@ export const BookingsPage: React.FC = () => {
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
+      case 'unpaid': return 'bg-slate-50 text-slate-600 border-slate-200';
       case 'paid': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'partially_paid': return 'bg-brand/5 text-brand border-brand/10';
       case 'refunded': return 'bg-gray-100 text-gray-600 border-gray-200';
@@ -157,7 +158,7 @@ export const BookingsPage: React.FC = () => {
                   </div>
                   <div className="hidden lg:flex items-center gap-4 shrink-0">
                      <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border ${getPaymentStatusColor(booking.paymentStatus)}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${booking.paymentStatus === 'paid' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        <div className={`w-1.5 h-1.5 rounded-full ${booking.paymentStatus === 'paid' ? 'bg-emerald-500' : booking.paymentStatus === 'unpaid' ? 'bg-slate-400' : 'bg-amber-500'}`} />
                         {booking.paymentStatus.replace('_', ' ')}
                      </div>
                     <ChevronRight className="text-text-tertiary group-hover:text-brand group-hover:translate-x-1 transition-all" size={20} />
@@ -304,7 +305,7 @@ export const BookingsPage: React.FC = () => {
                         </div>
                         
                         <div className={`p-4 rounded-lg flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-widest border border-transparent ${getPaymentStatusColor(selectedBooking.paymentStatus)}`}>
-                           <div className={`w-2 h-2 rounded-full ${selectedBooking.paymentStatus === 'paid' ? 'bg-emerald-600' : selectedBooking.paymentStatus === 'partially_paid' ? 'bg-brand' : 'bg-amber-600'}`} />
+                           <div className={`w-2 h-2 rounded-full ${selectedBooking.paymentStatus === 'paid' ? 'bg-emerald-600' : selectedBooking.paymentStatus === 'unpaid' ? 'bg-slate-400' : selectedBooking.paymentStatus === 'partially_paid' ? 'bg-brand' : 'bg-amber-600'}`} />
                            {selectedBooking.paymentStatus.replace('_', ' ')}
                         </div>
                      </section>

@@ -24,7 +24,7 @@ export const DomainsPage: React.FC = () => {
     fetchDomains();
   }, [fetchDomains]);
 
-  const isPro = business?.planType === 'pro' || business?.planType === 'enterprise';
+  const isPro = business?.planType === 'pro' || business?.planType === 'business' || business?.planType === 'enterprise';
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();

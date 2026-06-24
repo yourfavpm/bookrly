@@ -36,7 +36,7 @@ export const AnalyticsPage: React.FC = () => {
   const [selectedStaffId, setSelectedStaffId] = useState<string>('all');
   
   const isStarter = (business?.planType as string) === 'starter';
-  const isBusiness = business?.planType === 'enterprise';
+  const isBusiness = business?.planType === 'business' || business?.planType === 'enterprise';
 
   const stats = useMemo(() => {
     if (!business) return null;

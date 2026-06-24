@@ -145,6 +145,25 @@ export const getBusinessUrl = (subdomain: string, customDomain?: string | null):
   return `https://${subdomain}.${rootDomain}`;
 };
 
+export const getBookingConfirmationUrl = (
+  bookingUrlBase: string,
+  params: { bookingId?: string; sessionId?: string; cancelled?: boolean } = {}
+): string => {
+  const base = `${bookingUrlBase.replace(/\/$/, '')}/`;
+  const url = new URL('booking/confirmation', base);
+  const queryParts: string[] = [];
+
+  if (params.bookingId) queryParts.push(`booking_id=${encodeURIComponent(params.bookingId)}`);
+  if (params.cancelled) queryParts.push('cancelled=true');
+  if (params.sessionId) {
+    queryParts.push(params.sessionId === '{CHECKOUT_SESSION_ID}'
+      ? 'session_id={CHECKOUT_SESSION_ID}'
+      : `session_id=${encodeURIComponent(params.sessionId)}`);
+  }
+
+  return `${url.toString()}${queryParts.length > 0 ? `?${queryParts.join('&')}` : ''}`;
+};
+
 /**
  * Extracts the business identifier from the current browser URL.
  * Works for both subdomain routing (businessname.skeduley.com) 

@@ -12,7 +12,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
-const PLATFORM_FEE_PERCENT = 0.03
+// MVP launch: no platform fee on booking payments.
+const PLATFORM_FEE_PERCENT = 0
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -71,7 +72,11 @@ serve(async (req) => {
       client_reference_id: bookingId,
       customer_email: booking.customer_email,
       payment_intent_data: {
-        application_fee_amount: platformFee,
+        ...(platformFee > 0
+          ? {
+              application_fee_amount: platformFee,
+            }
+          : {}),
         transfer_data: {
           destination: business.stripe_account_id,
         },

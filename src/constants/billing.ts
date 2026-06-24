@@ -117,9 +117,9 @@ export const PRICING_TIERS: PricingTier[] = [
   },
 ];
 
-export const ENTERPRISE_TIER = {
-  id: 'enterprise',
-  name: 'Enterprise',
+export const BUSINESS_TIER = {
+  id: 'business',
+  name: 'Business',
   description: 'For chains, franchises & large teams',
   price: 'Custom',
   features: [
@@ -135,3 +135,5 @@ export const ENTERPRISE_TIER = {
     'Negotiated annual contract pricing',
   ],
 };
+
+export const ENTERPRISE_TIER = BUSINESS_TIER;

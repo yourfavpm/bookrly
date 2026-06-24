@@ -21,6 +21,7 @@ import { BillingPage } from './features/dashboard/BillingPage';
 import { DomainsPage } from './features/dashboard/DomainsPage';
 import { NotificationSettings } from './features/dashboard/NotificationSettings';
 import { PublicWebsite } from './features/public/PublicWebsite';
+import { BookingConfirmationPage } from './features/public/BookingConfirmationPage';
 import { UnsubscribePage } from './features/public/UnsubscribePage';
 import { StaffInviteAccept } from './features/public/StaffInviteAccept';
 import { PublicLayout } from './components/layout/PublicLayout';
@@ -88,6 +89,8 @@ function App() {
             
             {/* Public Site (Direct View) */}
             <Route path="/p/:subdomain" element={<PublicLayout><PublicWebsite /></PublicLayout>} />
+            <Route path="/booking/confirmation" element={<PublicLayout><BookingConfirmationPage /></PublicLayout>} />
+            <Route path="/:subdomain/booking/confirmation" element={<PublicLayout><BookingConfirmationPage /></PublicLayout>} />
             <Route path="/unsubscribe/:businessId" element={<UnsubscribePage />} />
             
             {/* Staff Invite Accept */}

@@ -236,7 +236,7 @@ export const SettingsPage: React.FC = () => {
 
             <p className="text-[11px] text-text-tertiary leading-relaxed">
               {isConnected
-                ? 'Your Stripe account is connected. Customers can pay you directly when they book. A 3% platform fee applies per transaction.'
+                ? 'Your Stripe account is connected. Customers can pay you directly when they book. No booking platform fee is charged in this MVP.'
                 : 'Connect your Stripe account to start accepting payments from customers. Funds go directly to your bank account.'}
             </p>
 
@@ -276,13 +276,13 @@ export const SettingsPage: React.FC = () => {
     const [showPricing, setShowPricing] = useState(isTrialing || !isActive);
     const [cadence, setCadence] = useState<'monthly' | 'quarterly' | 'biannual' | 'annual'>('annual');
 
-    const handleUpgrade = async (priceId: string | undefined) => {
+    const handleUpgrade = async (priceId: string | undefined, planType?: string) => {
       if (!priceId) {
         window.location.href = 'mailto:hello@skeduley.com?subject=Enterprise Inquiry';
         return;
       }
       setIsRedirecting(true);
-      const url = await createSubscription(priceId);
+      const url = await createSubscription(priceId, planType);
       if (url) window.location.href = url;
       else setIsRedirecting(false);
     };
@@ -521,7 +521,7 @@ export const SettingsPage: React.FC = () => {
                       </div>
 
                       <Button
-                        onClick={() => handleUpgrade(priceInfo.id)}
+                        onClick={() => handleUpgrade(priceInfo.id, plan.name.toLowerCase())}
                         disabled={isRedirecting}
                         className={`w-full h-12 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all ${
                           isPopular 

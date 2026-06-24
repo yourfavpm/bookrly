@@ -7,6 +7,7 @@ import {
   generateBusinessSubdomain,
   getBaseDomain,
   getBusinessUrl,
+  getBookingConfirmationUrl,
   getDomainLookupCandidates,
   isDefaultSubdomain,
   normalizeDomainIdentifier,
@@ -58,7 +59,7 @@ export interface Booking {
   startTime: string;
   endTime: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
-  paymentStatus: 'paid' | 'pending' | 'partially_paid' | 'failed' | 'refunded';
+  paymentStatus: 'unpaid' | 'pending' | 'paid' | 'partially_paid' | 'failed' | 'refunded';
   paymentMethod: 'CARD' | 'CASH' | 'GIFT_CARD' | 'PACKAGE' | 'UNPAID';
   totalAmount: number;
   paidAmount: number;
@@ -227,7 +228,7 @@ interface BusinessState {
   subscriptionStatus: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'incomplete';
   trialStartDate: string | null;
   trialEndDate: string | null;
-  planType: 'free' | 'pro' | 'enterprise';
+  planType: 'free' | 'starter' | 'pro' | 'business' | 'enterprise';
   domains: Domain[];
   themeMode: 'light' | 'dark' | 'auto';
   hiddenSections: string[];
@@ -332,7 +333,7 @@ interface AppState {
   setupStripeConnect: () => Promise<string | null>;
   refreshStripeStatus: () => Promise<void>;
   refundBooking: (bookingId: string) => Promise<void>;
-  createSubscription: (priceId: string) => Promise<string | null>;
+  createSubscription: (priceId: string, planType?: string) => Promise<string | null>;
   openBillingPortal: () => Promise<string | null>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
   uploadLogo: (file: File) => Promise<string | null>;
@@ -361,6 +362,16 @@ interface AppState {
 
 const generateSubdomain = (name: string, businessId: string): string => {
   return generateBusinessSubdomain(name, businessId);
+};
+
+const normalizePlanType = (planType?: string | null): BusinessState['planType'] => {
+  if (!planType) return 'pro';
+  const normalized = planType.toLowerCase();
+  if (normalized === 'enterprise') return 'business';
+  if (normalized === 'free' || normalized === 'starter' || normalized === 'pro' || normalized === 'business') {
+    return normalized;
+  }
+  return 'pro';
 };
 
 const isSubdomainAvailable = async (subdomain: string, businessId: string): Promise<boolean> => {
@@ -615,7 +626,7 @@ export const useAppStore = create<AppState>()(
         startTime: bk.start_time,
         endTime: bk.end_time,
         status: bk.status,
-        paymentStatus: bk.payment_status || 'pending',
+        paymentStatus: bk.payment_status || 'unpaid',
         paymentMethod: bk.payment_method || 'UNPAID',
         totalAmount: bk.total_amount,
         paidAmount: bk.paid_amount || 0,
@@ -687,7 +698,7 @@ export const useAppStore = create<AppState>()(
           subscriptionStatus: b.subscription_status || 'trialing',
           trialStartDate: b.trial_start_date || null,
           trialEndDate: b.trial_end_date || null,
-          planType: b.plan_type || 'pro',
+          planType: normalizePlanType(b.plan_type),
           services: (services || []).map((s: Record<string, unknown>) => ({ ...s, bookingFeeEnabled: s.booking_fee_enabled, bookingFeeAmount: s.booking_fee_amount, addOns: s.addons || [] } as unknown as Service)),
           workingHours: (availability || []).map((h: Record<string, unknown>) => ({ ...h, dayOfWeek: h.day_of_week, startTime: h.start_time, endTime: h.end_time, isOpen: h.is_open } as unknown as WorkingHour)),
           bookings: mappedBookings,
@@ -707,7 +718,7 @@ export const useAppStore = create<AppState>()(
           } : undefined,
           smsUsage: {
              count: smsUsageData?.count || 0,
-             limit: b.plan_type === 'starter' ? 100 : 1000000
+             limit: normalizePlanType(b.plan_type) === 'starter' ? 100 : 1000000
           },
           scheduledMessages: (scheduledMessages || []).map((m: any) => ({
              ...m,
@@ -1258,7 +1269,7 @@ export const useAppStore = create<AppState>()(
           subscriptionStatus: business.subscription_status || 'trialing',
           trialStartDate: business.trial_start_date || null,
           trialEndDate: business.trial_end_date || null,
-          planType: business.plan_type || 'pro',
+          planType: normalizePlanType(business.plan_type),
           // Relations
           services: mappedServices,
           workingHours: (availabilityRes.data || []).map((h) => ({
@@ -1707,7 +1718,7 @@ export const useAppStore = create<AppState>()(
         timezone: business.timezone,
         total_amount: data.totalPrice,
         paid_amount: data.depositDue || 0,
-        payment_status: data.depositDue > 0 ? 'pending' : 'paid',
+        payment_status: data.depositDue > 0 ? 'pending' : 'unpaid',
         status: data.depositDue > 0 ? 'pending' : 'confirmed',
         notes: data.notes,
         client_id: clientId
@@ -1843,8 +1854,8 @@ export const useAppStore = create<AppState>()(
     if (!business) return null;
 
     const bookingUrl = getBusinessUrl(business.subdomain, business.customDomain);
-    const successUrl = `${bookingUrl}/?booking_success=true`;
-    const cancelUrl = `${bookingUrl}/?booking_cancel=true`;
+    const successUrl = getBookingConfirmationUrl(bookingUrl, { bookingId, sessionId: '{CHECKOUT_SESSION_ID}' });
+    const cancelUrl = getBookingConfirmationUrl(bookingUrl, { bookingId, cancelled: true });
 
     const { data, error } = await supabase.functions.invoke('booking-checkout', {
       body: { 
@@ -1975,11 +1986,11 @@ export const useAppStore = create<AppState>()(
     }
   },
 
-  createSubscription: async (priceId: string) => {
+  createSubscription: async (priceId: string, planType?: string) => {
     set({ loading: true, error: null });
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscription-checkout', {
-        body: { action: 'create-checkout-session', priceId },
+        body: { action: 'create-checkout-session', priceId, planType },
       });
 
       if (error) throw error;

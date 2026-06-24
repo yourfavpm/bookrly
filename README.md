@@ -71,3 +71,14 @@ export default defineConfig([
   },
 ])
 ```
+
+## Stripe Setup
+
+Required Edge Function secrets:
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET` for subscription checkout and billing portal events
+- `STRIPE_BOOKING_WEBHOOK_SECRET` for booking payment and refund events
+- `APP_URL` for redirect URLs in deployed environments
+
+Frontend price IDs live in the `VITE_STRIPE_*` environment variables in `.env.example`.

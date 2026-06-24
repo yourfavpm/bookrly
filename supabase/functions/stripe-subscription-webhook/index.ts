@@ -7,6 +7,44 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   httpClient: Stripe.createFetchHttpClient(),
 })
 
+const normalizePlanType = (value: string | null | undefined) => {
+  if (!value) return "pro"
+  const lower = value.toLowerCase()
+  if (lower === "enterprise") return "business"
+  if (["starter", "pro", "business", "free"].includes(lower)) return lower
+  return "pro"
+}
+
+const syncBusinessSubscription = async (
+  adminClient: ReturnType<typeof createClient>,
+  subscription: Stripe.Subscription,
+  overrides: Record<string, unknown> = {}
+) => {
+  const businessId = (subscription.metadata?.business_id as string | undefined) || (overrides.business_id as string | undefined)
+  const planType = normalizePlanType((subscription.metadata?.plan_type as string | undefined) || (overrides.plan_type as string | undefined))
+  const trialEndDate = subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null
+  const trialStartDate = subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null
+
+  const payload = {
+    stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : null,
+    stripe_subscription_id: subscription.id,
+    subscription_status: subscription.status,
+    trial_start_date: trialStartDate,
+    trial_end_date: trialEndDate,
+    plan_type: planType,
+    ...overrides,
+  }
+
+  if (businessId) {
+    await adminClient.from("businesses").update(payload).eq("id", businessId)
+    return
+  }
+
+  if (typeof subscription.customer === "string") {
+    await adminClient.from("businesses").update(payload).eq("stripe_customer_id", subscription.customer)
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { status: 200 })
@@ -38,19 +76,22 @@ serve(async (req) => {
 
   try {
     switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session
+        if (session.mode === "subscription" && session.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+          await syncBusinessSubscription(adminClient, subscription, {
+            business_id: session.metadata?.business_id,
+            plan_type: session.metadata?.plan_type,
+          })
+        }
+        break
+      }
+
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription
-        await adminClient
-          .from("businesses")
-          .update({
-            stripe_subscription_id: subscription.id,
-            subscription_status: subscription.status,
-            trial_end_date: subscription.trial_end
-              ? new Date(subscription.trial_end * 1000).toISOString()
-              : null,
-          })
-          .eq("stripe_customer_id", subscription.customer as string)
+        await syncBusinessSubscription(adminClient, subscription)
         break
       }
 
@@ -58,7 +99,10 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription
         await adminClient
           .from("businesses")
-          .update({ subscription_status: "canceled" })
+          .update({
+            subscription_status: "canceled",
+            stripe_subscription_id: subscription.id,
+          })
           .eq("stripe_subscription_id", subscription.id)
         break
       }
@@ -66,9 +110,16 @@ serve(async (req) => {
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice
         if (invoice.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
           await adminClient
             .from("businesses")
-            .update({ subscription_status: "active" })
+            .update({
+              subscription_status: "active",
+              stripe_subscription_id: subscription.id,
+              trial_start_date: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
+              trial_end_date: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+              plan_type: normalizePlanType((subscription.metadata?.plan_type as string | undefined)),
+            })
             .eq("stripe_subscription_id", invoice.subscription as string)
         }
         break

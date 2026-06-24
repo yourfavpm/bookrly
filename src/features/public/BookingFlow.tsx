@@ -5,6 +5,7 @@ import {
   ChevronLeft, 
   Clock, 
   Calendar as CalendarIcon, 
+  AlertCircle,
   X,
   CheckCircle2
 } from 'lucide-react';
@@ -13,6 +14,7 @@ import type { Service, AddOn, StaffMember } from '../../store/useAppStore';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { formatPrice } from '../../utils/formatters';
+import { getBusinessUrl, getBookingConfirmationUrl } from '../../lib/domainUtils';
 
 interface BookingFlowProps {
   onCancel?: () => void;
@@ -130,6 +132,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   // 1. Service Selection
   // 2. Staff Selection (NEW)
@@ -160,6 +163,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   }, [selectedService, selectedAddOns]);
 
   const totalDue = subtotal;
+  const siteBookingUrl = business ? getBusinessUrl(business.subdomain, business.customDomain) : '';
 
   const availableDates = useMemo(() => {
     const today = new Date();
@@ -316,6 +320,17 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
 
       <div className="min-h-screen">
         <AnimatePresence mode="wait">
+          {bookingError && (
+            <div className="px-6 pt-6">
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-start gap-3">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="font-semibold">Booking failed</p>
+                  <p className="text-red-600/90">{bookingError}</p>
+                </div>
+              </div>
+            </div>
+          )}
            {step === 1 && (
              <BookingStepWrapper 
                key="step1" 
@@ -575,6 +590,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                 onBack={prevStep}
                 onNext={async () => {
                   setIsSubmitting(true);
+                  setBookingError(null);
                   try {
                       const booking = await createBooking({
                           serviceId: selectedService.id,
@@ -596,12 +612,17 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                                window.location.href = checkoutUrl;
                                return;
                            }
+                           throw new Error('We saved your booking, but payment setup could not start.');
                        }
-                       if (booking) nextStep();
+                       if (booking) {
+                         window.location.href = getBookingConfirmationUrl(siteBookingUrl, { bookingId: booking.id });
+                         return;
+                       }
                   } catch (err) {
-                      console.error('Booking error:', err);
+                    console.error('Booking error:', err);
+                    setBookingError((err as Error).message || 'Something went wrong while saving your booking.');
                   } finally {
-                      setIsSubmitting(false);
+                    setIsSubmitting(false);
                   }
                 }}
                 nextLabel={isStripeReady ? 'Pay & Confirm' : 'Confirm Appointment'}

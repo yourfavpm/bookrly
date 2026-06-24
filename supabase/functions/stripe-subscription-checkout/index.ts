@@ -30,7 +30,7 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     if (userError || !user) throw new Error("Unauthorized")
 
-    const { action, priceId } = await req.json()
+    const { action, priceId, planType } = await req.json()
 
     const { data: business, error: bError } = await supabaseClient
       .from("businesses")
@@ -43,6 +43,7 @@ serve(async (req) => {
     // --- Create Checkout Session ---
     if (action === "create-checkout-session") {
       if (!priceId) throw new Error("Price ID is required to create a checkout session")
+      const effectivePlanType = typeof planType === "string" && planType.length > 0 ? planType : "pro"
 
       let customerId = business.stripe_customer_id
 
@@ -83,7 +84,12 @@ serve(async (req) => {
         mode: "subscription",
         subscription_data: {
           trial_period_days: trialDaysRemaining > 0 ? trialDaysRemaining : undefined,
-          metadata: { business_id: business.id },
+          metadata: { business_id: business.id, plan_type: effectivePlanType },
+        },
+        metadata: {
+          business_id: business.id,
+          plan_type: effectivePlanType,
+          price_id: priceId,
         },
         success_url: `${origin}/dashboard/settings?section=billing&upgraded=true`,
         cancel_url: `${origin}/dashboard/settings?section=billing&canceled=true`,
