@@ -52,20 +52,20 @@ const BookingStepWrapper: React.FC<BookingStepWrapperProps> = ({
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -10 }}
     transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-    className="w-full max-w-[440px] mx-auto pt-28 pb-20 px-6 flex flex-col min-h-screen"
+    className="w-full max-w-[440px] mx-auto pt-12 pb-12 px-6 flex flex-col min-h-[100dvh]"
   >
-    <div className="flex-1 flex flex-col space-y-10">
+    <div className="flex-1 flex flex-col space-y-8">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{title}</h1>
         {subtitle && <p className="text-[11px] text-text-tertiary font-normal max-w-[300px] mx-auto leading-relaxed">{subtitle}</p>}
       </div>
 
-      <div className="flex-1">
+      <div className="flex-1 min-h-0">
         {children}
       </div>
     </div>
 
-    <div className="pt-12 flex flex-col gap-4">
+    <div className="pt-8 pb-4 flex flex-col gap-4 mt-auto sticky bottom-0 bg-bg-canvas z-10">
       {showNext && (
         <Button
           onClick={onNext}
@@ -174,7 +174,14 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     return total;
   }, [selectedService, selectedAddOns]);
 
-  const totalDue = subtotal;
+  const totalDue = useMemo(() => {
+    if (!selectedService) return 0;
+    if (selectedService.bookingFeeEnabled) {
+      return selectedService.bookingFeeAmount || 0;
+    }
+    return 0;
+  }, [selectedService]);
+
   const siteBookingUrl = business ? getBusinessUrl(business.subdomain, business.customDomain) : '';
 
   const availableDates = useMemo(() => {
@@ -706,7 +713,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                          <span>{formatPrice(subtotal, currency)}</span>
                       </div>
                       <div className="flex justify-between items-center text-lg font-bold text-text-primary pt-2 border-t border-border-light">
-                         <span>Total</span>
+                         <span>Total Due Today</span>
                          <span>{formatPrice(totalDue, currency)}</span>
                       </div>
                    </div>

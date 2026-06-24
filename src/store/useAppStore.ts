@@ -1713,44 +1713,19 @@ export const useAppStore = create<AppState>()(
 
     // 1. Auto-CRM Logic: Match/Create Client
     let clientId = null;
-    if (data.customerEmail) {
+    if (data.customerEmail || data.customerPhone) {
       try {
-        const { data: existingClient } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('business_id', business.id)
-          .ilike('email', data.customerEmail.trim())
-          .eq('is_deleted', false)
-          .maybeSingle();
+        const { data: rpcClientId, error: rpcError } = await supabase.rpc('skeduley_upsert_booking_client', {
+          p_business_id: business.id,
+          p_name: data.customerName,
+          p_email: data.customerEmail?.trim() || null,
+          p_phone: data.customerPhone || null
+        });
 
-        if (existingClient) {
-          clientId = existingClient.id;
-          // Update name/phone to most recent
-          await supabase
-            .from('clients')
-            .update({ 
-              name: data.customerName, 
-              ...(data.customerPhone ? { phone: data.customerPhone } : {}),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', clientId);
-        } else {
-          // Create new client record
-          const { data: newClient, error: cError } = await supabase
-            .from('clients')
-            .insert([{
-              business_id: business.id,
-              name: data.customerName,
-              phone: data.customerPhone,
-              email: data.customerEmail.trim(),
-              join_date: new Date().toISOString()
-            }])
-            .select()
-            .single();
-          
-          if (!cError && newClient) {
-            clientId = newClient.id;
-          }
+        if (!rpcError && rpcClientId) {
+          clientId = rpcClientId;
+        } else if (rpcError) {
+          console.warn('Auto-CRM RPC failed:', rpcError);
         }
       } catch (crmErr) {
         console.warn('Auto-CRM match failed:', crmErr);
