@@ -26,7 +26,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) =
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className="relative w-full max-w-4xl h-full md:h-auto md:max-h-[85vh] bg-white md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col"
           >
-            <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
+            <div className="flex-1 min-h-0 bg-white">
               <BookingFlow onCancel={onClose} />
             </div>
           </motion.div>

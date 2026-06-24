@@ -24,6 +24,9 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
 
   // Determine if we are in demo mode
   const isDemo = propIsDemo || !!demoTemplateKey;
+  const [tenantStatus, setTenantStatus] = useState<'resolving' | 'resolved' | 'missing'>(() => (
+    isPreview || isDemo ? 'resolved' : 'resolving'
+  ));
 
   const business = useMemo(() => {
     if (!storeBusiness && !isDemo) return null;
@@ -61,7 +64,12 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
     }
 
     const resolveTenant = async () => {
-      if (isPreview) return;
+      if (isPreview || isDemo) {
+        setTenantStatus('resolved');
+        return;
+      }
+
+      setTenantStatus('resolving');
 
       // Priority 1: subdomain-based routing (businessname.skeduley.com)
       const subdomainFromHost = extractSubdomainFromHost();
@@ -71,6 +79,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
 
       if (!identifier) {
         console.log('[PublicWebsite] No tenant identifier found — showing landing page or 404');
+        setTenantStatus('missing');
         return;
       }
 
@@ -78,12 +87,14 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
       
       try {
         await fetchPublicBusiness(identifier);
+        setTenantStatus('resolved');
       } catch (err) {
         console.error('[PublicWebsite] Failed to fetch business:', err);
+        setTenantStatus('missing');
       }
     };
     resolveTenant();
-  }, [paramSubdomain, fetchPublicBusiness, isPreview]);
+  }, [paramSubdomain, fetchPublicBusiness, isPreview, isDemo]);
 
 
   const isTrialing = business?.subscriptionStatus === 'trialing';
@@ -94,13 +105,13 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({ forcedView, isPrev
   const isActive = business?.subscriptionStatus === 'active';
   const isRestricted = (isTrialExpired || (!isTrialing && !isActive)) && !isPreview;
 
-  if (loading) return (
+  if (tenantStatus === 'resolving' || loading) return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
-  if (error || !business) return (
+  if (tenantStatus === 'missing' || error || !business) return (
     <div className="min-h-screen flex items-center justify-center bg-white p-6">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-black text-text-primary">404</h1>

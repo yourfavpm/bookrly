@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, 
@@ -17,6 +17,75 @@ import { formatPrice } from '../../utils/formatters';
 interface BookingFlowProps {
   onCancel?: () => void;
 }
+
+interface BookingStepWrapperProps {
+  children: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  onNext?: () => void;
+  onBack?: () => void;
+  nextDisabled?: boolean;
+  showNext?: boolean;
+  showBack?: boolean;
+  nextLabel?: string;
+  isLoading?: boolean;
+  accentColor: string;
+}
+
+const BookingStepWrapper: React.FC<BookingStepWrapperProps> = ({
+  children,
+  title,
+  subtitle,
+  onNext,
+  onBack,
+  nextDisabled = false,
+  showNext = true,
+  showBack = true,
+  nextLabel = 'Continue',
+  isLoading = false,
+  accentColor
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+    className="w-full max-w-[440px] mx-auto pt-28 pb-20 px-6 flex flex-col min-h-screen"
+  >
+    <div className="flex-1 flex flex-col space-y-10">
+      <div className="space-y-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{title}</h1>
+        {subtitle && <p className="text-[11px] text-text-tertiary font-normal max-w-[300px] mx-auto leading-relaxed">{subtitle}</p>}
+      </div>
+
+      <div className="flex-1">
+        {children}
+      </div>
+    </div>
+
+    <div className="pt-12 flex flex-col gap-4">
+      {showNext && (
+        <Button
+          onClick={onNext}
+          disabled={nextDisabled}
+          isLoading={isLoading}
+          className="w-full h-14 rounded-2xl text-white font-bold text-[11px] uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] disabled:opacity-30"
+          style={{ backgroundColor: !nextDisabled ? accentColor : undefined }}
+        >
+          {nextLabel}
+        </Button>
+      )}
+      {showBack && (
+        <button
+          onClick={onBack}
+          className="w-full py-2 text-[10px] font-medium text-text-tertiary uppercase tracking-widest hover:text-text-primary transition-colors flex items-center justify-center gap-2"
+        >
+          <ChevronLeft size={14} /> Back
+        </button>
+      )}
+    </div>
+  </motion.div>
+);
 
 const getZonedDateParts = (date: Date, timeZone: string) => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -46,6 +115,7 @@ const getZonedDateKey = (date: Date, timeZone: string) => {
 
 export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   const { business, createBooking, createCheckoutSession, currency } = useAppStore();
+  const flowRef = useRef<HTMLDivElement | null>(null);
   const businessTimezone = business?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const isStripeReady = business?.stripeConnected && business?.stripeDetailsSubmitted;
   const [step, setStep] = useState(() => {
@@ -74,6 +144,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
 
   const nextStep = () => setStep(s => Math.min(s + 1, TOTAL_STEPS));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
+
+  useEffect(() => {
+    flowRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
 
   const subtotal = useMemo(() => {
     if (!selectedService) return 0;
@@ -200,7 +274,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   if (!business) return null;
 
   const renderProgress = () => (
-    <div className="fixed top-0 left-0 w-full h-[3px] bg-bg-tertiary z-60">
+    <div className="sticky top-0 left-0 w-full h-[3px] bg-bg-tertiary z-60">
       <motion.div 
         className="h-full" 
         style={{ backgroundColor: business.primaryColor }}
@@ -220,76 +294,11 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     </div>
   );
 
-  const StepWrapper: React.FC<{ 
-    children: React.ReactNode, 
-    title: string, 
-    subtitle?: string,
-    onNext?: () => void,
-    onBack?: () => void,
-    nextDisabled?: boolean,
-    showNext?: boolean,
-    showBack?: boolean,
-    nextLabel?: string,
-    isLoading?: boolean
-  }> = ({ 
-    children, 
-    title, 
-    subtitle, 
-    onNext, 
-    onBack, 
-    nextDisabled = false, 
-    showNext = true, 
-    showBack = true,
-    nextLabel = "Continue",
-    isLoading = false
-  }) => (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-      className="w-full max-w-[440px] mx-auto pt-28 pb-20 px-6 flex flex-col min-h-screen"
-    >
-      <div className="flex-1 flex flex-col space-y-10">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{title}</h1>
-          {subtitle && <p className="text-[11px] text-text-tertiary font-normal max-w-[300px] mx-auto leading-relaxed">{subtitle}</p>}
-        </div>
-        
-        <div className="flex-1">
-          {children}
-        </div>
-      </div>
-
-      <div className="pt-12 flex flex-col gap-4">
-        {showNext && (
-          <Button 
-            onClick={onNext} 
-            disabled={nextDisabled} 
-            isLoading={isLoading}
-            className="w-full h-14 rounded-2xl text-white font-bold text-[11px] uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] disabled:opacity-30"
-            style={{ backgroundColor: !nextDisabled ? business.primaryColor : undefined }}
-          >
-            {nextLabel}
-          </Button>
-        )}
-        {showBack && (
-          <button 
-            onClick={onBack} 
-            className="w-full py-2 text-[10px] font-medium text-text-tertiary uppercase tracking-widest hover:text-text-primary transition-colors flex items-center justify-center gap-2"
-          >
-            <ChevronLeft size={14} /> Back
-          </button>
-        )}
-      </div>
-    </motion.div>
-  );
-
   return (
-    <div className="fixed inset-0 bg-white z-99 overflow-y-auto">
+    <div ref={flowRef} className="relative h-full min-h-full bg-white overflow-y-auto custom-scrollbar">
       {renderProgress()}
 
-      <header className="fixed top-0 left-0 w-full h-20 flex items-center justify-between px-8 z-50">
+      <header className="sticky top-[3px] left-0 w-full h-20 flex items-center justify-between px-5 sm:px-8 z-50 bg-white/95 backdrop-blur-md border-b border-border-light/60">
          <div className="flex items-center gap-3">
             {business.logo ? (
               <img src={business.logo} className="w-8 h-8 rounded-lg object-contain" alt="Logo" />
@@ -308,12 +317,13 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
       <div className="min-h-screen">
         <AnimatePresence mode="wait">
            {step === 1 && (
-             <StepWrapper 
+             <BookingStepWrapper 
                key="step1" 
                title="Select a service" 
                subtitle="Choose the service you'd like to book with us today."
                showBack={false}
                showNext={false}
+               accentColor={business.primaryColor}
              >
                 <div className="grid gap-3">
                    {business.services.map(s => (
@@ -347,16 +357,17 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                      </button>
                    ))}
                 </div>
-             </StepWrapper>
+             </BookingStepWrapper>
            )}
 
            {step === 2 && selectedService && (
-             <StepWrapper
+             <BookingStepWrapper
                key="step2"
                title="Choose your provider"
                subtitle="Select who you'd like to see, or let us assign someone."
                onBack={prevStep}
                showNext={false}
+               accentColor={business.primaryColor}
              >
                 <div className="grid gap-3">
                    <button
@@ -389,17 +400,18 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                      </button>
                    ))}
                 </div>
-             </StepWrapper>
+             </BookingStepWrapper>
            )}
 
            {step === 3 && selectedService && (
-             <StepWrapper 
+             <BookingStepWrapper 
                key="step3" 
                title="Customize your visit" 
                subtitle="Select any add-ons to personalize your experience."
                onNext={nextStep}
                onBack={prevStep}
                nextLabel="Continue to Scheduling"
+               accentColor={business.primaryColor}
              >
                 {renderTotalPrice()}
                 <div className="grid gap-3">
@@ -438,16 +450,17 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                      </div>
                    )}
                 </div>
-             </StepWrapper>
+             </BookingStepWrapper>
            )}
 
            {step === 4 && (
-             <StepWrapper 
+             <BookingStepWrapper 
                key="step4" 
                title="Pick a date" 
                subtitle="When would you like to come in?"
                onBack={prevStep}
                showNext={false}
+               accentColor={business.primaryColor}
              >
                 {renderTotalPrice()}
                 <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
@@ -467,16 +480,17 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                        );
                    })}
                 </div>
-             </StepWrapper>
+             </BookingStepWrapper>
            )}
 
            {step === 5 && (
-             <StepWrapper 
+             <BookingStepWrapper 
                key="step5" 
                title="Select a time" 
                subtitle={`Available times for ${new Date(selectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`}
                onBack={prevStep}
                showNext={false}
+               accentColor={business.primaryColor}
              >
                 {renderTotalPrice()}
                 <div className="grid grid-cols-2 gap-3">
@@ -496,17 +510,18 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                      </div>
                    )}
                 </div>
-             </StepWrapper>
+             </BookingStepWrapper>
            )}
 
            {step === 6 && (
-             <StepWrapper 
+             <BookingStepWrapper 
                key="step6" 
                title="Your details" 
                subtitle="Almost there. Let us know who to expect."
                onNext={nextStep}
                onBack={prevStep}
                nextDisabled={!contactInfo.name || !contactInfo.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)}
+               accentColor={business.primaryColor}
              >
                 <div className="space-y-4">
                    <div className="space-y-1.5">
@@ -549,11 +564,11 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                       />
                    </div>
                 </div>
-             </StepWrapper>
+             </BookingStepWrapper>
            )}
 
            {step === 7 && selectedService && (
-             <StepWrapper 
+             <BookingStepWrapper 
                 key="step7" 
                 title="Review & Confirm" 
                 subtitle="Review your appointment details before proceeding."
@@ -591,6 +606,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                 }}
                 nextLabel={isStripeReady ? 'Pay & Confirm' : 'Confirm Appointment'}
                 isLoading={isSubmitting}
+                accentColor={business.primaryColor}
              >
                 <div className="grid gap-6">
                    <div className="p-6 rounded-3xl bg-bg-secondary/20 border border-border-light space-y-4">
@@ -624,17 +640,18 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                       </div>
                    </div>
                 </div>
-             </StepWrapper>
+             </BookingStepWrapper>
            )}
 
            {step === 8 && (
-             <StepWrapper 
+             <BookingStepWrapper 
                key="step7" 
                title="You're all set!" 
                subtitle={`Confirmation sent to ${contactInfo.email}`}
                showBack={false}
                onNext={() => window.location.href = '/'}
                nextLabel="Return to Homepage"
+               accentColor={business.primaryColor}
              >
                 <div className="py-10 flex flex-col items-center text-center space-y-12">
                    <div className="w-20 h-20 rounded-full bg-success/10 text-success flex items-center justify-center">
@@ -663,7 +680,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                       </div>
                    </Card>
                 </div>
-             </StepWrapper>
+             </BookingStepWrapper>
            )}
         </AnimatePresence>
       </div>
