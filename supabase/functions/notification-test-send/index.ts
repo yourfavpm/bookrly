@@ -82,16 +82,36 @@ serve(async (req) => {
       const fromEmail = envFrom.includes("<") ? `${business.name} <${envFrom.split("<")[1]}` : `${business.name} <${envFrom}>`;
       
       const htmlContent = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #fafafa;">
-          <div style="text-align: center; margin-bottom: 32px;">
-            <h1 style="font-size: 28px; font-weight: 800; margin: 0; color: #111; letter-spacing: -0.5px;">${business.name}</h1>
-          </div>
-          <div style="background: #ffffff; border: 1px solid #eaeaea; border-radius: 16px; padding: 40px; font-size: 16px; line-height: 1.6; color: #333; white-space: pre-wrap; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">${personalizedMessage}</div>
-          <div style="margin-top: 40px; font-size: 13px; color: #888; text-align: center;">
-            <p style="margin: 0;">Sent via Skeduley on behalf of <strong>${business.name}</strong></p>
-            <p style="margin: 8px 0 0;"><a href="https://${business.subdomain}.skeduley.com" style="color: #666; text-decoration: underline;">Visit our website</a></p>
-          </div>
-        </div>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subjectLine}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f9f9f9; }
+    .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .header { background-color: #111111; padding: 40px 32px; text-align: center; }
+    .logo { color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin: 0; }
+    .content { padding: 48px 40px; color: #1a1a1a; }
+    .footer { background-color: #fcfcfc; padding: 32px 40px; text-align: center; border-top: 1px solid #f0f0f0; }
+    .footer p { font-size: 13px; color: #888888; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="logo">${business.name || 'Provider'}</h1>
+    </div>
+    <div class="content">
+      <div style="font-size: 16px; line-height: 1.6; color: #333; white-space: pre-wrap;">${personalizedMessage}</div>
+    </div>
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} ${business.name}. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
       `;
 
       const { error } = await resend.emails.send({

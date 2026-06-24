@@ -34,7 +34,7 @@ const getAvatarColor = (name: string) => {
 };
 
 export const ClientsPage: React.FC = () => {
-  const { business, currency, addClientNote } = useAppStore();
+  const { business, currency, addClientNote, exportClientsCSV } = useAppStore();
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,9 +109,16 @@ export const ClientsPage: React.FC = () => {
   }, [processedClients, searchQuery, tagFilter]);
 
   // Pagination
-  const pageSize = 25;
+  const pageSize = 10;
   const totalPages = Math.ceil(filteredClients.length / pageSize);
-  const paginatedClients = filteredClients.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, tagFilter]);
+
+  // Adjust current page if it goes out of bounds
+  const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const paginatedClients = filteredClients.slice((validCurrentPage - 1) * pageSize, validCurrentPage * pageSize);
 
   // All unique tags
   const allTags = Array.from(new Set(clients.flatMap(c => c.tags)));
@@ -186,6 +193,14 @@ export const ClientsPage: React.FC = () => {
                 <option key={tag} value={tag}>{tag}</option>
               ))}
            </select>
+           <Button 
+             variant="secondary"
+             className="h-10 px-4 rounded-xl border-border-polaris font-medium text-sm flex items-center gap-2"
+             onClick={exportClientsCSV}
+           >
+             <ExternalLink size={16} />
+             <span className="hidden sm:inline">Export CSV</span>
+           </Button>
         </div>
       </div>
 
@@ -295,8 +310,7 @@ export const ClientsPage: React.FC = () => {
                                <button 
                                  onClick={(e) => { 
                                    e.stopPropagation(); 
-                                   // Pre-fill booking flow (mock logic - would need store update to handle client prefill)
-                                   window.open(`/preview`, '_blank');
+                                   window.open(`/preview?name=${encodeURIComponent(client.name)}&email=${encodeURIComponent(client.email)}${client.phone ? `&phone=${encodeURIComponent(client.phone)}` : ''}`, '_blank');
                                  }}
                                  className="p-2 hover:bg-white rounded-lg text-text-tertiary hover:text-brand transition-all"
                                  title="Book Again"
@@ -344,23 +358,23 @@ export const ClientsPage: React.FC = () => {
          {totalPages > 1 && (
            <div className="px-6 py-4 border-t border-black/5 flex items-center justify-between bg-bg-canvas/10">
               <p className="text-xs text-text-tertiary font-light">
-                 Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of {filteredClients.length} clients
+                 Showing {(validCurrentPage - 1) * pageSize + 1} to {Math.min(validCurrentPage * pageSize, filteredClients.length)} of {filteredClients.length} clients
               </p>
               <div className="flex items-center gap-2">
                  <Button 
                    variant="secondary" 
                    size="sm" 
-                   disabled={currentPage === 1}
+                   disabled={validCurrentPage === 1}
                    onClick={() => setCurrentPage(p => p - 1)}
                    className="p-2 h-9 w-9 rounded-lg border-border-polaris"
                  >
                     <ChevronLeft size={16} />
                  </Button>
-                 <span className="text-xs font-medium px-2">{currentPage} / {totalPages}</span>
+                 <span className="text-xs font-medium px-2">{validCurrentPage} / {totalPages}</span>
                  <Button 
                    variant="secondary" 
                    size="sm" 
-                   disabled={currentPage === totalPages}
+                   disabled={validCurrentPage === totalPages}
                    onClick={() => setCurrentPage(p => p + 1)}
                    className="p-2 h-9 w-9 rounded-lg border-border-polaris"
                  >

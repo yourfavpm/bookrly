@@ -1,4 +1,5 @@
 import { supabase } from '../../../lib/supabase';
+import imageCompression from 'browser-image-compression';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
 const VIDEO_TYPES = ['video/mp4', 'video/webm'];
@@ -59,10 +60,24 @@ export const uploadEditorAsset = async ({ businessId, file, folder, allowVideo =
   const validationError = validateEditorUpload(file, allowVideo, maxSizeMb);
   if (validationError) throw new Error(validationError);
 
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'asset';
+  let fileToUpload = file;
+  if (file.type.startsWith('image/') && file.type !== 'image/svg+xml') {
+    try {
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1024,
+        useWebWorker: true,
+      };
+      fileToUpload = await imageCompression(file, options);
+    } catch (error) {
+      console.warn('Image compression failed, using original file:', error);
+    }
+  }
+
+  const ext = fileToUpload.name.split('.').pop()?.toLowerCase() || 'asset';
   const uniqueName = `${folder}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
   const filePath = `${businessId}/${folder}/${uniqueName}`;
-  const { error } = await supabase.storage.from('business-assets').upload(filePath, file, { upsert: false });
+  const { error } = await supabase.storage.from('business-assets').upload(filePath, fileToUpload, { upsert: false });
   if (error) throw error;
 
   const { data: { publicUrl } } = supabase.storage.from('business-assets').getPublicUrl(filePath);

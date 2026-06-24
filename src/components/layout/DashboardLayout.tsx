@@ -68,7 +68,7 @@ export const DashboardLayout: React.FC = () => {
     { icon: <Scissors />, label: 'Services', to: '/dashboard/services', roles: ['owner', 'admin'] },
     { icon: <Image />, label: 'Portfolio', to: '/dashboard/portfolio', roles: ['owner', 'admin'] },
     { icon: <MessageSquare />, label: 'Testimonials', to: '/dashboard/testimonials', roles: ['owner', 'admin'] },
-    { icon: <Clock />, label: 'Availability', to: '/dashboard/availability', roles: ['owner', 'admin', 'manager'] },
+    { icon: <Clock />, label: 'Availability', to: '/dashboard/availability', roles: ['owner', 'admin', 'manager', 'staff'] },
     { icon: <Users />, label: 'Team', to: '/dashboard/team', roles: ['owner', 'admin', 'manager'] },
     { icon: <UserPlus />, label: 'Clients', to: '/dashboard/clients', roles: ['owner', 'admin', 'manager', 'staff'] },
     { icon: <Calendar />, label: 'Bookings', to: '/dashboard/bookings', roles: ['owner', 'admin', 'manager', 'staff'] },

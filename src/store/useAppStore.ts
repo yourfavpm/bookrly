@@ -293,7 +293,7 @@ interface AppState {
   resetEditorSaveStatus: () => void;
   updateBusiness: (updates: Partial<BusinessState>, immediate?: boolean) => Promise<void>;
   setOnboardingStep: (step: number) => void;
-  fetchBusiness: (retryCount?: number) => Promise<void>;
+  fetchBusiness: (retryCount?: number, silent?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   addReview: (review: { author_name: string; rating: number; content: string }) => Promise<void>;
   deleteReview: (id: string) => Promise<void>;
@@ -337,10 +337,12 @@ interface AppState {
   sendTestNotification: (channel: 'sms' | 'email', templateText?: string, notificationType?: string) => Promise<void>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
   uploadLogo: (file: File) => Promise<string | null>;
+  deleteStorageAsset: (url: string) => Promise<void>;
   updateWorkingHours: (hours: WorkingHour[]) => Promise<void>;
   // CRM Actions
   fetchClients: () => Promise<void>;
   updateClient: (id: string, updates: Partial<Client>) => Promise<void>;
+  exportClientsCSV: () => void;
   deleteClient: (id: string) => Promise<void>;
   addClientNote: (clientId: string, text: string) => Promise<void>;
   updateClientNote: (id: string, text: string) => Promise<void>;
@@ -351,7 +353,7 @@ interface AppState {
   getDashboardStats: (period?: string, compare?: boolean, staffId?: string) => DashboardStats | null;
   // Domain Actions
   fetchDomains: () => Promise<void>;
-  addDomain: (domain: string, type: 'subdomain' | 'custom') => Promise<void>;
+  addDomain: (domain: string, type: 'subdomain' | 'custom') => Promise<{ success: boolean; error?: string }>;
   verifyDomain: (id: string) => Promise<{ verified: boolean; errors?: any }>;
   setPrimaryDomain: (id: string) => Promise<void>;
   deleteDomain: (id: string) => Promise<void>;
@@ -501,7 +503,7 @@ export const useAppStore = create<AppState>()(
   resetEditorSaveStatus: () => set({ editorSaveStatus: 'idle', editorSaveError: null }),
   setOnboardingStep: (step) => set({ onboardingStep: step }),
 
-  fetchBusiness: async (retryCount?: number) => {
+  fetchBusiness: async (retryCount?: number, silent: boolean = false) => {
     const { user, business } = get();
     if (!user) {
       set({ loading: false });
@@ -514,10 +516,12 @@ export const useAppStore = create<AppState>()(
       return;
     }
 
-    if (!business) {
-      set({ loading: true, error: null });
-    } else {
-      set({ error: null });
+    if (!silent) {
+      if (!business) {
+        set({ loading: true, error: null });
+      } else {
+        set({ error: null });
+      }
     }
     try {
       // 1. Fetch Business
@@ -1436,7 +1440,23 @@ export const useAppStore = create<AppState>()(
           serviceIds: data.serviceIds
         };
 
-        set({ business: { ...business, staff: [...business.staff, staffMember] } });
+        // Send invite email
+        const inviteUrl = `${window.location.origin}/invite/${newStaff.invite_token}`;
+        supabase.functions.invoke('send-email', {
+          body: {
+            to: data.email,
+            template: 'staff_invite',
+            data: { 
+              businessName: business.name,
+              inviteUrl 
+            }
+          }
+        }).catch(console.error);
+
+        set({ business: { 
+          ...business, 
+          staff: [...(business.staff || []), staffMember] 
+        }});
         return staffMember;
       } catch (err) {
         set({ error: (err as Error).message });
@@ -1481,11 +1501,35 @@ export const useAppStore = create<AppState>()(
       const { business } = get();
       if (!business) return;
 
+      const upcomingBookings = (business.bookings || []).filter(b => b.staffId === id && (b.status === 'confirmed' || b.status === 'pending') && new Date(`${b.date}T${b.startTime}`) > new Date());
+
+      // Re-assign upcoming bookings to unassigned (null)
+      if (upcomingBookings.length > 0) {
+        for (const booking of upcomingBookings) {
+          await supabase.from('bookings').update({ staff_id: null }).eq('id', booking.id);
+          
+          const service = business.services.find(s => s.id === booking.serviceId);
+          supabase.functions.invoke('send-email', {
+            body: {
+              to: booking.customerEmail,
+              template: 'reassignment',
+              data: {
+                businessName: business.name,
+                clientName: booking.customerName.split(' ')[0],
+                serviceName: service?.name || 'your appointment',
+                timeStr: `${new Date(booking.date).toLocaleDateString()} at ${booking.startTime}`
+              }
+            }
+          }).catch(console.error);
+        }
+      }
+
       // Optimistic removal
       set({
         business: {
           ...business,
-          staff: business.staff.filter(s => s.id !== id)
+          staff: business.staff.filter(s => s.id !== id),
+          bookings: business.bookings.map(b => upcomingBookings.some(ub => ub.id === b.id) ? { ...b, staffId: undefined } : b)
         }
       });
 
@@ -1612,6 +1656,45 @@ export const useAppStore = create<AppState>()(
       }
     },
 
+    exportClientsCSV: () => {
+      const { business } = get();
+      if (!business || !business.clients) return;
+      const headers = ['Name', 'Email', 'Phone', 'Total Bookings', 'Total Spent', 'Join Date'];
+      const rows = business.clients.map(c => [
+        c.name,
+        c.email,
+        c.phone || '',
+        c.totalBookings.toString(),
+        c.totalSpent.toString(),
+        new Date(c.joinDate).toLocaleDateString()
+      ]);
+      const csvContent = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${business.name.replace(/\s+/g, '_')}_Clients.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    },
+
+    deleteClient: async (id: string) => {
+      const { business } = get();
+      if (!business) return;
+      set({
+        business: {
+          ...business,
+          clients: business.clients.filter(c => c.id !== id)
+        }
+      });
+      const { error } = await supabase.from('clients').update({ is_deleted: true }).eq('id', id);
+      if (error) {
+        set({ error: error.message });
+        get().fetchClients();
+      }
+    },
+
     createBooking: async (data: {
       serviceId: string;
       addOnIds: string[];
@@ -1630,24 +1713,24 @@ export const useAppStore = create<AppState>()(
 
     // 1. Auto-CRM Logic: Match/Create Client
     let clientId = null;
-    if (data.customerPhone) {
+    if (data.customerEmail) {
       try {
         const { data: existingClient } = await supabase
           .from('clients')
           .select('id')
           .eq('business_id', business.id)
-          .eq('phone', data.customerPhone)
+          .ilike('email', data.customerEmail.trim())
           .eq('is_deleted', false)
           .maybeSingle();
 
         if (existingClient) {
           clientId = existingClient.id;
-          // Update name/email to most recent
+          // Update name/phone to most recent
           await supabase
             .from('clients')
             .update({ 
               name: data.customerName, 
-              email: data.customerEmail,
+              ...(data.customerPhone ? { phone: data.customerPhone } : {}),
               updated_at: new Date().toISOString()
             })
             .eq('id', clientId);
@@ -1659,7 +1742,7 @@ export const useAppStore = create<AppState>()(
               business_id: business.id,
               name: data.customerName,
               phone: data.customerPhone,
-              email: data.customerEmail,
+              email: data.customerEmail.trim(),
               join_date: new Date().toISOString()
             }])
             .select()
@@ -2044,7 +2127,7 @@ export const useAppStore = create<AppState>()(
       if (error) throw error;
       if (data && data.error) throw new Error(data.error);
       
-      await get().fetchBusiness(0);
+      await get().fetchBusiness(0, true);
     } catch (err) {
       set({ error: (err as Error).message });
       throw err;
@@ -2061,13 +2144,23 @@ export const useAppStore = create<AppState>()(
     if (!business) return null;
 
     try {
-      const fileExt = file.name.split('.').pop();
+      let fileToUpload = file;
+      if (file.type.startsWith('image/') && file.type !== 'image/svg+xml') {
+        const imageCompression = (await import('browser-image-compression')).default;
+        try {
+          fileToUpload = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1024, useWebWorker: true });
+        } catch (e) {
+          console.warn('Image compression failed', e);
+        }
+      }
+
+      const fileExt = fileToUpload.name.split('.').pop();
       const fileName = `${business.id}-${Math.random()}.${fileExt}`;
       const filePath = `logos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('business-assets')
-        .upload(filePath, file);
+        .upload(filePath, fileToUpload);
 
       if (uploadError) throw uploadError;
 
@@ -2080,6 +2173,25 @@ export const useAppStore = create<AppState>()(
     } catch (err) {
       console.error('Logo upload error:', (err as Error).message);
       return null;
+    }
+  },
+
+  deleteStorageAsset: async (url: string) => {
+    try {
+      if (!url.includes('supabase.co/storage/v1/object/public/business-assets/')) return;
+      
+      const filePath = url.split('business-assets/')[1];
+      if (!filePath) return;
+
+      const { error } = await supabase.storage
+        .from('business-assets')
+        .remove([filePath]);
+
+      if (error) {
+        console.error('Asset deletion error:', error.message);
+      }
+    } catch (err) {
+      console.error('Asset deletion error:', (err as Error).message);
     }
   },
 
@@ -2409,11 +2521,19 @@ export const useAppStore = create<AppState>()(
 
   addDomain: async (domain, type) => {
     const { business } = get();
-    if (!business) return;
+    if (!business) return { success: false, error: 'No business loaded' };
     const normalizedDomain = type === 'subdomain'
       ? slugifyDomainLabel(domain)
       : normalizeDomainIdentifier(domain);
     
+    // Do not allow reserved subdomains
+    if (type === 'subdomain') {
+      const reserved = ['www', 'api', 'app', 'admin', 'proxy', 'assets', 'static', 'mail', 'remote', 'blog', 'store', 'shop'];
+      if (reserved.includes(normalizedDomain)) {
+        return { success: false, error: 'This is a reserved subdomain and cannot be used.' };
+      }
+    }
+
     const dnsRecords = type === 'custom' ? {
       A: { host: '@', value: '76.76.21.21' },
       CNAME: { host: 'www', value: `proxy.${getBaseDomain()}` }
@@ -2431,7 +2551,15 @@ export const useAppStore = create<AppState>()(
       is_primary: (business.domains || []).length === 0
     }]);
 
-    if (!error) get().fetchDomains();
+    if (error) {
+      if (error.code === '23505') {
+        return { success: false, error: 'This domain is already in use by another business.' };
+      }
+      return { success: false, error: error.message };
+    }
+
+    await get().fetchDomains();
+    return { success: true };
   },
 
   verifyDomain: async (id) => {

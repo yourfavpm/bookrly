@@ -21,7 +21,7 @@ import { getBusinessUrl } from '../../lib/domainUtils';
 type SettingsSection = 'menu' | 'profile' | 'website' | 'payments' | 'billing' | 'team' | 'security';
 
 export const SettingsPage: React.FC = () => {
-  const { business, updateBusiness, user, setupStripeConnect, refreshStripeStatus, createSubscription, openBillingPortal, uploadLogo, updatePassword } = useAppStore();
+  const { business, updateBusiness, user, setupStripeConnect, refreshStripeStatus, createSubscription, openBillingPortal, uploadLogo, updatePassword, deleteStorageAsset } = useAppStore();
   const [activeSection, setActiveSection] = useState<SettingsSection>('menu');
   const [formData, setFormData] = useState({ ...business });
   const [isConnecting, setIsConnecting] = useState(false);
@@ -42,14 +42,15 @@ export const SettingsPage: React.FC = () => {
     updateBusiness(updates);
   };
 
+  const currentRole = useAppStore(s => s.staffRole) || 'owner';
   const navItems = [
-    { id: 'profile' as const, title: 'Profile', description: 'Manage your business details', icon: <User size={18} /> },
-    { id: 'website' as const, title: 'Website', description: 'Configure your subdomain and site status', icon: <Globe size={18} /> },
-    { id: 'payments' as const, title: 'Payments', description: 'Connect Stripe and manage payouts', icon: <CreditCard size={18} /> },
-    { id: 'billing' as const, title: 'Billing', description: 'Manage your plan and invoices', icon: <ShieldCheck size={18} /> },
-    { id: 'team' as const, title: 'Team', description: 'Invite members (Coming Soon)', icon: <Users size={18} />, isPlaceholder: true },
-    { id: 'security' as const, title: 'Security', description: 'Update your password', icon: <ShieldCheck size={18} /> }
-  ];
+    { id: 'profile' as const, title: 'Profile', description: 'Manage your business details', icon: <User size={18} />, roles: ['owner', 'admin', 'manager'] },
+    { id: 'website' as const, title: 'Website', description: 'Configure your subdomain and site status', icon: <Globe size={18} />, roles: ['owner', 'admin'] },
+    { id: 'payments' as const, title: 'Payments', description: 'Connect Stripe and manage payouts', icon: <CreditCard size={18} />, roles: ['owner', 'admin'] },
+    { id: 'billing' as const, title: 'Billing', description: 'Manage your plan and invoices', icon: <ShieldCheck size={18} />, roles: ['owner', 'admin'] },
+    { id: 'team' as const, title: 'Team', description: 'Invite members', icon: <Users size={18} />, roles: ['owner', 'admin', 'manager'] },
+    { id: 'security' as const, title: 'Security', description: 'Update your password', icon: <ShieldCheck size={18} />, roles: ['owner', 'admin', 'manager', 'staff'] }
+  ].filter(item => item.roles.includes(currentRole));
 
   const renderMenu = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -120,8 +121,12 @@ export const SettingsPage: React.FC = () => {
                         const file = e.target.files?.[0];
                         if (file) {
                           setIsUploadingLogo(true);
+                          const oldLogo = formData.logo;
                           const url = await uploadLogo(file);
-                          if (url) handleUpdate({ logo: url });
+                          if (url) {
+                            if (oldLogo) await deleteStorageAsset(oldLogo);
+                            handleUpdate({ logo: url });
+                          }
                           setIsUploadingLogo(false);
                         }
                       }} />

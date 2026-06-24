@@ -186,7 +186,7 @@ export const ClientProfilePage: React.FC = () => {
                    <Button variant="secondary" className="p-3 rounded-xl border-border-polaris" onClick={() => setIsEditing(true)}>
                       <Edit3 size={18} />
                    </Button>
-                   <Button className="flex-1 md:flex-none bg-brand text-white font-bold text-[11px] uppercase tracking-widest px-8">Book Again</Button>
+                   <Button onClick={() => window.open(`/preview?name=${encodeURIComponent(client.name)}&email=${encodeURIComponent(client.email)}${client.phone ? `&phone=${encodeURIComponent(client.phone)}` : ''}`, '_blank')} className="flex-1 md:flex-none bg-brand text-white font-bold text-[11px] uppercase tracking-widest px-8">Book Again</Button>
                    <Button variant="secondary" className="p-3 rounded-xl border-border-polaris text-rose-500 hover:bg-rose-50" onClick={handleDeleteClient}>
                       <Trash2 size={18} />
                    </Button>

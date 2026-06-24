@@ -9,7 +9,8 @@ import {
   ShieldCheck, 
   ArrowRight,
   Trash2,
-  Lock
+  Lock,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getBaseDomain, getBusinessUrl } from '../../lib/domainUtils';
@@ -20,6 +21,8 @@ export const DomainsPage: React.FC = () => {
   const [newDomain, setNewDomain] = useState('');
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   useEffect(() => {
     fetchDomains();
   }, [fetchDomains]);
@@ -29,7 +32,12 @@ export const DomainsPage: React.FC = () => {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDomain) return;
-    await addDomain(newDomain, 'custom');
+    setErrorMsg(null);
+    const result = await addDomain(newDomain, 'custom');
+    if (result && !result.success) {
+      setErrorMsg(result.error || 'Failed to add domain');
+      return;
+    }
     setNewDomain('');
     setIsAdding(false);
   };
@@ -85,7 +93,7 @@ export const DomainsPage: React.FC = () => {
             <Card key={domain.id} className="p-6">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${domain.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${domain.status === 'active' ? 'bg-emerald-50 text-emerald-600' : domain.status === 'failed' ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-400'}`}>
                     <Globe size={24} />
                   </div>
                   <div>
@@ -102,7 +110,7 @@ export const DomainsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-3 mt-1">
                       <div className="flex items-center gap-1">
-                        <div className={`w-1.5 h-1.5 rounded-full ${domain.status === 'active' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        <div className={`w-1.5 h-1.5 rounded-full ${domain.status === 'active' ? 'bg-emerald-500' : domain.status === 'failed' ? 'bg-red-500' : domain.status === 'ssl_pending' ? 'bg-blue-500' : 'bg-amber-500'}`} />
                         <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
                           {domain.status.replace('_', ' ')}
                         </span>
@@ -201,9 +209,14 @@ export const DomainsPage: React.FC = () => {
                       type="text"
                       placeholder="e.g. glowsalon.com"
                       value={newDomain}
-                      onChange={(e) => setNewDomain(e.target.value)}
-                      className="w-full h-14 bg-bg-secondary border-none rounded-2xl px-6 text-sm focus:ring-2 ring-brand/20 outline-none transition-all"
+                      onChange={(e) => { setNewDomain(e.target.value); setErrorMsg(null); }}
+                      className={`w-full h-14 bg-bg-secondary rounded-2xl px-6 text-sm focus:ring-2 outline-none transition-all ${errorMsg ? 'border border-red-500 ring-red-500/20' : 'border-none ring-brand/20'}`}
                     />
+                    {errorMsg && (
+                      <p className="text-red-500 text-xs ml-2 mt-1 font-medium flex items-center gap-1">
+                        <AlertCircle size={14} /> {errorMsg}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex gap-3 pt-2">

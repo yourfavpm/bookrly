@@ -70,6 +70,70 @@ const getWelcomeEmailHtml = (businessName: string = 'Provider') => `
 </html>
 `;
 
+const getStaffInviteHtml = (businessName: string, inviteUrl: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f9f9f9; }
+    .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .header { background-color: #111111; padding: 40px 32px; text-align: center; }
+    .logo { color: #ffffff; font-size: 28px; font-weight: 700; margin: 0; }
+    .content { padding: 48px 40px; color: #1a1a1a; }
+    h1 { font-size: 24px; font-weight: 600; margin-top: 0; margin-bottom: 24px; }
+    p { font-size: 16px; color: #4a4a4a; margin-bottom: 24px; }
+    .cta-container { text-align: center; margin: 40px 0; }
+    .btn { display: inline-block; background-color: #111111; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 100px; font-weight: 500; font-size: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1 class="logo">${businessName}</h1></div>
+    <div class="content">
+      <h1>You've been invited!</h1>
+      <p>You have been invited to join the team at <strong>${businessName}</strong>.</p>
+      <div class="cta-container">
+        <a href="${inviteUrl}" class="btn">Accept Invitation</a>
+      </div>
+      <p>If you didn't expect this invitation, you can safely ignore this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+const getReassignmentHtml = (businessName: string, clientName: string, serviceName: string, timeStr: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f9f9f9; }
+    .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .header { background-color: #111111; padding: 40px 32px; text-align: center; }
+    .logo { color: #ffffff; font-size: 28px; font-weight: 700; margin: 0; }
+    .content { padding: 48px 40px; color: #1a1a1a; }
+    h1 { font-size: 24px; font-weight: 600; margin-top: 0; margin-bottom: 24px; }
+    p { font-size: 16px; color: #4a4a4a; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1 class="logo">${businessName}</h1></div>
+    <div class="content">
+      <h1>Update to your booking</h1>
+      <p>Hi ${clientName},</p>
+      <p>Your upcoming booking for <strong>${serviceName}</strong> at <strong>${timeStr}</strong> has been updated.</p>
+      <p>Due to a change in our schedule, your booking has been reassigned to another available team member. Your appointment time and details remain exactly the same.</p>
+      <p>We look forward to seeing you!</p>
+      <p>Best,<br>${businessName}</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -99,6 +163,12 @@ serve(async (req) => {
     if (template === 'welcome') {
       subject = "Welcome to Skeduley! 🎉";
       html = getWelcomeEmailHtml(templateData?.name || 'there');
+    } else if (template === 'staff_invite') {
+      subject = `You've been invited to join ${templateData?.businessName}`;
+      html = getStaffInviteHtml(templateData?.businessName || 'our team', templateData?.inviteUrl || '');
+    } else if (template === 'reassignment') {
+      subject = `Update to your booking at ${templateData?.businessName}`;
+      html = getReassignmentHtml(templateData?.businessName || '', templateData?.clientName || 'there', templateData?.serviceName || '', templateData?.timeStr || '');
     }
 
     if (!to || !subject || (!html && !text)) {

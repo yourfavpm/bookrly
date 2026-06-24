@@ -19,8 +19,8 @@ const DAY_NAMES = [
 ];
 
 export const AvailabilityPage: React.FC = () => {
-  const { business, updateWorkingHours, addBlockedTime, deleteBlockedTime } = useAppStore();
-  const [localHours, setLocalHours] = useState<WorkingHour[]>([]);
+  const { business, staffId, updateWorkingHours, updateStaffAvailability, addBlockedTime, deleteBlockedTime } = useAppStore();
+  const [localHours, setLocalHours] = useState<WorkingHour[] | StaffAvailability[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -31,8 +31,16 @@ export const AvailabilityPage: React.FC = () => {
   const [blockedReason, setBlockedReason] = useState('');
   const [isAddingBlocked, setIsAddingBlocked] = useState(false);
 
-  if (business?.workingHours && !isInitialized) {
-    setLocalHours([...business.workingHours]);
+  // Filter blocked times for the current view (business or specific staff)
+  const relevantBlockedTimes = business?.blockedTimes?.filter(b => b.staffId === (staffId || null)) || [];
+
+  if (business && !isInitialized) {
+    if (staffId) {
+      const currentStaff = business.staff.find(s => s.id === staffId);
+      setLocalHours(currentStaff ? [...currentStaff.availability] : []);
+    } else {
+      setLocalHours(business.workingHours ? [...business.workingHours] : []);
+    }
     setIsInitialized(true);
   }
 
@@ -98,7 +106,11 @@ export const AvailabilityPage: React.FC = () => {
 
   const handleSave = async () => {
     setSaving(true);
-    await updateWorkingHours(localHours);
+    if (staffId) {
+      await updateStaffAvailability(staffId, localHours as StaffAvailability[]);
+    } else {
+      await updateWorkingHours(localHours as WorkingHour[]);
+    }
     setSaving(false);
     setHasChanges(false);
   };
@@ -110,7 +122,8 @@ export const AvailabilityPage: React.FC = () => {
       date: blockedDate,
       startTime: blockedStartTime,
       endTime: blockedEndTime,
-      reason: blockedReason
+      reason: blockedReason,
+      staffId: staffId || undefined
     });
     setBlockedDate('');
     setBlockedStartTime('09:00');
@@ -290,14 +303,14 @@ export const AvailabilityPage: React.FC = () => {
             </Button>
           </div>
 
-          {business.blockedTimes && business.blockedTimes.length > 0 && (
-            <div className="mt-8 space-y-3">
-              <h3 className="text-sm font-medium text-text-secondary uppercase tracking-widest">Upcoming Blocked Times</h3>
+          {relevantBlockedTimes && relevantBlockedTimes.length > 0 && (
+            <div className="mt-6 border-t border-black/5 pt-6 animate-in fade-in">
+              <h3 className="text-sm font-semibold text-text-primary mb-4">Upcoming Blocked Times</h3>
               <div className="space-y-3">
-                {business.blockedTimes
+                {relevantBlockedTimes
                   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                   .map((block) => (
-                  <div key={block.id} className="flex items-center justify-between p-4 rounded-xl border border-border-polaris bg-bg-canvas/50">
+                  <div key={block.id} className="flex items-center justify-between p-4 bg-bg-canvas/50 rounded-xl border border-border-polaris bg-bg-canvas/50">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-error/10 text-error flex items-center justify-center">
                         <CalendarOff size={18} />

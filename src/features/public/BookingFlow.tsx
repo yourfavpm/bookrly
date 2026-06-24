@@ -128,17 +128,29 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [isAnyStaff, setIsAnyStaff] = useState(false);
+  const [availableStaffList, setAvailableStaffList] = useState<StaffMember[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
-  const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [contactInfo, setContactInfo] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        name: params.get('name') || '',
+        email: params.get('email') || '',
+        phone: params.get('phone') || '',
+        notes: ''
+      };
+    }
+    return { name: '', email: '', phone: '', notes: '' };
+  });
   const [bookingError, setBookingError] = useState<string | null>(null);
 
   // 1. Service Selection
-  // 2. Staff Selection (NEW)
-  // 3. Add-ons
-  // 4. Date
-  // 5. Time
+  // 2. Add-ons
+  // 3. Date
+  // 4. Time
+  // 5. Staff Selection
   // 6. Contact
   // 7. Review
   // 8. Payment (Success/Finalize)
@@ -180,6 +192,42 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     return business.staff.filter(s => s.status === 'active' && s.serviceIds.includes(selectedService.id));
   }, [selectedService, business]);
 
+  const checkOverlap = (bookings: any[], blocks: any[], slotStart: number, slotEnd: number, totalDurationMinutes: number) => {
+    const isBookingOverlap = bookings.some((booking: any) => {
+       const timeStr = booking.startTime;
+       const [bh, bm] = timeStr.split(':').map(Number);
+       const endStr = booking.endTime;
+       const [eh, em] = endStr ? endStr.split(':').map(Number) : [bh + Math.floor(totalDurationMinutes/60), bm + (totalDurationMinutes%60)];
+       
+       const existingService = business?.services.find(s => s.id === booking.serviceId);
+       const existingBuffer = existingService?.bufferTime || 0;
+       
+       const bookingStart = bh * 60 + bm;
+       const bookingEnd = (eh * 60 + em) + existingBuffer;
+       
+       return (slotStart < bookingEnd) && (slotEnd > bookingStart);
+    });
+
+    const isBlockOverlap = blocks.some((block: any) => {
+       const [bh, bm] = block.startTime.split(':').map(Number);
+       const [eh, em] = block.endTime.split(':').map(Number);
+       const blockStart = bh * 60 + bm;
+       const blockEnd = eh * 60 + em;
+       return (slotStart < blockEnd) && (slotEnd > blockStart);
+    });
+    return isBookingOverlap || isBlockOverlap;
+  };
+
+  const getComputedDuration = () => {
+    if (!selectedService) return 0;
+    let totalDurationMinutes = selectedService.duration;
+    selectedAddOns.forEach(name => {
+      const addon = selectedService.addOns.find((a: AddOn) => a.name === name);
+      if (addon) totalDurationMinutes += addon.duration;
+    });
+    return totalDurationMinutes;
+  };
+
   const timeSlots = useMemo(() => {
     if (!selectedDate || !selectedService || !business) return [];
     
@@ -187,11 +235,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     const dayOfWeek = dateObj.getDay();
 
-    let totalDurationMinutes = selectedService.duration;
-    selectedAddOns.forEach(name => {
-      const addon = selectedService.addOns.find((a: AddOn) => a.name === name);
-      if (addon) totalDurationMinutes += addon.duration;
-    });
+    const totalDurationMinutes = getComputedDuration();
 
     const now = new Date();
     const nowParts = getZonedDateParts(now, business.timezone || businessTimezone);
@@ -199,72 +243,45 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     const isToday = selectedDate === todayKey;
     const currentMinutes = nowParts.hour * 60 + nowParts.minute;
 
-    // Use staff-specific availability if a staff member is selected
-    const useStaffHours = selectedStaff && !isAnyStaff;
-    let dayHoursSource: { startTime: string; endTime: string; isOpen: boolean } | undefined;
+    const bizHour = business.workingHours.find(h => h.dayOfWeek === dayOfWeek);
+    if (!bizHour || !bizHour.isOpen) return [];
 
-    if (useStaffHours) {
-      const staffHour = selectedStaff.availability.find(h => h.dayOfWeek === dayOfWeek);
-      dayHoursSource = staffHour ? { startTime: staffHour.startTime, endTime: staffHour.endTime, isOpen: staffHour.isOpen } : undefined;
-    } else {
-      const bizHour = business.workingHours.find(h => h.dayOfWeek === dayOfWeek);
-      dayHoursSource = bizHour ? { startTime: bizHour.startTime, endTime: bizHour.endTime, isOpen: bizHour.isOpen } : undefined;
-    }
-
-    if (!dayHoursSource || !dayHoursSource.isOpen) return [];
-
-    const [startH, startM] = dayHoursSource.startTime.split(':').map(Number);
-    const [endH, endM] = dayHoursSource.endTime.split(':').map(Number);
+    const [startH, startM] = bizHour.startTime.split(':').map(Number);
+    const [endH, endM] = bizHour.endTime.split(':').map(Number);
     const openMinutes = startH * 60 + startM;
     const closeMinutes = endH * 60 + endM;
 
-    // Filter bookings by staff if specific staff selected
-    const todaysBookings = business.bookings.filter(b => {
-      if (b.date !== selectedDate || b.status === 'cancelled') return false;
-      if (selectedStaff && !isAnyStaff) return b.staffId === selectedStaff.id;
-      return true;
-    });
-
-    const todaysBlocked = (business.blockedTimes || []).filter(b => {
-      if (b.date !== selectedDate) return false;
-      if (selectedStaff && !isAnyStaff) {
-         return !b.staffId || b.staffId === selectedStaff.id;
-      }
-      return !b.staffId;
-    });
+    const mainBookings = business.bookings.filter(b => b.date === selectedDate && b.status !== 'cancelled' && !b.staffId);
+    const mainBlocks = (business.blockedTimes || []).filter(b => b.date === selectedDate && !b.staffId);
 
     const currentBuffer = selectedService.bufferTime || 0;
-
     const slots: string[] = [];
+
     for (let m = openMinutes; m + totalDurationMinutes <= closeMinutes; m += 15) {
        if (isToday && m <= currentMinutes + 30) continue;
        const slotStart = m;
        const slotEnd = m + totalDurationMinutes + currentBuffer;
        
-       const isOverlap = todaysBookings.some((booking: any) => {
-          const timeStr = booking.startTime;
-          const [bh, bm] = timeStr.split(':').map(Number);
-          const endStr = booking.endTime;
-          const [eh, em] = endStr ? endStr.split(':').map(Number) : [bh + Math.floor(totalDurationMinutes/60), bm + (totalDurationMinutes%60)];
-          
-          const existingService = business.services.find(s => s.id === booking.serviceId);
-          const existingBuffer = existingService?.bufferTime || 0;
-          
-          const bookingStart = bh * 60 + bm;
-          const bookingEnd = (eh * 60 + em) + existingBuffer;
-          
-          return (slotStart < bookingEnd) && (slotEnd > bookingStart);
-       });
+       let slotAvailable = false;
 
-       const isBlocked = todaysBlocked.some(block => {
-         const [bh, bm] = block.startTime.split(':').map(Number);
-         const [eh, em] = block.endTime.split(':').map(Number);
-         const blockStart = bh * 60 + bm;
-         const blockEnd = eh * 60 + em;
-         return (slotStart < blockEnd) && (slotEnd > blockStart);
-       });
+       if (!checkOverlap(mainBookings, mainBlocks, slotStart, slotEnd, totalDurationMinutes)) {
+           slotAvailable = true;
+       } else {
+           const anyStaffAvailable = qualifiedStaff.some(staff => {
+               const sHour = staff.availability.find(h => h.dayOfWeek === dayOfWeek);
+               if (!sHour || !sHour.isOpen) return false;
+               const [sh, sm] = sHour.startTime.split(':').map(Number);
+               const [eh, em] = sHour.endTime.split(':').map(Number);
+               if (slotStart < (sh*60+sm) || slotEnd > (eh*60+em)) return false;
 
-       if (!isOverlap && !isBlocked) {
+               const sBookings = business.bookings.filter(b => b.date === selectedDate && b.status !== 'cancelled' && b.staffId === staff.id);
+               const sBlocks = (business.blockedTimes || []).filter(b => b.date === selectedDate && b.staffId === staff.id);
+               return !checkOverlap(sBookings, sBlocks, slotStart, slotEnd, totalDurationMinutes);
+           });
+           if (anyStaffAvailable) slotAvailable = true;
+       }
+
+       if (slotAvailable) {
           const h = Math.floor(m / 60);
           const mins = m % 60;
           const period = h >= 12 ? 'PM' : 'AM';
@@ -273,7 +290,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
        }
     }
     return slots;
-  }, [selectedDate, selectedService, selectedAddOns, business, selectedStaff, isAnyStaff, businessTimezone]);
+  }, [selectedDate, selectedService, selectedAddOns, business, qualifiedStaff, businessTimezone]);
 
   if (!business) return null;
 
@@ -346,18 +363,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                        key={s.id}
                         onClick={() => {
                           setSelectedService(s);
-                          const qualified = business.staff.filter(st => st.status === 'active' && st.serviceIds.includes(s.id));
-                          if (qualified.length === 0) {
-                            setIsAnyStaff(true);
-                            setSelectedStaff(null);
-                            setStep(3);
-                          } else if (qualified.length === 1) {
-                            setSelectedStaff(qualified[0]);
-                            setIsAnyStaff(false);
-                            setStep(3);
-                          } else {
-                            nextStep();
-                          }
+                          nextStep();
                         }}
                         className="w-full p-5 rounded-2xl border border-border-light bg-white hover:border-brand/40 hover:shadow-lg hover:shadow-black/2 transition-all text-left group"
                      >
@@ -375,9 +381,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              </BookingStepWrapper>
            )}
 
-           {step === 2 && selectedService && (
+           {step === 5 && selectedService && (
              <BookingStepWrapper
-               key="step2"
+               key="step5"
                title="Choose your provider"
                subtitle="Select who you'd like to see, or let us assign someone."
                onBack={prevStep}
@@ -397,7 +403,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                          </div>
                       </div>
                    </button>
-                   {qualifiedStaff.map(member => (
+                    {availableStaffList.map(member => (
                      <button
                        key={member.id}
                        onClick={() => { setIsAnyStaff(false); setSelectedStaff(member); nextStep(); }}
@@ -418,14 +424,14 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              </BookingStepWrapper>
            )}
 
-           {step === 3 && selectedService && (
+           {step === 2 && selectedService && (
              <BookingStepWrapper 
-               key="step3" 
+               key="step2" 
                title="Customize your visit" 
                subtitle="Select any add-ons to personalize your experience."
                onNext={nextStep}
                onBack={prevStep}
-               nextLabel="Continue to Scheduling"
+               nextLabel="Continue"
                accentColor={business.primaryColor}
              >
                 {renderTotalPrice()}
@@ -468,9 +474,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              </BookingStepWrapper>
            )}
 
-           {step === 4 && (
+           {step === 3 && (
              <BookingStepWrapper 
-               key="step4" 
+               key="step3" 
                title="Pick a date" 
                subtitle="When would you like to come in?"
                onBack={prevStep}
@@ -498,9 +504,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              </BookingStepWrapper>
            )}
 
-           {step === 5 && (
+           {step === 4 && (
              <BookingStepWrapper 
-               key="step5" 
+               key="step4" 
                title="Select a time" 
                subtitle={`Available times for ${new Date(selectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`}
                onBack={prevStep}
@@ -513,7 +519,51 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                      timeSlots.map(time => (
                         <button 
                           key={time}
-                          onClick={() => { setSelectedTime(time); nextStep(); }}
+                           onClick={() => { 
+                             setSelectedTime(time);
+                             
+                             // Calculate available staff for this specific time
+                             const [timeH, timeM, period] = time.match(/(\d+):(\d+) (AM|PM)/)!.slice(1);
+                             let hour = parseInt(timeH);
+                             if (period === 'PM' && hour !== 12) hour += 12;
+                             if (period === 'AM' && hour === 12) hour = 0;
+                             const slotStart = hour * 60 + parseInt(timeM);
+                             
+                             const totalDurationMinutes = getComputedDuration();
+                             const slotEnd = slotStart + totalDurationMinutes + (selectedService.bufferTime || 0);
+
+                             const mainBookings = business.bookings.filter(b => b.date === selectedDate && b.status !== 'cancelled' && !b.staffId);
+                             const mainBlocks = (business.blockedTimes || []).filter(b => b.date === selectedDate && !b.staffId);
+                             const isMainBusinessAvailable = !checkOverlap(mainBookings, mainBlocks, slotStart, slotEnd, totalDurationMinutes);
+
+                             const dObj = new Date(selectedDate);
+                             const dayOfWeek = dObj.getDay();
+
+                             const availableStaff = qualifiedStaff.filter(staff => {
+                                 const sHour = staff.availability.find(h => h.dayOfWeek === dayOfWeek);
+                                 if (!sHour || !sHour.isOpen) return false;
+                                 const [sh, sm] = sHour.startTime.split(':').map(Number);
+                                 const [eh, em] = sHour.endTime.split(':').map(Number);
+                                 if (slotStart < (sh*60+sm) || slotEnd > (eh*60+em)) return false;
+
+                                 const sBookings = business.bookings.filter(b => b.date === selectedDate && b.status !== 'cancelled' && b.staffId === staff.id);
+                                 const sBlocks = (business.blockedTimes || []).filter(b => b.date === selectedDate && b.staffId === staff.id);
+                                 return !checkOverlap(sBookings, sBlocks, slotStart, slotEnd, totalDurationMinutes);
+                             });
+
+                             if (availableStaff.length === 0 && isMainBusinessAvailable) {
+                                setIsAnyStaff(true);
+                                setSelectedStaff(null);
+                                setStep(6);
+                             } else if (availableStaff.length === 1 && !isMainBusinessAvailable) {
+                                setIsAnyStaff(false);
+                                setSelectedStaff(availableStaff[0]);
+                                setStep(6);
+                             } else {
+                                setAvailableStaffList(availableStaff);
+                                setStep(5);
+                             }
+                           }}
                           className="py-4 rounded-2xl border border-border-light bg-white hover:border-brand/40 font-bold text-xs text-text-primary transition-all"
                         >
                            {time}
