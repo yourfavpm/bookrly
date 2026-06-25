@@ -64,7 +64,7 @@ const BookingStepWrapper: React.FC<BookingStepWrapperProps> = ({
       </div>
     </div>
 
-    <div className="pt-8 pb-4 flex flex-col gap-4 mt-auto sticky bottom-0 bg-bg-canvas z-10">
+    <div className="pt-8 pb-4 flex flex-col gap-4 mt-auto">
       {showNext && (
         <Button
           onClick={onNext}
