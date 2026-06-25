@@ -310,7 +310,7 @@ export const ClientsPage: React.FC = () => {
                                <button 
                                  onClick={(e) => { 
                                    e.stopPropagation(); 
-                                   window.open(`/preview?name=${encodeURIComponent(client.name)}&email=${encodeURIComponent(client.email)}${client.phone ? `&phone=${encodeURIComponent(client.phone)}` : ''}`, '_blank');
+                                   window.open(`/preview?name=${encodeURIComponent(client.name || '')}&email=${encodeURIComponent(client.email || '')}${client.phone ? `&phone=${encodeURIComponent(client.phone || '')}` : ''}`, '_blank');
                                  }}
                                  className="p-2 hover:bg-white rounded-lg text-text-tertiary hover:text-brand transition-all"
                                  title="Book Again"

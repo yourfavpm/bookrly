@@ -256,7 +256,7 @@ export interface Domain {
   businessId: string;
   domain: string;
   type: 'subdomain' | 'custom';
-  status: 'pending_verification' | 'dns_configured' | 'active' | 'failed' | 'suspended' | 'transferred';
+  status: 'pending_verification' | 'dns_configured' | 'active' | 'failed' | 'suspended' | 'transferred' | 'ssl_pending';
   isPrimary: boolean;
   sslEnabled: boolean;
   sslStatus: string;
@@ -1664,8 +1664,8 @@ export const useAppStore = create<AppState>()(
         c.name,
         c.email,
         c.phone || '',
-        c.totalBookings.toString(),
-        c.totalSpent.toString(),
+        (c.totalVisits || 0).toString(),
+        (c.lifetimeSpend || 0).toString(),
         new Date(c.joinDate).toLocaleDateString()
       ]);
       const csvContent = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
@@ -1677,22 +1677,6 @@ export const useAppStore = create<AppState>()(
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    },
-
-    deleteClient: async (id: string) => {
-      const { business } = get();
-      if (!business) return;
-      set({
-        business: {
-          ...business,
-          clients: business.clients.filter(c => c.id !== id)
-        }
-      });
-      const { error } = await supabase.from('clients').update({ is_deleted: true }).eq('id', id);
-      if (error) {
-        set({ error: error.message });
-        get().fetchClients();
-      }
     },
 
     createBooking: async (data: {

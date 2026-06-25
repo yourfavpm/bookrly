@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import type { WorkingHour } from '../../store/useAppStore';
+import type { WorkingHour, StaffAvailability } from '../../store/useAppStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { 
@@ -20,7 +20,7 @@ const DAY_NAMES = [
 
 export const AvailabilityPage: React.FC = () => {
   const { business, staffId, updateWorkingHours, updateStaffAvailability, addBlockedTime, deleteBlockedTime } = useAppStore();
-  const [localHours, setLocalHours] = useState<WorkingHour[] | StaffAvailability[]>([]);
+  const [localHours, setLocalHours] = useState<any[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -47,13 +47,13 @@ export const AvailabilityPage: React.FC = () => {
   if (!business) return null;
 
   const handleToggleDay = (dayIdx: number) => {
-    const daySlots = localHours.filter(h => h.day_of_week === dayIdx);
-    const isOpen = daySlots.some(s => s.is_open);
+    const daySlots = localHours.filter(h => (h.day_of_week ?? h.dayOfWeek) === dayIdx);
+    const isOpen = daySlots.some(s => (s.is_open ?? s.isOpen));
 
-    let updated: WorkingHour[];
+    let updated: any[];
     if (isOpen) {
       updated = localHours.map(h => 
-        h.day_of_week === dayIdx ? { ...h, is_open: false } : h
+        (h.day_of_week ?? h.dayOfWeek) === dayIdx ? { ...h, is_open: false, isOpen: false } : h
       );
     } else {
       if (daySlots.length === 0) {
@@ -69,7 +69,7 @@ export const AvailabilityPage: React.FC = () => {
         } as WorkingHour];
       } else {
         updated = localHours.map(h => 
-          h.day_of_week === dayIdx ? { ...h, is_open: true } : h
+          (h.day_of_week ?? h.dayOfWeek) === dayIdx ? { ...h, is_open: true, isOpen: true } : h
         );
       }
     }
@@ -78,7 +78,7 @@ export const AvailabilityPage: React.FC = () => {
   };
 
   const handleAddSlot = (dayIdx: number) => {
-    const newSlot: WorkingHour = {
+    const newSlot = {
       day_of_week: dayIdx,
       start_time: '09:00',
       end_time: '17:00',
@@ -92,12 +92,12 @@ export const AvailabilityPage: React.FC = () => {
     setHasChanges(true);
   };
 
-  const handleRemoveSlot = (originalSlot: WorkingHour) => {
+  const handleRemoveSlot = (originalSlot: any) => {
     setLocalHours(localHours.filter(h => h !== originalSlot));
     setHasChanges(true);
   };
 
-  const handleUpdateSlot = (originalSlot: WorkingHour, field: string, value: string) => {
+  const handleUpdateSlot = (originalSlot: any, field: string, value: string) => {
     setLocalHours(localHours.map(h => 
       h === originalSlot ? { ...h, [field]: value, [field.replace('_', 'S')]: value } : h
     ));
@@ -163,8 +163,8 @@ export const AvailabilityPage: React.FC = () => {
 
       <div className="grid gap-4">
         {DAY_NAMES.map((dayName, dayIdx) => {
-          const daySlots = localHours.filter(h => h.day_of_week === dayIdx);
-          const isOpen = daySlots.some(s => s.is_open);
+          const daySlots = localHours.filter(h => (h.day_of_week ?? h.dayOfWeek) === dayIdx);
+          const isOpen = daySlots.some(s => (s.is_open ?? s.isOpen));
 
           return (
             <Card key={dayIdx} className={`p-0 overflow-hidden transition-all duration-300 ${isOpen ? 'border-brand/20' : 'bg-bg-canvas/50 grayscale opacity-80'}`}>
@@ -189,7 +189,7 @@ export const AvailabilityPage: React.FC = () => {
                     <p className="text-sm text-text-tertiary italic py-2">Unavailable for bookings</p>
                   ) : (
                     <div className="space-y-4">
-                      {daySlots.filter(s => s.is_open).map((slot, sIdx) => (
+                      {daySlots.filter(s => (s.is_open ?? s.isOpen)).map((slot, sIdx) => (
                         <div key={`${dayIdx}-${sIdx}`} className="flex items-center gap-4 animate-in fade-in slide-in-from-left-2 duration-300">
                           <div className="flex-1 grid grid-cols-2 gap-3">
                             <div className="relative group">
@@ -198,8 +198,8 @@ export const AvailabilityPage: React.FC = () => {
                                 <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand" />
                                 <input 
                                   type="time"
-                                  value={slot.start_time}
-                                  onChange={(e) => handleUpdateSlot(slot, 'start_time', e.target.value)}
+                                  value={slot.start_time ?? slot.startTime}
+                                  onChange={(e) => handleUpdateSlot(slot, staffId ? 'startTime' : 'start_time', e.target.value)}
                                   className="w-full h-11 pl-9 pr-4 rounded-xl border border-border-polaris bg-white text-sm focus:outline-none focus:ring-4 focus:ring-brand/5 focus:border-brand transition-all"
                                 />
                               </div>
@@ -210,8 +210,8 @@ export const AvailabilityPage: React.FC = () => {
                                 <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand" />
                                 <input 
                                   type="time"
-                                  value={slot.end_time}
-                                  onChange={(e) => handleUpdateSlot(slot, 'end_time', e.target.value)}
+                                  value={slot.end_time ?? slot.endTime}
+                                  onChange={(e) => handleUpdateSlot(slot, staffId ? 'endTime' : 'end_time', e.target.value)}
                                   className="w-full h-11 pl-9 pr-4 rounded-xl border border-border-polaris bg-white text-sm focus:outline-none focus:ring-4 focus:ring-brand/5 focus:border-brand transition-all"
                                 />
                               </div>
@@ -219,7 +219,7 @@ export const AvailabilityPage: React.FC = () => {
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            {daySlots.filter(s => s.is_open).length > 1 && (
+                            {daySlots.filter(s => (s.is_open ?? s.isOpen)).length > 1 && (
                               <button 
                                 onClick={() => handleRemoveSlot(slot)}
                                 className="p-2.5 text-text-tertiary hover:text-error hover:bg-error/5 rounded-xl transition-all"

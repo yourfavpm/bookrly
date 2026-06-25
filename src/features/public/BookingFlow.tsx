@@ -14,7 +14,6 @@ import type { Service, AddOn, StaffMember } from '../../store/useAppStore';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { formatPrice } from '../../utils/formatters';
-import { getBusinessUrl, getBookingConfirmationUrl } from '../../lib/domainUtils';
 
 interface BookingFlowProps {
   onCancel?: () => void;
@@ -127,7 +126,6 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
-  const [isAnyStaff, setIsAnyStaff] = useState(false);
   const [availableStaffList, setAvailableStaffList] = useState<StaffMember[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -181,8 +179,6 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
     }
     return 0;
   }, [selectedService]);
-
-  const siteBookingUrl = business ? getBusinessUrl(business.subdomain, business.customDomain) : '';
 
   const availableDates = useMemo(() => {
     const today = new Date();
@@ -399,7 +395,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
              >
                 <div className="grid gap-3">
                    <button
-                     onClick={() => { setIsAnyStaff(true); setSelectedStaff(null); nextStep(); }}
+                     onClick={() => { setSelectedStaff(null); nextStep(); }}
                      className="w-full p-5 rounded-2xl border border-border-light bg-white hover:border-brand/40 hover:shadow-lg transition-all text-left group"
                    >
                       <div className="flex items-center gap-4">
@@ -413,7 +409,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                     {availableStaffList.map(member => (
                      <button
                        key={member.id}
-                       onClick={() => { setIsAnyStaff(false); setSelectedStaff(member); nextStep(); }}
+                       onClick={() => { setSelectedStaff(member); nextStep(); }}
                        className="w-full p-5 rounded-2xl border border-border-light bg-white hover:border-brand/40 hover:shadow-lg transition-all text-left group"
                      >
                         <div className="flex items-center gap-4">
@@ -537,7 +533,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                              const slotStart = hour * 60 + parseInt(timeM);
                              
                              const totalDurationMinutes = getComputedDuration();
-                             const slotEnd = slotStart + totalDurationMinutes + (selectedService.bufferTime || 0);
+                             const slotEnd = slotStart + totalDurationMinutes + (selectedService?.bufferTime || 0);
 
                              const mainBookings = business.bookings.filter(b => b.date === selectedDate && b.status !== 'cancelled' && !b.staffId);
                              const mainBlocks = (business.blockedTimes || []).filter(b => b.date === selectedDate && !b.staffId);
@@ -559,11 +555,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ onCancel }) => {
                              });
 
                              if (availableStaff.length === 0 && isMainBusinessAvailable) {
-                                setIsAnyStaff(true);
                                 setSelectedStaff(null);
                                 setStep(6);
                              } else if (availableStaff.length === 1 && !isMainBusinessAvailable) {
-                                setIsAnyStaff(false);
                                 setSelectedStaff(availableStaff[0]);
                                 setStep(6);
                              } else {

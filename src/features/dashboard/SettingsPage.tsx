@@ -19,9 +19,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getBusinessUrl } from '../../lib/domainUtils';
 
 type SettingsSection = 'menu' | 'profile' | 'website' | 'payments' | 'billing' | 'team' | 'security';
-
 export const SettingsPage: React.FC = () => {
-  const { business, updateBusiness, user, setupStripeConnect, refreshStripeStatus, createSubscription, openBillingPortal, uploadLogo, updatePassword, deleteStorageAsset } = useAppStore();
+  const { business, updateBusiness, user, setupStripeConnect, refreshStripeStatus, createSubscription, openBillingPortal, uploadLogo, updatePassword, deleteStorageAsset, staffRole } = useAppStore();
   const [activeSection, setActiveSection] = useState<SettingsSection>('menu');
   const [formData, setFormData] = useState({ ...business });
   const [isConnecting, setIsConnecting] = useState(false);
@@ -42,9 +41,9 @@ export const SettingsPage: React.FC = () => {
     updateBusiness(updates);
   };
 
-  const currentRole = useAppStore(s => s.staffRole) || 'owner';
-  const navItems = [
-    { id: 'profile' as const, title: 'Profile', description: 'Manage your business details', icon: <User size={18} />, roles: ['owner', 'admin', 'manager'] },
+  const currentRole = staffRole || 'owner';
+  const navItems: Array<{id: SettingsSection, title: string, description: string, icon: React.ReactNode, roles: string[], isPlaceholder?: boolean}> = [
+    { id: 'profile' as const, title: 'Profile', description: 'Update personal details', icon: <User size={18} />, roles: ['owner', 'admin', 'manager', 'staff'] },
     { id: 'website' as const, title: 'Website', description: 'Configure your subdomain and site status', icon: <Globe size={18} />, roles: ['owner', 'admin'] },
     { id: 'payments' as const, title: 'Payments', description: 'Connect Stripe and manage payouts', icon: <CreditCard size={18} />, roles: ['owner', 'admin'] },
     { id: 'billing' as const, title: 'Billing', description: 'Manage your plan and invoices', icon: <ShieldCheck size={18} />, roles: ['owner', 'admin'] },
